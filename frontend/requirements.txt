@@ -1,0 +1,38 @@
+# NorthStar Funding Intelligence Platform - Python Dependencies
+# Phase 3.1 - T005: Configure Python requirements
+# 
+# Core Streamlit Requirements
+streamlit>=1.28.0
+streamlit-option-menu>=0.3.6
+
+# API Integration
+requests>=2.31.0
+httpx>=0.24.1
+
+# Data Processing
+pandas>=2.0.3
+numpy>=1.24.3
+
+# JSON/Data Handling  
+pydantic>=2.4.0
+
+# Date/Time Utilities
+python-dateutil>=2.8.2
+
+# Logging and Configuration
+python-dotenv>=1.0.0
+
+# Development Dependencies (optional)
+pytest>=7.4.0
+black>=23.7.0
+flake8>=6.0.0
+
+# Future Dependencies (placeholder comments for upcoming phases)
+# Phase 3.11 - External Integrations:
+# - openai>=1.0.0  # If needed for API compatibility
+# - anthropic>=0.3.0  # If needed for API compatibility  
+# - tavily-python>=0.3.0  # For search integration
+#
+# Phase 3.12 - Polish & Deployment:
+# - gunicorn>=21.2.0  # For production deployment
+# - uvicorn>=0.23.0  # Alternative ASGI server

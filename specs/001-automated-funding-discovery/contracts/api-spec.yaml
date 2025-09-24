@@ -1,0 +1,807 @@
+openapi: 3.0.3
+info:
+  title: NorthStar Funding Discovery API
+  description: Admin API for reviewing and validating funding source candidates
+  version: 1.0.0
+  contact:
+    name: NorthStar Foundation
+    email: admin@northstar-foundation.org
+
+servers:
+  - url: http://192.168.1.10:8080/api
+    description: Mac Studio development server
+
+paths:
+  /candidates:
+    get:
+      summary: List funding source candidates
+      description: Get paginated list of candidates filtered by status, confidence score, etc.
+      operationId: listCandidates
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [PENDING_REVIEW, IN_REVIEW, APPROVED, REJECTED]
+          description: Filter by candidate status
+        - name: minConfidence
+          in: query
+          schema:
+            type: number
+            format: double
+            minimum: 0.0
+            maximum: 1.0
+          description: Minimum confidence score filter
+        - name: assignedTo
+          in: query
+          schema:
+            type: string
+            format: uuid
+          description: Filter by assigned reviewer ID
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+          description: Page number (0-based)
+        - name: size
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+          description: Page size
+        - name: sortBy
+          in: query
+          schema:
+            type: string
+            enum: [confidenceScore, discoveredAt, organizationName]
+            default: confidenceScore
+          description: Sort field
+        - name: sortDirection
+          in: query
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: desc
+          description: Sort direction
+      responses:
+        '200':
+          description: List of candidates
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CandidatePageResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /candidates/{candidateId}:
+    get:
+      summary: Get candidate details
+      description: Retrieve full details of a funding source candidate for review
+      operationId: getCandidateById
+      parameters:
+        - name: candidateId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Candidate ID
+      responses:
+        '200':
+          description: Candidate details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FundingSourceCandidateDetail'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    
+    put:
+      summary: Update candidate with enhancements
+      description: Admin user updates candidate information with manual enhancements
+      operationId: updateCandidate
+      parameters:
+        - name: candidateId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CandidateUpdateRequest'
+      responses:
+        '200':
+          description: Candidate updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FundingSourceCandidateDetail'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /candidates/{candidateId}/approve:
+    post:
+      summary: Approve candidate for knowledge base
+      description: Move candidate from review status to approved knowledge base
+      operationId: approveCandidate
+      parameters:
+        - name: candidateId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApprovalRequest'
+      responses:
+        '200':
+          description: Candidate approved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ActionResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /candidates/{candidateId}/reject:
+    post:
+      summary: Reject candidate
+      description: Remove candidate from review queue with rejection reason
+      operationId: rejectCandidate
+      parameters:
+        - name: candidateId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RejectionRequest'
+      responses:
+        '200':
+          description: Candidate rejected successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ActionResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /candidates/{candidateId}/assign:
+    post:
+      summary: Assign candidate to reviewer
+      description: Assign candidate to specific admin user for review
+      operationId: assignCandidate
+      parameters:
+        - name: candidateId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssignmentRequest'
+      responses:
+        '200':
+          description: Candidate assigned successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ActionResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /candidates/{candidateId}/contacts:
+    get:
+      summary: Get candidate contact intelligence
+      description: Retrieve all contact information for a funding source candidate
+      operationId: getCandidateContacts
+      parameters:
+        - name: candidateId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Contact intelligence list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ContactIntelligence'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    
+    post:
+      summary: Add contact intelligence
+      description: Add new contact information for funding source candidate
+      operationId: addCandidateContact
+      parameters:
+        - name: candidateId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ContactIntelligenceRequest'
+      responses:
+        '201':
+          description: Contact added successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContactIntelligence'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /discovery/trigger:
+    post:
+      summary: Trigger manual discovery session
+      description: Start new funding discovery session manually
+      operationId: triggerDiscovery
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DiscoveryTriggerRequest'
+      responses:
+        '202':
+          description: Discovery session started
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DiscoverySessionResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /discovery/sessions:
+    get:
+      summary: List discovery sessions
+      description: Get audit log of discovery sessions for monitoring
+      operationId: listDiscoverySessions
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+        - name: size
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        '200':
+          description: Discovery sessions list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DiscoverySessionPageResponse'
+
+components:
+  schemas:
+    FundingSourceCandidateDetail:
+      type: object
+      required:
+        - candidateId
+        - status
+        - confidenceScore
+        - organizationName
+        - programName
+        - sourceUrl
+        - discoveredAt
+      properties:
+        candidateId:
+          type: string
+          format: uuid
+        status:
+          $ref: '#/components/schemas/CandidateStatus'
+        confidenceScore:
+          type: number
+          format: double
+          minimum: 0.0
+          maximum: 1.0
+        discoverySessionId:
+          type: string
+          format: uuid
+        discoveredAt:
+          type: string
+          format: date-time
+        lastUpdatedAt:
+          type: string
+          format: date-time
+        assignedReviewerId:
+          type: string
+          format: uuid
+          nullable: true
+        reviewStartedAt:
+          type: string
+          format: date-time
+          nullable: true
+        organizationName:
+          type: string
+          maxLength: 255
+        programName:
+          type: string
+          maxLength: 500
+        sourceUrl:
+          type: string
+          format: uri
+        description:
+          type: string
+          maxLength: 2000
+        fundingAmountMin:
+          type: number
+          format: double
+          nullable: true
+        fundingAmountMax:
+          type: number  
+          format: double
+          nullable: true
+        currency:
+          type: string
+          maxLength: 3
+        geographicEligibility:
+          type: array
+          items:
+            type: string
+        organizationTypes:
+          type: array
+          items:
+            type: string
+        applicationDeadline:
+          type: string
+          format: date
+          nullable: true
+        applicationProcess:
+          type: string
+          maxLength: 1000
+        requirements:
+          type: array
+          items:
+            type: string
+        tags:
+          type: array
+          items:
+            type: string
+        discoveryMethod:
+          type: string
+        searchQuery:
+          type: string
+        extractedData:
+          type: object
+          additionalProperties: true
+        validationNotes:
+          type: string
+          maxLength: 1000
+
+    ContactIntelligence:
+      type: object
+      required:
+        - contactId
+        - candidateId
+        - contactType
+        - fullName
+      properties:
+        contactId:
+          type: string
+          format: uuid
+        candidateId:
+          type: string
+          format: uuid
+        contactType:
+          $ref: '#/components/schemas/ContactType'
+        fullName:
+          type: string
+          maxLength: 255
+        title:
+          type: string
+          maxLength: 255
+        email:
+          type: string
+          format: email
+        phone:
+          type: string
+          maxLength: 50
+        organization:
+          type: string
+          maxLength: 255
+        officeAddress:
+          type: string
+          maxLength: 500
+        communicationPreference:
+          type: string
+          maxLength: 100
+        lastContactedAt:
+          type: string
+          format: date-time
+          nullable: true
+        responsePattern:
+          type: string
+          maxLength: 500
+        referralSource:
+          type: string
+          maxLength: 255
+        validatedAt:
+          type: string
+          format: date-time
+          nullable: true
+        isActive:
+          type: boolean
+        decisionAuthority:
+          $ref: '#/components/schemas/AuthorityLevel'
+        relationshipNotes:
+          type: string
+          maxLength: 1000
+        referralConnections:
+          type: string
+          maxLength: 500
+
+    CandidateStatus:
+      type: string
+      enum:
+        - PENDING_REVIEW
+        - IN_REVIEW
+        - APPROVED
+        - REJECTED
+
+    ContactType:
+      type: string
+      enum:
+        - PROGRAM_OFFICER
+        - FOUNDATION_STAFF
+        - GOVERNMENT_OFFICIAL
+        - ACADEMIC_CONTACT
+        - CORPORATE_CONTACT
+
+    AuthorityLevel:
+      type: string
+      enum:
+        - DECISION_MAKER
+        - INFLUENCER
+        - INFORMATION_ONLY
+
+    CandidatePageResponse:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/FundingSourceCandidateSummary'
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+        size:
+          type: integer
+        number:
+          type: integer
+        first:
+          type: boolean
+        last:
+          type: boolean
+
+    FundingSourceCandidateSummary:
+      type: object
+      required:
+        - candidateId
+        - status
+        - confidenceScore
+        - organizationName
+        - programName
+        - discoveredAt
+      properties:
+        candidateId:
+          type: string
+          format: uuid
+        status:
+          $ref: '#/components/schemas/CandidateStatus'
+        confidenceScore:
+          type: number
+          format: double
+        organizationName:
+          type: string
+        programName:
+          type: string
+        fundingAmountMax:
+          type: number
+          format: double
+          nullable: true
+        currency:
+          type: string
+        applicationDeadline:
+          type: string
+          format: date
+          nullable: true
+        discoveredAt:
+          type: string
+          format: date-time
+        assignedReviewerId:
+          type: string
+          format: uuid
+          nullable: true
+
+    CandidateUpdateRequest:
+      type: object
+      properties:
+        organizationName:
+          type: string
+          maxLength: 255
+        programName:
+          type: string
+          maxLength: 500
+        description:
+          type: string
+          maxLength: 2000
+        fundingAmountMin:
+          type: number
+          format: double
+        fundingAmountMax:
+          type: number
+          format: double
+        currency:
+          type: string
+          maxLength: 3
+        geographicEligibility:
+          type: array
+          items:
+            type: string
+        organizationTypes:
+          type: array
+          items:
+            type: string
+        applicationDeadline:
+          type: string
+          format: date
+        applicationProcess:
+          type: string
+          maxLength: 1000
+        requirements:
+          type: array
+          items:
+            type: string
+        tags:
+          type: array
+          items:
+            type: string
+        validationNotes:
+          type: string
+          maxLength: 1000
+
+    ApprovalRequest:
+      type: object
+      required:
+        - approvalNotes
+      properties:
+        approvalNotes:
+          type: string
+          maxLength: 500
+          description: Admin notes explaining approval decision
+
+    RejectionRequest:
+      type: object
+      required:
+        - rejectionReason
+      properties:
+        rejectionReason:
+          type: string
+          maxLength: 500
+          description: Reason for rejecting this candidate
+
+    AssignmentRequest:
+      type: object
+      required:
+        - reviewerId
+      properties:
+        reviewerId:
+          type: string
+          format: uuid
+          description: UUID of admin user to assign candidate to
+
+    ContactIntelligenceRequest:
+      type: object
+      required:
+        - contactType
+        - fullName
+      properties:
+        contactType:
+          $ref: '#/components/schemas/ContactType'
+        fullName:
+          type: string
+          maxLength: 255
+        title:
+          type: string
+          maxLength: 255
+        email:
+          type: string
+          format: email
+        phone:
+          type: string
+          maxLength: 50
+        organization:
+          type: string
+          maxLength: 255
+        officeAddress:
+          type: string
+          maxLength: 500
+        communicationPreference:
+          type: string
+          maxLength: 100
+        responsePattern:
+          type: string
+          maxLength: 500
+        referralSource:
+          type: string
+          maxLength: 255
+        decisionAuthority:
+          $ref: '#/components/schemas/AuthorityLevel'
+        relationshipNotes:
+          type: string
+          maxLength: 1000
+        referralConnections:
+          type: string
+          maxLength: 500
+
+    DiscoveryTriggerRequest:
+      type: object
+      properties:
+        searchEngines:
+          type: array
+          items:
+            type: string
+          description: Specific search engines to use (optional)
+        customQueries:
+          type: array
+          items:
+            type: string
+          description: Custom search queries (optional)
+        targetRegions:
+          type: array
+          items:
+            type: string
+          description: Focus on specific geographic regions
+
+    DiscoverySessionResponse:
+      type: object
+      properties:
+        sessionId:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [RUNNING, COMPLETED, FAILED]
+        startedAt:
+          type: string
+          format: date-time
+        estimatedDurationMinutes:
+          type: integer
+
+    DiscoverySessionPageResponse:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/DiscoverySessionSummary'
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+        size:
+          type: integer
+        number:
+          type: integer
+
+    DiscoverySessionSummary:
+      type: object
+      properties:
+        sessionId:
+          type: string
+          format: uuid
+        executedAt:
+          type: string
+          format: date-time
+        sessionType:
+          type: string
+          enum: [SCHEDULED, MANUAL, RETRY]
+        durationMinutes:
+          type: integer
+        status:
+          type: string
+          enum: [RUNNING, COMPLETED, FAILED, CANCELLED]
+        candidatesFound:
+          type: integer
+        averageConfidenceScore:
+          type: number
+          format: double
+
+    ActionResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        candidateId:
+          type: string
+          format: uuid
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+        path:
+          type: string
+
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+  securitySchemes:
+    basicAuth:
+      type: http
+      scheme: basic
+
+security:
+  - basicAuth: []
