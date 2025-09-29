@@ -195,23 +195,37 @@ DUPLICATE_MERGED - Merged duplicate candidate data
 
 ## Repository Patterns
 
-Following DDD repository pattern with aggregate-focused data access:
+Following Spring Data JDBC repository pattern with domain-focused data access:
+**Reference**: [Spring Data JDBC - Domain Driven Design](https://docs.spring.io/spring-data/relational/reference/jdbc/domain-driven-design.html)
 
 ### FundingSourceCandidateRepository
-- `findPendingCandidatesByConfidenceScore()` - Review queue ordered by quality
-- `findDuplicatesByOrganizationAndProgram()` - Duplicate detection queries
-- `findCandidatesAssignedToReviewer(UUID reviewerId)` - Admin workload queries
-- `findCandidatesOlderThan(LocalDateTime threshold)` - Stale candidate cleanup
+```java
+interface FundingSourceCandidateRepository extends PagingAndSortingRepository<FundingSourceCandidate, UUID> {
+    Page<FundingSourceCandidate> findByStatusOrderByConfidenceScoreDesc(CandidateStatus status, Pageable pageable);
+    List<FundingSourceCandidate> findDuplicatesByOrganizationNameAndProgramName(String orgName, String programName);
+    Page<FundingSourceCandidate> findByAssignedReviewerId(UUID reviewerId, Pageable pageable);
+    List<FundingSourceCandidate> findByDiscoveredAtBefore(LocalDateTime threshold); // stale candidates
+}
+```
 
 ### ContactIntelligenceRepository  
-- `findContactsByCandidateId(UUID candidateId)` - All contacts for funding source
-- `findContactsNeedingValidation()` - Contacts older than 90 days
-- `findContactsByOrganization(String organization)` - Organization-based queries
+```java
+interface ContactIntelligenceRepository extends CrudRepository<ContactIntelligence, UUID> {
+    List<ContactIntelligence> findByCandidateId(UUID candidateId);
+    List<ContactIntelligence> findByValidatedAtBeforeOrValidatedAtIsNull(LocalDateTime threshold);
+    List<ContactIntelligence> findByOrganizationContainingIgnoreCase(String organization);
+}
+```
 
 ### DiscoverySessionRepository
-- `findRecentSessions(int limit)` - Audit and monitoring queries
-- `findFailedSessions()` - Error analysis and retry logic
-- `getAverageDiscoveryMetrics()` - Performance tracking
+```java
+interface DiscoverySessionRepository extends PagingAndSortingRepository<DiscoverySession, UUID> {
+    List<DiscoverySession> findTop10ByOrderByExecutedAtDesc(); // recent sessions
+    List<DiscoverySession> findByStatus(SessionStatus status); // failed sessions
+    @Query("SELECT AVG(candidates_found) FROM discovery_sessions WHERE executed_at > :since")
+    Double getAverageDiscoveryMetrics(@Param("since") LocalDateTime since);
+}
+```
 
 ## Domain Services
 

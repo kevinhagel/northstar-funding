@@ -106,38 +106,55 @@ logging:
     org.hibernate.SQL: WARN
 
 ---
-# Test Profile
+# PostgreSQL TestContainers Profile
 spring:
   config:
     activate:
-      on-profile: test
+      on-profile: postgres-test
   
-  # Test Database (Embedded H2 for unit tests, TestContainers for integration)
+  # TestContainers will override these properties dynamically
   datasource:
-    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
-    username: sa
-    password: password
-    driver-class-name: org.h2.Driver
+    url: jdbc:postgresql://localhost:5432/test  # Will be overridden by TestContainers
+    username: test_user                         # Will be overridden by TestContainers
+    password: test_password                     # Will be overridden by TestContainers
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 5  # Smaller pool for testing
+      minimum-idle: 2
+      idle-timeout: 300000
+      connection-timeout: 20000
   
   jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
-      ddl-auto: create-drop
-    database-platform: org.hibernate.dialect.H2Dialect
+      ddl-auto: validate  # Let Flyway handle schema creation
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        jdbc:
+          time_zone: UTC
   
-  # Test Flyway
   flyway:
-    enabled: false
-  
-  # Test Security
+    enabled: true  # Important: Enable migrations for TestContainers
+    baseline-on-migrate: true
+    locations: classpath:db/migration
+    
+  # Test Security (same as regular test profile)
   security:
     user:
-      name: test-admin
-      password: test123
+      name: postgres-test-admin
+      password: postgres-test123
       roles: ADMIN
 
-# Test Logging
+# Enhanced logging for PostgreSQL testing and debugging
 logging:
   level:
     com.northstar.funding: DEBUG
-    org.springframework.web: DEBUG
     org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+    org.springframework.jdbc.core: DEBUG
+    org.testcontainers: INFO
+    org.flywaydb: DEBUG
+  pattern:
+    console: "%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"

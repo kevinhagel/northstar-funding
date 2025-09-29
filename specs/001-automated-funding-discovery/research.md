@@ -10,7 +10,7 @@ All technical decisions align with constitutional principles and Kevin's experti
 ## Technology Stack Decisions
 
 ### Backend Framework
-**Decision**: Java 25 + Spring Boot 3.5.5 + Maven 3.9.9 monolith  
+**Decision**: Java 25 + Spring Boot 3.5.4 + Maven 3.9.9 monolith  
 **Rationale**: 
 - Aligns with constitutional Technology Stack principle (NON-NEGOTIABLE)
 - Leverages Kevin's expert-level Java and Spring Boot knowledge
@@ -110,7 +110,8 @@ All technical decisions align with constitutional principles and Kevin's experti
 - Admin workflow scale: hundreds of candidates per day, not thousands per second
 - PostgreSQL handles JSON columns for flexible metadata storage
 - Proper indexing on discovery_date, confidence_score, status fields
-**Implementation**: Spring Data JPA with custom repositories for complex queries
+**Implementation**: Spring Data JDBC with repository abstractions and SQL queries
+**Reference**: [Spring Data JDBC - Domain Driven Design](https://docs.spring.io/spring-data/relational/reference/jdbc/domain-driven-design.html)
 
 ## Security & Privacy Decisions
 
@@ -120,7 +121,7 @@ All technical decisions align with constitutional principles and Kevin's experti
 - Constitutional requirement: "Contact information encrypted at rest"
 - Contact intelligence is highest value asset requiring protection
 - Compliance with privacy requirements for EU contacts
-**Implementation**: JPA entity listeners with encryption/decryption
+**Implementation**: Service layer encryption/decryption with Spring Data JDBC
 
 ### Access Control
 **Decision**: Simple role-based authentication  

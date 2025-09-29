@@ -1,42 +1,42 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" 
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 
-         https://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    
+
     <!-- Spring Boot Parent -->
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.5.5</version>
-        <relativePath/> <!-- lookup parent from repository -->
+        <version>3.5.4</version>
+        <relativePath /> <!-- lookup parent from repository -->
     </parent>
-    
+
     <!-- Project Information -->
     <groupId>com.northstar</groupId>
     <artifactId>funding-discovery</artifactId>
     <version>1.0.0-SNAPSHOT</version>
     <name>NorthStar Funding Discovery</name>
     <description>Automated funding discovery workflow with human-AI collaboration</description>
-    
+
     <!-- Properties -->
     <properties>
         <!-- Java Version (Constitutional Requirement) -->
         <java.version>25</java.version>
         <maven.version>3.9.9</maven.version>
-        
+
         <!-- Dependency Versions -->
-        <spring-boot.version>3.5.5</spring-boot.version>
+        <spring-boot.version>3.5.4</spring-boot.version>
         <testcontainers.version>1.19.1</testcontainers.version>
         <vavr.version>0.10.4</vavr.version>
-        
+        <lombok.version>1.18.42</lombok.version>
+
         <!-- Maven Plugin Versions -->
-        <maven-compiler-plugin.version>3.11.0</maven-compiler-plugin.version>
+        <maven-compiler-plugin.version>3.14.1</maven-compiler-plugin.version>
         <maven-surefire-plugin.version>3.1.2</maven-surefire-plugin.version>
         <maven-failsafe-plugin.version>3.1.2</maven-failsafe-plugin.version>
     </properties>
-    
+
     <!-- Dependencies -->
     <dependencies>
         <!-- Spring Boot Starters -->
@@ -44,71 +44,80 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
-        
+
         <dependency>
             <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-data-jpa</artifactId>
+            <artifactId>spring-boot-starter-data-jdbc</artifactId>
         </dependency>
-        
+
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-security</artifactId>
         </dependency>
-        
+
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-validation</artifactId>
         </dependency>
-        
+
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-actuator</artifactId>
         </dependency>
-        
+
         <!-- Database -->
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
             <scope>runtime</scope>
         </dependency>
-        
+
         <!-- Flyway for Database Migrations -->
         <dependency>
             <groupId>org.flywaydb</groupId>
             <artifactId>flyway-core</artifactId>
         </dependency>
-        
+
         <dependency>
             <groupId>org.flywaydb</groupId>
             <artifactId>flyway-database-postgresql</artifactId>
         </dependency>
-        
+
         <!-- JSON Processing -->
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
         </dependency>
-        
+
         <!-- Functional Programming (Constitutional Requirement) -->
         <dependency>
             <groupId>io.vavr</groupId>
             <artifactId>vavr</artifactId>
             <version>${vavr.version}</version>
         </dependency>
-        
+
         <!-- HTTP Client for LM Studio Integration -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-webflux</artifactId>
         </dependency>
-        
+
         <!-- Configuration Properties -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-configuration-processor</artifactId>
             <optional>true</optional>
         </dependency>
-        
+
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <version>${lombok.version}</version>
+            <scope>provided</scope>
+        </dependency>
+
+        <!-- Lombok for Builder Pattern and Boilerplate Reduction -->
+
         <!-- Development Tools -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -116,47 +125,47 @@
             <scope>runtime</scope>
             <optional>true</optional>
         </dependency>
-        
+
         <!-- Test Dependencies -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
         </dependency>
-        
+
         <dependency>
             <groupId>org.springframework.security</groupId>
             <artifactId>spring-security-test</artifactId>
             <scope>test</scope>
         </dependency>
-        
-        <!-- TestContainers for Integration Tests -->
+
+<!-- TestContainers for Integration Tests -->
         <dependency>
             <groupId>org.testcontainers</groupId>
             <artifactId>junit-jupiter</artifactId>
             <scope>test</scope>
         </dependency>
-        
+
         <dependency>
             <groupId>org.testcontainers</groupId>
             <artifactId>postgresql</artifactId>
             <scope>test</scope>
         </dependency>
-        
+
         <!-- REST Assured for API Testing -->
         <dependency>
             <groupId>io.rest-assured</groupId>
             <artifactId>rest-assured</artifactId>
             <scope>test</scope>
         </dependency>
-        
+
         <dependency>
             <groupId>io.rest-assured</groupId>
             <artifactId>spring-mock-mvc</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>
-    
+
     <!-- Dependency Management -->
     <dependencyManagement>
         <dependencies>
@@ -169,7 +178,7 @@
             </dependency>
         </dependencies>
     </dependencyManagement>
-    
+
     <!-- Build Configuration -->
     <build>
         <plugins>
@@ -183,25 +192,31 @@
                             <groupId>org.springframework.boot</groupId>
                             <artifactId>spring-boot-configuration-processor</artifactId>
                         </exclude>
+                        <exclude>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                        </exclude>
                     </excludes>
                 </configuration>
             </plugin>
-            
-            <!-- Maven Compiler Plugin (Java 25 Support) -->
+
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>${maven-compiler-plugin.version}</version>
                 <configuration>
-                    <source>25</source>
-                    <target>25</target>
-                    <compilerArgs>
-                        <!-- Enable Virtual Threads (Constitutional Requirement) -->
-                        <arg>--enable-preview</arg>
-                    </compilerArgs>
+                    <release>${java.version}</release>
+                    <annotationProcessorPaths>
+                        <path>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                            <version>${lombok.version}</version>
+                        </path>
+                    </annotationProcessorPaths>
                 </configuration>
             </plugin>
-            
+
+
             <!-- Surefire Plugin for Unit Tests -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -215,7 +230,7 @@
                     </includes>
                 </configuration>
             </plugin>
-            
+
             <!-- Failsafe Plugin for Integration Tests -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -237,7 +252,7 @@
                     </execution>
                 </executions>
             </plugin>
-            
+
             <!-- Flyway Plugin for Database Migrations -->
             <plugin>
                 <groupId>org.flywaydb</groupId>
@@ -253,7 +268,7 @@
             </plugin>
         </plugins>
     </build>
-    
+
     <!-- Profiles -->
     <profiles>
         <!-- Development Profile (Default) -->
@@ -266,7 +281,7 @@
                 <spring.profiles.active>dev</spring.profiles.active>
             </properties>
         </profile>
-        
+
         <!-- Mac Studio Production Profile -->
         <profile>
             <id>mac-studio</id>
@@ -274,7 +289,7 @@
                 <spring.profiles.active>mac-studio</spring.profiles.active>
             </properties>
         </profile>
-        
+
         <!-- Test Profile -->
         <profile>
             <id>test</id>
@@ -283,10 +298,10 @@
             </properties>
         </profile>
     </profiles>
-    
+
     <!-- Maven Version Enforcement -->
     <prerequisites>
         <maven>3.9.9</maven>
     </prerequisites>
-    
+
 </project>

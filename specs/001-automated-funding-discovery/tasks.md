@@ -3,6 +3,22 @@
 **Input**: Design documents from `/specs/001-automated-funding-discovery/`
 **Prerequisites**: plan.md ✅, research.md ✅, data-model.md ✅, contracts/ ✅
 
+## ⚠️ CRITICAL TDD ARCHITECTURE FLAW IDENTIFIED
+
+**ISSUE:** Original task flow violates fundamental TDD principles by implementing repositories and services without testing persistence layer first. Controllers cannot reliably return domain classes if the persistence layer is untested.
+
+**ROOT CAUSE:** Missing persistence layer testing phase between database schema and domain model implementation.
+
+**IMPACT:** 
+- Repository queries may fail at runtime despite compilation success
+- Service layer business logic may fail due to untested data access patterns  
+- Controllers may return corrupted or incomplete domain objects
+- Integration tests become unreliable without solid persistence foundation
+
+**SOLUTION:** Insert proper TDD persistence testing phases before domain implementation.
+
+---
+
 ## Execution Flow (main)
 ```
 1. Load plan.md from feature directory ✅
@@ -12,10 +28,10 @@
    → data-model.md: 5 entities → 5 model tasks [P]
    → contracts/: 8 endpoints → 8 contract test tasks [P]
    → quickstart.md: 4 scenarios → 4 integration tests
-3. Generate tasks by category ✅:
+3. Generate tasks by category ⚠️ CORRECTED:
    → Setup: Spring Boot project, PostgreSQL, Streamlit
-   → Tests: 8 contract tests, 4 integration tests, entity tests
-   → Core: 5 models, 3 services, 8 controllers
+   → Tests: DATABASE SCHEMA → PERSISTENCE TESTS → SERVICE TESTS → CONTRACT TESTS → INTEGRATION TESTS
+   → Core: Domain models → Repository implementation → Service implementation → Controllers  
    → Integration: DB, security, AI services
    → Polish: unit tests, performance, deployment
 4. Apply task rules ✅:
@@ -55,6 +71,26 @@
 - [ ] **T011** [P] Create EnhancementRecord table migration in `backend/src/main/resources/db/migration/V5__create_enhancement_record.sql`
 - [ ] **T012** Create database indexes for performance in `backend/src/main/resources/db/migration/V6__create_indexes.sql`
 
+## Phase 3.2.5: Persistence Layer Testing (MISSING - CRITICAL TDD FOUNDATION)
+⚠️ **ARCHITECTURAL REQUIREMENT:** These tests MUST pass before implementing any repositories or domain models
+
+**WHY CRITICAL:** Controllers return domain objects from repositories. If persistence layer fails, controllers return corrupted/incomplete data regardless of business logic correctness.
+
+- [ ] **T012.1** [P] FundingSourceCandidate repository persistence test in `backend/src/test/java/com/northstar/funding/discovery/infrastructure/FundingSourceCandidateRepositoryTest.java`
+- [ ] **T012.2** [P] ContactIntelligence repository persistence test in `backend/src/test/java/com/northstar/funding/discovery/infrastructure/ContactIntelligenceRepositoryTest.java`
+- [ ] **T012.3** [P] AdminUser repository persistence test in `backend/src/test/java/com/northstar/funding/discovery/infrastructure/AdminUserRepositoryTest.java`
+- [ ] **T012.4** [P] DiscoverySession repository persistence test in `backend/src/test/java/com/northstar/funding/discovery/infrastructure/DiscoverySessionRepositoryTest.java`
+- [ ] **T012.5** [P] EnhancementRecord repository persistence test in `backend/src/test/java/com/northstar/funding/discovery/infrastructure/EnhancementRecordRepositoryTest.java`
+
+**PERSISTENCE LAYER TEST REQUIREMENTS:**
+- Use @DataJdbcTest for isolated repository testing
+- Test all custom @Query methods return expected results
+- Verify pagination and sorting work correctly
+- Test database constraints and relationships
+- Validate JSON field serialization/deserialization
+- Test null handling and optional fields
+- Verify cascade deletes and foreign key constraints
+
 ## Phase 3.3: Contract Tests First (TDD) ⚠️ MUST COMPLETE BEFORE 3.4
 **CRITICAL: These tests MUST be written and MUST FAIL before ANY implementation**
 - [ ] **T013** [P] Contract test GET /api/candidates in `backend/src/test/java/com/northstar/funding/web/CandidateControllerContractTest.java`
@@ -80,13 +116,40 @@
 - [ ] **T029** [P] EnhancementRecord value object for audit trail in `backend/src/main/java/com/northstar/funding/discovery/domain/EnhancementRecord.java`
 
 ## Phase 3.6: Repository Layer
-- [ ] **T030** [P] FundingSourceCandidateRepository with custom queries in `backend/src/main/java/com/northstar/funding/discovery/infrastructure/FundingSourceCandidateRepository.java`
-- [ ] **T031** [P] ContactIntelligenceRepository with encryption support in `backend/src/main/java/com/northstar/funding/discovery/infrastructure/ContactIntelligenceRepository.java`
-- [ ] **T032** [P] DiscoverySessionRepository with analytics queries in `backend/src/main/java/com/northstar/funding/discovery/infrastructure/DiscoverySessionRepository.java`
+- [ ] **T030** [P] FundingSourceCandidateRepository with Spring Data JDBC queries in `backend/src/main/java/com/northstar/funding/discovery/infrastructure/FundingSourceCandidateRepository.java`
+- [ ] **T031** [P] ContactIntelligenceRepository with Spring Data JDBC methods in `backend/src/main/java/com/northstar/funding/discovery/infrastructure/ContactIntelligenceRepository.java`
+- [ ] **T032** [P] DiscoverySessionRepository with custom query methods in `backend/src/main/java/com/northstar/funding/discovery/infrastructure/DiscoverySessionRepository.java`
+
+## Phase 3.6.5: Service Layer Testing (MISSING - CRITICAL BUSINESS LOGIC FOUNDATION)
+⚠️ **ARCHITECTURAL REQUIREMENT:** These tests MUST pass before implementing service layer or controllers
+
+**WHY CRITICAL:** Controllers delegate all business logic to services. Services orchestrate repositories to fulfill business requirements. If service layer fails, controllers return incorrect business results even with perfect persistence layer.
+
+**SERVICE LAYER RESPONSIBILITIES:**
+- Business rule validation and enforcement
+- Transaction coordination across multiple repositories  
+- Domain logic orchestration and workflow management
+- Data transformation and business calculations
+- Security and authorization enforcement
+- Error handling and business exception translation
+
+- [ ] **T032.1** [P] CandidateValidationService business logic test in `backend/src/test/java/com/northstar/funding/discovery/application/CandidateValidationServiceTest.java`
+- [ ] **T032.2** [P] ContactIntelligenceService business logic test in `backend/src/test/java/com/northstar/funding/discovery/application/ContactIntelligenceServiceTest.java` 
+- [ ] **T032.3** [P] DiscoveryOrchestrationService workflow test in `backend/src/test/java/com/northstar/funding/discovery/application/DiscoveryOrchestrationServiceTest.java`
+
+**SERVICE LAYER TEST REQUIREMENTS:**
+- Use @ExtendWith(MockitoExtension.class) for isolated service testing
+- Mock all repository dependencies with @Mock annotations
+- Test all business rule validations and constraint enforcement
+- Verify transaction boundaries and rollback scenarios
+- Test error handling and custom exception translation
+- Validate security and authorization enforcement
+- Test workflow coordination and multi-repository operations
+- Verify data transformation and business calculations
 
 ## Phase 3.7: Service Layer (Business Logic)
-- [ ] **T033** CandidateValidationService with deduplication logic in `backend/src/main/java/com/northstar/funding/discovery/application/CandidateValidationService.java`
-- [ ] **T034** ContactIntelligenceService with encryption/validation in `backend/src/main/java/com/northstar/funding/discovery/application/ContactIntelligenceService.java`
+- [ ] **T033** CandidateValidationService with Spring Data JDBC repositories in `backend/src/main/java/com/northstar/funding/discovery/application/CandidateValidationService.java`
+- [ ] **T034** ContactIntelligenceService with Spring Data JDBC and encryption in `backend/src/main/java/com/northstar/funding/discovery/application/ContactIntelligenceService.java`
 - [ ] **T035** DiscoveryOrchestrationService for workflow coordination in `backend/src/main/java/com/northstar/funding/discovery/application/DiscoveryOrchestrationService.java`
 
 ## Phase 3.8: REST Controllers (Make Tests Pass)
@@ -120,13 +183,41 @@
 
 ## Dependencies
 
-### Sequential Dependencies (Blocking)
-- **Database First**: T007-T012 before any JPA entities (T025-T029)
-- **TDD Order**: All contract tests (T013-T020) before implementation (T036-T039) 
-- **Layer Dependencies**: 
-  - Models (T025-T029) → Repositories (T030-T032) → Services (T033-T035) → Controllers (T036-T039)
-- **Integration**: Services (T033-T035) before Security (T040-T042)
-- **UI Dependencies**: Backend API (T036-T039) before Streamlit pages (T044-T046)
+### Sequential Dependencies (CORRECTED TDD ARCHITECTURE)
+
+**🚨 CRITICAL CHANGE:** Original dependencies violated TDD principles. Controllers cannot reliably return domain objects without tested persistence layer.
+
+**CORRECTED TDD LAYER DEPENDENCIES:**
+- **Database Schema First**: T007-T012 before any persistence tests
+- **Persistence Testing Required**: T012.1-T012.5 (Repository tests) MUST PASS before domain models T025-T029
+- **Service Testing Required**: T032.1-T032.3 (Service tests) MUST PASS before service implementation T033-T035
+- **TDD Order**: All contract tests (T013-T020) before controller implementation (T036-T039)
+
+**PROPER LAYER FLOW:**
+```
+Database Schema (T007-T012)
+     ↓
+Persistence Layer Tests (T012.1-T012.5) ← MISSING - CRITICAL
+     ↓  
+Domain Models (T025-T029)
+     ↓
+Repository Implementation (T030-T032)
+     ↓
+Service Layer Tests (T032.1-T032.3) ← MISSING - CRITICAL
+     ↓
+Service Implementation (T033-T035)
+     ↓
+Controller Tests (T013-T020)
+     ↓  
+Controller Implementation (T036-T039)
+```
+
+**WHY CRITICAL:**
+- Controllers return domain objects from repositories
+- If repositories fail, controllers return corrupted data
+- Services orchestrate repositories for business logic
+- If services fail, controllers return incorrect business results
+- Testing must verify each layer works before building next layer
 
 ### Non-Blocking ([P] Tasks)
 - Setup tasks T001-T006 can run in parallel

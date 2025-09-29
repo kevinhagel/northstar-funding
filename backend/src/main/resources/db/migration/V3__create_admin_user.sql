@@ -34,7 +34,7 @@ CREATE TABLE admin_user (
     approval_rate DECIMAL(4,2) DEFAULT 0.00 CHECK (approval_rate >= 0.00 AND approval_rate <= 1.00),
     
     -- Specialization & Assignment Logic
-    specializations JSONB DEFAULT '[]'::jsonb, -- Areas of expertise for smart assignment
+    specializations TEXT[] DEFAULT '{}', -- Areas of expertise for smart assignment
     current_workload INTEGER NOT NULL DEFAULT 0, -- Active assignments for load balancing
     max_concurrent_assignments INTEGER DEFAULT 10,
     
@@ -101,7 +101,7 @@ INSERT INTO admin_user (
     'kevin@northstar.bg', 
     'ADMINISTRATOR',
     20,
-    '["technology", "academic", "research", "government"]'::jsonb
+    ARRAY['technology', 'academic', 'research', 'government']
 ),
 (
     'huw', 
@@ -109,7 +109,7 @@ INSERT INTO admin_user (
     'huw@northstar.bg', 
     'ADMINISTRATOR', 
     20,
-    '["foundation", "corporate", "international", "arts"]'::jsonb
+    ARRAY['foundation', 'corporate', 'international', 'arts']
 );
 
 -- Comments for Domain Understanding
@@ -117,7 +117,7 @@ COMMENT ON TABLE admin_user IS 'System administrators for human-AI collaboration
 COMMENT ON COLUMN admin_user.candidates_reviewed IS 'Total funding source candidates processed by this admin user';
 COMMENT ON COLUMN admin_user.average_review_time_minutes IS 'Average time spent reviewing each candidate (for workload estimation)';
 COMMENT ON COLUMN admin_user.approval_rate IS 'Percentage of candidates approved vs rejected (quality metric)';
-COMMENT ON COLUMN admin_user.specializations IS 'Areas of expertise as JSON array for intelligent assignment of candidates';
+COMMENT ON COLUMN admin_user.specializations IS 'Areas of expertise as TEXT array for intelligent assignment of candidates';
 COMMENT ON COLUMN admin_user.current_workload IS 'Number of candidates currently assigned to this user (real-time counter)';
 COMMENT ON COLUMN admin_user.max_concurrent_assignments IS 'Maximum number of candidates that can be assigned simultaneously';
 
