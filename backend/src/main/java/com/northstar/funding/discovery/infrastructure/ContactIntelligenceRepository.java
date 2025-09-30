@@ -187,7 +187,7 @@ public interface ContactIntelligenceRepository extends CrudRepository<ContactInt
     List<ContactIntelligence> findUncontactedValidatedContacts(Pageable pageable);
     
     /**
-     * Advanced contact search with multiple criteria
+     * Advanced contact search with multiple criteria  
      */
     @Query("""
         SELECT * FROM contact_intelligence 
