@@ -21,8 +21,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.northstar.funding.discovery.config.TestDataFactory;
 import com.northstar.funding.discovery.domain.AdminUser;
+import com.northstar.funding.discovery.domain.CandidateStatus;
 import com.northstar.funding.discovery.domain.EnhancementRecord;
 import com.northstar.funding.discovery.domain.EnhancementType;
+import com.northstar.funding.discovery.domain.FundingSourceCandidate;
 
 /**
  * Integration Tests for EnhancementRecordRepository
@@ -51,13 +53,16 @@ class EnhancementRecordRepositoryIT {
     @Autowired
     private AdminUserRepository adminUserRepository;
     
+    @Autowired
+    private FundingSourceCandidateRepository candidateRepository;
+    
     @Autowired 
     private TestDataFactory testDataFactory;
     
     private AdminUser reviewer1;
     private AdminUser reviewer2;
-    private UUID candidateId1;
-    private UUID candidateId2;
+    private FundingSourceCandidate candidate1;
+    private FundingSourceCandidate candidate2;
     private EnhancementRecord contactAddedRecord;
     private EnhancementRecord dataCorrectedRecord;
     private EnhancementRecord notesAddedRecord;
@@ -71,18 +76,39 @@ class EnhancementRecordRepositoryIT {
         reviewer2 = testDataFactory.reviewerBuilder().build();
         adminUserRepository.saveAll(List.of(reviewer1, reviewer2));
         
-        // Create test candidate IDs (these would normally reference actual candidates)
-        candidateId1 = UUID.randomUUID();
-        candidateId2 = UUID.randomUUID();
+        // Create test candidates (required for foreign key constraint)
+        candidate1 = FundingSourceCandidate.builder()
+            .status(CandidateStatus.PENDING_REVIEW)
+            .confidenceScore(0.85)
+            .discoveredAt(LocalDateTime.now().minusDays(3))
+            .lastUpdatedAt(LocalDateTime.now().minusDays(3))
+            .organizationName("Test Foundation 1")
+            .programName("Test Program 1")
+            .sourceUrl("https://test1.org")
+            .description("Test candidate 1")
+            .build();
+            
+        candidate2 = FundingSourceCandidate.builder()
+            .status(CandidateStatus.PENDING_REVIEW)
+            .confidenceScore(0.75)
+            .discoveredAt(LocalDateTime.now().minusDays(2))
+            .lastUpdatedAt(LocalDateTime.now().minusDays(2))
+            .organizationName("Test Foundation 2")
+            .programName("Test Program 2")
+            .sourceUrl("https://test2.org")
+            .description("Test candidate 2")
+            .build();
+            
+        candidateRepository.saveAll(List.of(candidate1, candidate2));
         
         // Create test enhancement records with different types
-        contactAddedRecord = testDataFactory.contactAddedEnhancement(candidateId1, reviewer1.getUserId());
+        contactAddedRecord = testDataFactory.contactAddedEnhancement(candidate1.getCandidateId(), reviewer1.getUserId());
         contactAddedRecord.setEnhancedAt(LocalDateTime.now().minusDays(1));
         
-        dataCorrectedRecord = testDataFactory.dataCorrectedEnhancement(candidateId1, reviewer1.getUserId());
+        dataCorrectedRecord = testDataFactory.dataCorrectedEnhancement(candidate1.getCandidateId(), reviewer1.getUserId());
         dataCorrectedRecord.setEnhancedAt(LocalDateTime.now().minusDays(2));
         
-        notesAddedRecord = testDataFactory.notesAddedEnhancement(candidateId2, reviewer2.getUserId());
+        notesAddedRecord = testDataFactory.notesAddedEnhancement(candidate2.getCandidateId(), reviewer2.getUserId());
         notesAddedRecord.setEnhancedAt(LocalDateTime.now().minusHours(6));
         
         repository.saveAll(List.of(contactAddedRecord, dataCorrectedRecord, notesAddedRecord));
@@ -99,7 +125,7 @@ class EnhancementRecordRepositoryIT {
         var record = found.get();
         
         assertAll("Enhancement record fields",
-            () -> assertThat(record.getCandidateId()).isEqualTo(candidateId1),
+            () -> assertThat(record.getCandidateId()).isEqualTo(candidate1.getCandidateId()),
             () -> assertThat(record.getEnhancedBy()).isEqualTo(reviewer1.getUserId()),
             () -> assertThat(record.getEnhancementType()).isEqualTo(EnhancementType.CONTACT_ADDED),
             () -> assertThat(record.getFieldName()).isEqualTo("contact_email"),
@@ -115,9 +141,9 @@ class EnhancementRecordRepositoryIT {
     @DisplayName("Should handle enum values as VARCHAR with CHECK constraints")
     void shouldHandleEnumValuesAsVarchar() {
         // When: Creating enhancement with all possible enum values
-        EnhancementRecord statusChanged = testDataFactory.statusChangedEnhancement(candidateId1, reviewer1.getUserId());
-        EnhancementRecord validationCompleted = testDataFactory.validationCompletedEnhancement(candidateId1, reviewer1.getUserId());
-        EnhancementRecord duplicateMerged = testDataFactory.duplicateMergedEnhancement(candidateId1, reviewer1.getUserId());
+        EnhancementRecord statusChanged = testDataFactory.statusChangedEnhancement(candidate1.getCandidateId(), reviewer1.getUserId());
+        EnhancementRecord validationCompleted = testDataFactory.validationCompletedEnhancement(candidate1.getCandidateId(), reviewer1.getUserId());
+        EnhancementRecord duplicateMerged = testDataFactory.duplicateMergedEnhancement(candidate1.getCandidateId(), reviewer1.getUserId());
         
         var saved = repository.saveAll(List.of(statusChanged, validationCompleted, duplicateMerged));
         
@@ -135,7 +161,7 @@ class EnhancementRecordRepositoryIT {
     @DisplayName("Should find enhancements by candidate ID")
     void shouldFindEnhancementsByCandidateId() {
         // When: Finding enhancements for candidate1
-        var enhancements = repository.findByCandidateIdOrderByEnhancedAtDesc(candidateId1);
+        var enhancements = repository.findByCandidateIdOrderByEnhancedAtDesc(candidate1.getCandidateId());
         
         // Then: Should return both enhancements for candidate1
         assertThat(enhancements).hasSize(2);
@@ -225,13 +251,13 @@ class EnhancementRecordRepositoryIT {
     void shouldFindEnhancementsByCandidateAndAdminUser() {
         // When: Finding enhancements for candidate1 by reviewer1
         var enhancements = repository.findByCandidateIdAndEnhancedByOrderByEnhancedAtDesc(
-            candidateId1, reviewer1.getUserId()
+            candidate1.getCandidateId(), reviewer1.getUserId()
         );
         
         // Then: Should return correct enhancements
         assertThat(enhancements).hasSize(2);
         assertThat(enhancements)
-            .allMatch(e -> e.getCandidateId().equals(candidateId1))
+            .allMatch(e -> e.getCandidateId().equals(candidate1.getCandidateId()))
             .allMatch(e -> e.getEnhancedBy().equals(reviewer1.getUserId()));
     }
     
@@ -239,7 +265,7 @@ class EnhancementRecordRepositoryIT {
     @DisplayName("Should find significant improvements by confidence improvement threshold")
     void shouldFindSignificantImprovements() {
         // Given: Enhancement with high confidence improvement
-        EnhancementRecord highImpact = testDataFactory.validationCompletedEnhancement(candidateId1, reviewer1.getUserId());
+        EnhancementRecord highImpact = testDataFactory.validationCompletedEnhancement(candidate1.getCandidateId(), reviewer1.getUserId());
         highImpact.setFieldName("validation_status");
         highImpact.setOldValue("not_validated");
         highImpact.setNewValue("validated");
@@ -271,7 +297,7 @@ class EnhancementRecordRepositoryIT {
     @DisplayName("Should find AI-assisted enhancements")
     void shouldFindAiAssistedEnhancements() {
         // Given: Enhancement with AI assistance
-        EnhancementRecord aiAssisted = testDataFactory.dataCorrectedEnhancement(candidateId2, reviewer2.getUserId());
+        EnhancementRecord aiAssisted = testDataFactory.dataCorrectedEnhancement(candidate2.getCandidateId(), reviewer2.getUserId());
         // Set aiAssistanceUsed to true via a setter if available
         repository.save(aiAssisted);
         
@@ -334,7 +360,7 @@ class EnhancementRecordRepositoryIT {
         
         var candidate1Summary = candidateSummaries.get(0);
         assertAll("Candidate 1 summary",
-            () -> assertThat(candidate1Summary.candidateId()).isEqualTo(candidateId1),
+            () -> assertThat(candidate1Summary.candidateId()).isEqualTo(candidate1.getCandidateId()),
             () -> assertThat(candidate1Summary.totalEnhancements()).isEqualTo(2L),
             () -> assertThat(candidate1Summary.uniqueReviewers()).isEqualTo(1L)
         );
@@ -344,7 +370,7 @@ class EnhancementRecordRepositoryIT {
     @DisplayName("Should find complex enhancements by time threshold")
     void shouldFindComplexEnhancements() {
         // Given: Complex enhancement with significant time
-        EnhancementRecord complexEnhancement = testDataFactory.validationCompletedEnhancement(candidateId1, reviewer1.getUserId());
+        EnhancementRecord complexEnhancement = testDataFactory.validationCompletedEnhancement(candidate1.getCandidateId(), reviewer1.getUserId());
         complexEnhancement.setTimeSpentMinutes(45);
         repository.save(complexEnhancement);
         
@@ -393,7 +419,7 @@ class EnhancementRecordRepositoryIT {
     @DisplayName("Should get validation method stats")
     void shouldGetValidationMethodStats() {
         // Given: Enhancements with validation methods
-        EnhancementRecord withValidation = testDataFactory.contactAddedEnhancement(candidateId1, reviewer1.getUserId());
+        EnhancementRecord withValidation = testDataFactory.contactAddedEnhancement(candidate1.getCandidateId(), reviewer1.getUserId());
         // Set validation_method if there's a setter
         repository.save(withValidation);
         
@@ -408,7 +434,7 @@ class EnhancementRecordRepositoryIT {
     @DisplayName("Should count enhancements by candidate")
     void shouldCountEnhancementsByCandidate() {
         // When: Counting enhancements for candidate1
-        var count = repository.countByCandidateId(candidateId1);
+        var count = repository.countByCandidateId(candidate1.getCandidateId());
         
         // Then: Should return correct count
         assertThat(count).isEqualTo(2L);
