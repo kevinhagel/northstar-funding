@@ -25,5 +25,15 @@ public enum EnhancementType {
     /**
      * Merged duplicate candidate data
      */
-    DUPLICATE_MERGED
+    DUPLICATE_MERGED,
+    
+    /**
+     * Changed candidate workflow status
+     */
+    STATUS_CHANGED,
+    
+    /**
+     * Completed manual validation of candidate
+     */
+    VALIDATION_COMPLETED
 }

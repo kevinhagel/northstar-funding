@@ -15,6 +15,8 @@ import com.northstar.funding.discovery.domain.AuthorityLevel;
 import com.northstar.funding.discovery.domain.ContactIntelligence;
 import com.northstar.funding.discovery.domain.ContactType;
 import com.northstar.funding.discovery.domain.DiscoverySession;
+import com.northstar.funding.discovery.domain.EnhancementRecord;
+import com.northstar.funding.discovery.domain.EnhancementType;
 import com.northstar.funding.discovery.domain.SessionStatus;
 import com.northstar.funding.discovery.domain.SessionType;
 
@@ -24,7 +26,7 @@ import com.northstar.funding.discovery.domain.SessionType;
  * Provides fluent builder pattern for creating consistent test data
  * with sensible defaults and customization options.
  * 
- * Supports AdminUser, ContactIntelligence, and DiscoverySession domain entities.
+ * Supports AdminUser, ContactIntelligence, DiscoverySession, and EnhancementRecord domain entities.
  */
 @Component
 public class TestDataFactory {
@@ -380,5 +382,127 @@ public class TestDataFactory {
             .averageConfidenceScore(0.65)
             .searchEngineFailures("{\"searxng\":[\"Occasional timeout\"],\"tavily\":[\"Rate limit warning\"]}")
             .errorMessages(new ArrayList<>(List.of("Some search engines experienced issues but session completed")));
+    }
+
+    // ===============================
+    // EnhancementRecord Builders
+    // ===============================
+
+    /**
+     * Create a basic EnhancementRecord with sensible defaults.
+     * All required fields are pre-populated, optional fields can be customized.
+     */
+    public EnhancementRecord enhancementRecordBuilder() {
+        return new EnhancementRecord(
+            UUID.randomUUID(), // candidateId - will be overridden in tests
+            UUID.randomUUID(), // enhancedBy - will be overridden in tests
+            EnhancementType.DATA_CORRECTED,
+            "test_field",
+            "old value",
+            "new value",
+            "Test enhancement"
+        );
+    }
+
+    /**
+     * Create a contact added enhancement.
+     */
+    public EnhancementRecord contactAddedEnhancement(UUID candidateId, UUID enhancedBy) {
+        EnhancementRecord record = new EnhancementRecord(
+            candidateId,
+            enhancedBy,
+            EnhancementType.CONTACT_ADDED,
+            "contact_email",
+            null,
+            "contact@foundation.org",
+            "Added primary contact email from foundation website"
+        );
+        record.setTimeSpentMinutes(15);
+        return record;
+    }
+
+    /**
+     * Create a data corrected enhancement.
+     */
+    public EnhancementRecord dataCorrectedEnhancement(UUID candidateId, UUID enhancedBy) {
+        EnhancementRecord record = new EnhancementRecord(
+            candidateId,
+            enhancedBy,
+            EnhancementType.DATA_CORRECTED,
+            "organization_name",
+            "Old Foundation Name",
+            "Correct Foundation Name",
+            "Corrected organization name from official website"
+        );
+        record.setTimeSpentMinutes(10);
+        return record;
+    }
+
+    /**
+     * Create a notes added enhancement.
+     */
+    public EnhancementRecord notesAddedEnhancement(UUID candidateId, UUID enhancedBy) {
+        EnhancementRecord record = new EnhancementRecord(
+            candidateId,
+            enhancedBy,
+            EnhancementType.NOTES_ADDED,
+            "validation_notes",
+            null,
+            "Verified eligibility criteria match our requirements. Previous applicant mentioned positive experience.",
+            "Added context from research and network contacts"
+        );
+        record.setTimeSpentMinutes(20);
+        return record;
+    }
+
+    /**
+     * Create a duplicate merged enhancement.
+     */
+    public EnhancementRecord duplicateMergedEnhancement(UUID candidateId, UUID enhancedBy) {
+        EnhancementRecord record = new EnhancementRecord(
+            candidateId,
+            enhancedBy,
+            EnhancementType.DUPLICATE_MERGED,
+            "duplicate_of_candidate_id",
+            null,
+            UUID.randomUUID().toString(),
+            "Merged duplicate entry - same foundation, different program name format"
+        );
+        record.setTimeSpentMinutes(25);
+        return record;
+    }
+
+    /**
+     * Create a status changed enhancement.
+     */
+    public EnhancementRecord statusChangedEnhancement(UUID candidateId, UUID enhancedBy) {
+        EnhancementRecord record = new EnhancementRecord(
+            candidateId,
+            enhancedBy,
+            EnhancementType.STATUS_CHANGED,
+            "status",
+            "PENDING_REVIEW",
+            "VALIDATED",
+            "Manual review completed - candidate meets all criteria"
+        );
+        record.setTimeSpentMinutes(30);
+        return record;
+    }
+
+    /**
+     * Create a validation completed enhancement.
+     */
+    public EnhancementRecord validationCompletedEnhancement(UUID candidateId, UUID enhancedBy) {
+        EnhancementRecord record = new EnhancementRecord(
+            candidateId,
+            enhancedBy,
+            EnhancementType.VALIDATION_COMPLETED,
+            "validation_status",
+            "not_validated",
+            "validated",
+            "Full validation completed including website verification and contact confirmation"
+        );
+        record.setTimeSpentMinutes(45);
+        return record;
     }
 }

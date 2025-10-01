@@ -6,17 +6,8 @@
 -- Drop table if exists (for development)
 DROP TABLE IF EXISTS enhancement_record CASCADE;
 
--- Create ENUM types for Enhancement Record domain
-CREATE TYPE enhancement_type AS ENUM (
-    'CONTACT_ADDED',
-    'DATA_CORRECTED', 
-    'NOTES_ADDED',
-    'DUPLICATE_MERGED',
-    'STATUS_CHANGED',
-    'VALIDATION_COMPLETED'
-);
-
--- EnhancementRecord: Immutable audit trail of human improvements  
+-- EnhancementRecord: Immutable audit trail of human improvements
+-- Using VARCHAR for enum-like fields for Spring Data JDBC compatibility
 CREATE TABLE enhancement_record (
     -- Primary Key (Immutable record)
     enhancement_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -27,7 +18,7 @@ CREATE TABLE enhancement_record (
     
     -- Enhancement Metadata
     enhanced_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    enhancement_type enhancement_type NOT NULL,
+    enhancement_type VARCHAR(50) NOT NULL,
     time_spent_minutes INTEGER DEFAULT 0,
     
     -- Change Tracking (Immutable Audit Trail)
@@ -44,6 +35,20 @@ CREATE TABLE enhancement_record (
     -- Quality Metrics
     review_complexity VARCHAR(20) DEFAULT 'SIMPLE', -- SIMPLE, MODERATE, COMPLEX
     ai_assistance_used BOOLEAN DEFAULT false, -- Whether AI tools were used for enhancement
+    
+    -- CHECK constraints for enum-like validation (Spring Data JDBC compatible)
+    CONSTRAINT enhancement_record_enhancement_type_check
+        CHECK (enhancement_type IN (
+            'CONTACT_ADDED',
+            'DATA_CORRECTED',
+            'NOTES_ADDED',
+            'DUPLICATE_MERGED',
+            'STATUS_CHANGED',
+            'VALIDATION_COMPLETED'
+        )),
+    
+    CONSTRAINT enhancement_record_review_complexity_check
+        CHECK (review_complexity IN ('SIMPLE', 'MODERATE', 'COMPLEX')),
     
     -- Foreign Key Constraints
     CONSTRAINT enhancement_record_candidate_fk 
@@ -135,6 +140,7 @@ CREATE TRIGGER enhancement_record_update_admin_stats
 
 -- Comments for Domain Understanding  
 COMMENT ON TABLE enhancement_record IS 'Immutable audit trail of manual improvements by admin users. Constitutional requirement for human-AI collaboration tracking.';
+COMMENT ON COLUMN enhancement_record.enhancement_type IS 'Enhancement type: CONTACT_ADDED, DATA_CORRECTED, NOTES_ADDED, DUPLICATE_MERGED, STATUS_CHANGED, or VALIDATION_COMPLETED. Using VARCHAR with CHECK constraint for Spring Data JDBC compatibility.';
 COMMENT ON COLUMN enhancement_record.field_name IS 'Which field was modified (e.g. "organization_name", "contact_email", "description")';
 COMMENT ON COLUMN enhancement_record.old_value IS 'Previous value before enhancement (NULL for new additions)';
 COMMENT ON COLUMN enhancement_record.new_value IS 'New value after enhancement (required for audit trail)';
@@ -171,7 +177,7 @@ SELECT
     fsc.status,
     COUNT(er.enhancement_id) as total_enhancements,
     SUM(er.confidence_improvement) as total_confidence_improvement,
-    array_agg(
+    json_agg(
         json_build_object(
             'enhanced_at', er.enhanced_at,
             'enhanced_by', au.username,
@@ -196,3 +202,4 @@ COMMENT ON VIEW candidate_enhancement_history IS 'Complete enhancement history f
 -- ✅ Automatic statistics updates for admin user performance tracking  
 -- ✅ Analytics views for continuous improvement of enhancement processes
 -- ✅ Full-text search capabilities for enhancement mining and analysis
+-- ✅ VARCHAR with CHECK constraints for Spring Data JDBC compatibility
