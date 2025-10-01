@@ -15,11 +15,13 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.northstar.funding.discovery.config.TestDataFactory;
+import com.northstar.funding.discovery.config.TestFlywayConfig;
 import com.northstar.funding.discovery.domain.AdminUser;
 import com.northstar.funding.discovery.domain.CandidateStatus;
 import com.northstar.funding.discovery.domain.EnhancementRecord;
@@ -42,6 +44,7 @@ import com.northstar.funding.discovery.domain.FundingSourceCandidate;
  * Tests run in @Transactional mode with rollback to avoid affecting production data.
  */
 @SpringBootTest
+@Import(TestFlywayConfig.class)
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @ActiveProfiles("test")
 @Transactional

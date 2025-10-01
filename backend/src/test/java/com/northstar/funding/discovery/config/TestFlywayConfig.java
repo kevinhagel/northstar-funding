@@ -1,29 +1,32 @@
 package com.northstar.funding.discovery.config;
 
-import javax.sql.DataSource;
-
 import org.flywaydb.core.Flyway;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Primary;
+
+import javax.sql.DataSource;
 
 /**
- * Test configuration to ensure Flyway migrations run before tests.
+ * Test configuration that ensures clean database state for tests.
+ * Forces Flyway to clean and migrate the test schema before running tests.
  */
 @TestConfiguration
 public class TestFlywayConfig {
-    
+
     @Bean
-    @Primary
-    public Flyway flyway(DataSource dataSource) {
+    public Flyway testFlyway(DataSource dataSource) {
         Flyway flyway = Flyway.configure()
-                .dataSource(dataSource)
-                .locations("classpath:db/migration")
-                .baselineOnMigrate(true)
-                .validateOnMigrate(false)
-                .load();
+            .dataSource(dataSource)
+            .schemas("test_schema")
+            .defaultSchema("test_schema")
+            .createSchemas(true)
+            .locations("classpath:db/migration")
+            .load();
         
-        // Execute migrations immediately
+        // Clean the schema first to remove old migrations
+        flyway.clean();
+        
+        // Run migrations with clean schema
         flyway.migrate();
         
         return flyway;
