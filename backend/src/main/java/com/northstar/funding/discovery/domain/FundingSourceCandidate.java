@@ -29,7 +29,7 @@ import lombok.NoArgsConstructor;
  * - Human-AI Collaboration workflow support
  * - No JPA/ORM - uses Spring Data JDBC for simplicity
  */
-@Table("funding_source_candidates")
+@Table("funding_source_candidate")
 @Data
 @Builder
 @NoArgsConstructor
