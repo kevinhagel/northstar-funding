@@ -58,7 +58,7 @@ CREATE INDEX idx_discovery_query_effectiveness
 -- Error pattern analysis (system reliability monitoring)
 CREATE INDEX idx_discovery_error_patterns
     ON discovery_session USING gin(error_messages)
-    WHERE status = 'FAILED' OR jsonb_array_length(error_messages) > 0;
+    WHERE status = 'FAILED' OR array_length(error_messages, 1) > 0;
 
 -- =================================================================
 -- ENHANCEMENT AUDIT PERFORMANCE

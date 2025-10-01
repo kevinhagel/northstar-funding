@@ -1,8 +1,9 @@
 package com.northstar.funding.discovery.config;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
@@ -239,7 +240,6 @@ public class TestDataFactory {
      */
     public DiscoverySession.DiscoverySessionBuilder discoverySessionBuilder() {
         return DiscoverySession.builder()
-            .sessionId(UUID.randomUUID())
             .executedAt(LocalDateTime.now())
             .executedBy("test-system")
             .sessionType(SessionType.SCHEDULED)
@@ -247,17 +247,17 @@ public class TestDataFactory {
             .durationMinutes(0)
             .startedAt(LocalDateTime.now())
             .completedAt(null)
-            .searchEnginesUsed(Set.of("searxng"))
-            .searchQueries(List.of("test funding query"))
+            .searchEnginesUsed(new HashSet<>(Set.of("searxng")))
+            .searchQueries(new ArrayList<>(List.of("test funding query")))
             .queryGenerationPrompt("Find test funding opportunities")
             .candidatesFound(0)
             .duplicatesDetected(0)
             .sourcesScraped(0)
             .averageConfidenceScore(0.0)
-            .errorMessages(List.of())
-            .searchEngineFailures(Map.of())
+            .errorMessages(new ArrayList<>())
+            .searchEngineFailures("{}")
             .llmModelUsed("llama-3.1-8b")
-            .searchParameters(Map.of("region", "test", "sector", "test"));
+            .searchParameters("{\"region\":\"test\",\"sector\":\"test\"}");
     }
 
     /**
@@ -276,8 +276,8 @@ public class TestDataFactory {
             .duplicatesDetected(2)
             .sourcesScraped(45)
             .averageConfidenceScore(0.78)
-            .searchEnginesUsed(Set.of("searxng", "tavily"))
-            .searchQueries(List.of("EU funding technology", "innovation grants Europe"));
+            .searchEnginesUsed(new HashSet<>(Set.of("searxng", "tavily")))
+            .searchQueries(new ArrayList<>(List.of("EU funding technology", "innovation grants Europe")));
     }
 
     /**
@@ -296,11 +296,8 @@ public class TestDataFactory {
             .duplicatesDetected(0)
             .sourcesScraped(3)
             .averageConfidenceScore(0.0)
-            .errorMessages(List.of("Connection timeout", "Rate limit exceeded"))
-            .searchEngineFailures(Map.of(
-                "searxng", List.of("Connection timeout"),
-                "tavily", List.of("Rate limit exceeded", "Authentication failed")
-            ));
+            .errorMessages(new ArrayList<>(List.of("Connection timeout", "Rate limit exceeded")))
+            .searchEngineFailures("{\"searxng\":[\"Connection timeout\"],\"tavily\":[\"Rate limit exceeded\",\"Authentication failed\"]}");
     }
 
     /**
@@ -313,13 +310,13 @@ public class TestDataFactory {
             .sourcesScraped(120)
             .averageConfidenceScore(0.92)
             .durationMinutes(20)
-            .searchEnginesUsed(Set.of("searxng", "tavily", "perplexity"))
+            .searchEnginesUsed(new HashSet<>(Set.of("searxng", "tavily", "perplexity")))
             .llmModelUsed("llama-3.1-70b")
-            .searchQueries(List.of(
+            .searchQueries(new ArrayList<>(List.of(
                 "European technology funding programs 2024",
                 "startup innovation grants EU",
                 "research development funding opportunities"
-            ));
+            )));
     }
 
     /**
@@ -329,7 +326,7 @@ public class TestDataFactory {
         return discoverySessionBuilder()
             .sessionType(SessionType.MANUAL)
             .executedBy("admin-user")
-            .searchEnginesUsed(Set.of("perplexity"))
+            .searchEnginesUsed(new HashSet<>(Set.of("perplexity")))
             .queryGenerationPrompt("Manual search for specific funding domain");
     }
 
@@ -340,7 +337,7 @@ public class TestDataFactory {
         return discoverySessionBuilder()
             .sessionType(SessionType.RETRY)
             .executedBy("retry-scheduler")
-            .searchParameters(Map.of("retry_count", "2", "original_session", UUID.randomUUID().toString()));
+            .searchParameters("{\"retry_count\":\"2\",\"original_session\":\"" + UUID.randomUUID().toString() + "\"}");
     }
 
     /**
@@ -348,17 +345,13 @@ public class TestDataFactory {
      */
     public DiscoverySession.DiscoverySessionBuilder multiEngineSessionBuilder() {
         return discoverySessionBuilder()
-            .searchEnginesUsed(Set.of("searxng", "tavily", "perplexity"))
-            .searchQueries(List.of(
+            .searchEnginesUsed(new HashSet<>(Set.of("searxng", "tavily", "perplexity")))
+            .searchQueries(new ArrayList<>(List.of(
                 "funding query 1 via searxng",
                 "funding query 2 via tavily", 
                 "funding query 3 via perplexity"
-            ))
-            .searchParameters(Map.of(
-                "searxng_timeout", "30",
-                "tavily_limit", "50",
-                "perplexity_depth", "comprehensive"
-            ));
+            )))
+            .searchParameters("{\"searxng_timeout\":\"30\",\"tavily_limit\":\"50\",\"perplexity_depth\":\"comprehensive\"}");
     }
 
     /**
@@ -385,10 +378,7 @@ public class TestDataFactory {
             .duplicatesDetected(1)
             .sourcesScraped(30)
             .averageConfidenceScore(0.65)
-            .searchEngineFailures(Map.of(
-                "searxng", List.of("Occasional timeout"),
-                "tavily", List.of("Rate limit warning")
-            ))
-            .errorMessages(List.of("Some search engines experienced issues but session completed"));
+            .searchEngineFailures("{\"searxng\":[\"Occasional timeout\"],\"tavily\":[\"Rate limit warning\"]}")
+            .errorMessages(new ArrayList<>(List.of("Some search engines experienced issues but session completed")));
     }
 }

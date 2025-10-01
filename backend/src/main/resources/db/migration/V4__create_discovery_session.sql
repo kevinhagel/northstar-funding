@@ -6,38 +6,24 @@
 -- Drop table if exists (for development)
 DROP TABLE IF EXISTS discovery_session CASCADE;
 
--- Create ENUM types for Discovery Session domain  
-CREATE TYPE session_status AS ENUM (
-    'RUNNING',
-    'COMPLETED', 
-    'FAILED',
-    'CANCELLED'
-);
-
--- Create session_type for discovery sessions
-CREATE TYPE session_type AS ENUM (
-    'SCHEDULED',
-    'MANUAL',
-    'RETRY'
-);
-
 -- DiscoverySession: Audit record of automated discovery executions
+-- Using VARCHAR for enum-like fields for Spring Data JDBC compatibility
 CREATE TABLE discovery_session (
     -- Primary Key & Identification  
     session_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     executed_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     executed_by VARCHAR(100) NOT NULL DEFAULT 'SYSTEM', -- System/scheduler identifier
-    session_type session_type NOT NULL DEFAULT 'SCHEDULED',
+    session_type VARCHAR(50) NOT NULL DEFAULT 'SCHEDULED',
     
     -- Execution Status & Timing
-    status session_status NOT NULL DEFAULT 'RUNNING',
+    status VARCHAR(50) NOT NULL DEFAULT 'RUNNING',
     duration_minutes INTEGER DEFAULT 0,
     started_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     completed_at TIMESTAMPTZ NULL,
     
     -- Search Configuration (AI Query Generation Context)
-    search_engines_used JSONB NOT NULL DEFAULT '[]'::jsonb, -- ["searxng", "tavily", "perplexity"]
-    search_queries JSONB NOT NULL DEFAULT '[]'::jsonb, -- Generated queries executed
+    search_engines_used TEXT[] NOT NULL DEFAULT '{}', -- ["searxng", "tavily", "perplexity"]
+    search_queries TEXT[] NOT NULL DEFAULT '{}', -- Generated queries executed
     query_generation_prompt TEXT, -- AI prompt used for query generation
     
     -- Results & Performance Metrics  
@@ -47,12 +33,19 @@ CREATE TABLE discovery_session (
     average_confidence_score DECIMAL(3,2) DEFAULT 0.00,
     
     -- Error Handling & Diagnostics
-    error_messages JSONB DEFAULT '[]'::jsonb,
-    search_engine_failures JSONB DEFAULT '{}'::jsonb, -- Per-engine error tracking
+    error_messages TEXT[] DEFAULT '{}',
+    search_engine_failures TEXT, -- JSON string for error tracking
     
     -- Process Metadata (for AI improvement)
     llm_model_used VARCHAR(100), -- LM Studio model used for query generation
-    search_parameters JSONB DEFAULT '{}'::jsonb, -- Configuration used
+    search_parameters TEXT, -- JSON string for configuration
+    
+    -- CHECK constraints for enum-like validation (Spring Data JDBC compatible)
+    CONSTRAINT discovery_session_status_check 
+        CHECK (status IN ('RUNNING', 'COMPLETED', 'FAILED', 'CANCELLED')),
+    
+    CONSTRAINT discovery_session_session_type_check 
+        CHECK (session_type IN ('SCHEDULED', 'MANUAL', 'RETRY')),
     
     -- Business Rules
     CONSTRAINT discovery_session_timing_logic
@@ -95,7 +88,7 @@ CREATE INDEX idx_discovery_session_performance
 
 -- Analytics indexes for discovery improvement
 CREATE INDEX idx_discovery_session_search_engines 
-    ON discovery_session USING gin(search_engines_used);
+    ON discovery_session USING GIN(search_engines_used);
     
 CREATE INDEX idx_discovery_session_average_confidence 
     ON discovery_session (average_confidence_score DESC) 
@@ -104,7 +97,7 @@ CREATE INDEX idx_discovery_session_average_confidence
 -- Error analysis for system reliability  
 CREATE INDEX idx_discovery_session_failures 
     ON discovery_session (executed_at DESC) 
-    WHERE status = 'FAILED' OR jsonb_array_length(error_messages) > 0;
+    WHERE status = 'FAILED' OR array_length(error_messages, 1) > 0;
 
 -- Trigger to automatically calculate duration when session completes
 CREATE OR REPLACE FUNCTION calculate_discovery_session_duration()
@@ -127,8 +120,10 @@ CREATE TRIGGER discovery_session_calculate_duration
 
 -- Comments for Domain Understanding
 COMMENT ON TABLE discovery_session IS 'Audit trail of automated discovery executions. Critical for AI process improvement and error analysis.';
-COMMENT ON COLUMN discovery_session.search_engines_used IS 'JSON array of search engines queried: ["searxng", "tavily", "perplexity"]';
-COMMENT ON COLUMN discovery_session.search_queries IS 'JSON array of AI-generated search queries executed during this session';
+COMMENT ON COLUMN discovery_session.status IS 'Session status: RUNNING, COMPLETED, FAILED, or CANCELLED. Using VARCHAR with CHECK constraint for Spring Data JDBC compatibility.';
+COMMENT ON COLUMN discovery_session.session_type IS 'Session type: SCHEDULED, MANUAL, or RETRY. Using VARCHAR with CHECK constraint for Spring Data JDBC compatibility.';
+COMMENT ON COLUMN discovery_session.search_engines_used IS 'Array of search engines queried: searxng, tavily, perplexity';
+COMMENT ON COLUMN discovery_session.search_queries IS 'Array of AI-generated search queries executed during this session';
 COMMENT ON COLUMN discovery_session.query_generation_prompt IS 'LM Studio prompt used to generate search queries (for prompt engineering improvement)';
 COMMENT ON COLUMN discovery_session.candidates_found IS 'Total new funding source candidates discovered in this session';
 COMMENT ON COLUMN discovery_session.duplicates_detected IS 'Number of duplicate candidates filtered out during processing';
@@ -147,7 +142,7 @@ SELECT
     SUM(candidates_found) as total_candidates_found,
     SUM(duplicates_detected) as total_duplicates_detected,
     AVG(average_confidence_score) as avg_confidence_score,
-    AVG(jsonb_array_length(search_engines_used)) as avg_search_engines_per_session
+    AVG(array_length(search_engines_used, 1)) as avg_search_engines_per_session
 FROM discovery_session 
 WHERE executed_at >= NOW() - INTERVAL '30 days'
 GROUP BY DATE_TRUNC('day', executed_at)
@@ -164,3 +159,4 @@ COMMENT ON VIEW discovery_session_analytics IS 'Daily analytics for discovery se
 -- ✅ Foreign key relationship established with FundingSourceCandidate
 -- ✅ Analytics view for continuous process improvement
 -- ✅ Automatic duration calculation with database triggers
+-- ✅ VARCHAR with CHECK constraints for Spring Data JDBC compatibility

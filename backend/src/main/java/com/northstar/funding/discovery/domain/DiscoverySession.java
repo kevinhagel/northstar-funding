@@ -90,14 +90,14 @@ public class DiscoverySession {
     private List<String> errorMessages; // List of error messages
     
     @Column("search_engine_failures")
-    private Map<String, List<String>> searchEngineFailures; // Per-engine error tracking: engine -> list of errors
+    private String searchEngineFailures; // JSON string: {"engine": ["error1", "error2"]}
     
     // Process Metadata (for AI improvement)
     @Column("llm_model_used")
     private String llmModelUsed; // LM Studio model used for query generation
     
     @Column("search_parameters")
-    private Map<String, String> searchParameters; // Configuration used: parameter -> value
+    private String searchParameters; // JSON string: {"param": "value"}
 
     // Business methods
     public boolean isCompleted() {

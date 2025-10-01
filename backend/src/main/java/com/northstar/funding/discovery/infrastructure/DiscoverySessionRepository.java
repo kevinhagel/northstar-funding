@@ -72,7 +72,7 @@ public interface DiscoverySessionRepository extends CrudRepository<DiscoverySess
     @Query("""
         SELECT * FROM discovery_session 
         WHERE status = 'FAILED' 
-        OR jsonb_array_length(error_messages) > 0
+        OR array_length(error_messages, 1) > 0
         ORDER BY executed_at DESC
     """)
     List<DiscoverySession> findFailedSessions(Pageable pageable);
@@ -135,7 +135,8 @@ public interface DiscoverySessionRepository extends CrudRepository<DiscoverySess
     @Query("""
         SELECT * FROM discovery_session 
         WHERE search_engine_failures IS NOT NULL 
-        AND search_engine_failures != '{}'::jsonb
+        AND search_engine_failures != '{}'
+        AND search_engine_failures != ''
         ORDER BY executed_at DESC
     """)
     List<DiscoverySession> findSessionsWithSearchEngineFailures(Pageable pageable);
@@ -163,18 +164,17 @@ public interface DiscoverySessionRepository extends CrudRepository<DiscoverySess
     @Query("""
         SELECT * FROM discovery_session 
         WHERE llm_model_used = :modelName
-        AND status = 'COMPLETED'
         ORDER BY executed_at DESC
     """)
     List<DiscoverySession> findByLlmModel(@Param("modelName") String modelName, Pageable pageable);
     
     /**
-     * Find sessions with specific search engines for integration analysis
+     * Find sessions by specific search engines for integration analysis
+     * Uses PostgreSQL array containment operator for accurate matching
      */
     @Query("""
         SELECT * FROM discovery_session 
-        WHERE search_engines_used::text LIKE CONCAT('%', :searchEngine, '%')
-        AND status = 'COMPLETED'
+        WHERE :searchEngine = ANY(search_engines_used)
         ORDER BY executed_at DESC
     """)
     List<DiscoverySession> findBySearchEngine(@Param("searchEngine") String searchEngine, Pageable pageable);
@@ -184,7 +184,7 @@ public interface DiscoverySessionRepository extends CrudRepository<DiscoverySess
      */
     @Query("""
         SELECT 
-            search_engines_used,
+            array_to_string(search_engines_used, ',') as search_engines_used,
             COUNT(*) as usage_count,
             AVG(candidates_found) as avg_candidates,
             COUNT(*) FILTER (WHERE status = 'FAILED') as failure_count
@@ -243,40 +243,41 @@ public interface DiscoverySessionRepository extends CrudRepository<DiscoverySess
     """)
     List<PromptEffectiveness> getPromptEffectivenessAnalysis(@Param("since") LocalDateTime since);
     
-    // Inner interfaces for query result mapping
-    interface DiscoveryMetrics {
-        Double getAvgCandidatesFound();
-        Double getAvgDurationMinutes();
-        Double getAvgConfidenceScore();
-        Long getSuccessfulSessions();
-        Long getFailedSessions();
-    }
+    // Records for query result mapping (Spring Data JDBC compatible)
+    // These use records instead of interfaces to provide automatic constructors
+    record DiscoveryMetrics(
+        Double avgCandidatesFound,
+        Double avgDurationMinutes,
+        Double avgConfidenceScore,
+        Long successfulSessions,
+        Long failedSessions
+    ) {}
     
-    interface DailyDiscoveryTrends {
-        LocalDateTime getDiscoveryDate();
-        Long getTotalSessions();
-        Double getAvgCandidates();
-        Double getAvgDuration();
-        Long getSuccessful();
-    }
+    record DailyDiscoveryTrends(
+        java.sql.Date discoveryDate,
+        Long totalSessions,
+        Double avgCandidates,
+        Double avgDuration,
+        Long successful
+    ) {}
     
-    interface SearchEngineStats {
-        String getSearchEnginesUsed();
-        Long getUsageCount();
-        Double getAvgCandidates();
-        Long getFailureCount();
-    }
+    record SearchEngineStats(
+        String searchEnginesUsed,
+        Long usageCount,
+        Double avgCandidates,
+        Long failureCount
+    ) {}
     
-    interface DuplicationStats {
-        Double getAvgDuplicateRate();
-        Long getTotalDuplicatesDetected();
-        Long getTotalCandidatesFound();
-    }
+    record DuplicationStats(
+        Double avgDuplicateRate,
+        Long totalDuplicatesDetected,
+        Long totalCandidatesFound
+    ) {}
     
-    interface PromptEffectiveness {
-        String getQueryGenerationPrompt();
-        Double getAvgEffectiveness();
-        Long getUsageCount();
-        Double getAvgQuality();
-    }
+    record PromptEffectiveness(
+        String queryGenerationPrompt,
+        Double avgEffectiveness,
+        Long usageCount,
+        Double avgQuality
+    ) {}
 }
