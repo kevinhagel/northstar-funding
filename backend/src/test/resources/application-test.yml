@@ -18,6 +18,8 @@ spring:
     validate-on-migrate: false
     # Clean database before tests for consistent state  
     clean-disabled: false
+    # Clean on validation errors
+    clean-on-validation-error: true
     # Use a separate schema for tests
     schemas: test_schema
     # Create schema if it doesn't exist
