@@ -6,21 +6,11 @@
 -- Drop table if exists (for development)
 DROP TABLE IF EXISTS funding_source_candidate CASCADE;
 
--- Create ENUM types for type safety
-CREATE TYPE candidate_status AS ENUM (
-    'PENDING_REVIEW',
-    'IN_REVIEW', 
-    'APPROVED',
-    'REJECTED'
-);
-
-
-
 -- FundingSourceCandidate: Core aggregate root for discovered funding opportunities
 CREATE TABLE funding_source_candidate (
     -- Primary Key & Status
     candidate_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    status candidate_status NOT NULL DEFAULT 'PENDING_REVIEW',
+    status VARCHAR(50) NOT NULL DEFAULT 'PENDING_REVIEW',
     confidence_score DECIMAL(3,2) NOT NULL CHECK (confidence_score >= 0.0 AND confidence_score <= 1.0),
     
     -- Audit Timestamps (Constitutional Requirement)
@@ -41,18 +31,18 @@ CREATE TABLE funding_source_candidate (
     funding_amount_min DECIMAL(15,2) NULL,
     funding_amount_max DECIMAL(15,2) NULL,
     currency VARCHAR(3) DEFAULT 'EUR',
-    geographic_eligibility JSONB DEFAULT '[]'::jsonb,
-    organization_types JSONB DEFAULT '[]'::jsonb,
+    geographic_eligibility TEXT[] DEFAULT '{}',
+    organization_types TEXT[] DEFAULT '{}',
     application_deadline DATE NULL,
     application_process TEXT,
-    requirements JSONB DEFAULT '[]'::jsonb,
-    tags JSONB DEFAULT '[]'::jsonb,
+    requirements TEXT[] DEFAULT '{}',
+    tags TEXT[] DEFAULT '{}',
     
     -- Discovery Metadata (AI Processing Context)  
     discovery_session_id UUID NULL, -- FK to DiscoverySession (will be added in V4)
     discovery_method VARCHAR(100) NOT NULL,
     search_query TEXT NOT NULL,
-    extracted_data JSONB NOT NULL DEFAULT '{}'::jsonb,
+    extracted_data TEXT NOT NULL DEFAULT '{}',
     duplicate_of_candidate_id UUID NULL, -- Self-referential FK for deduplication
     
     -- Enhancement & Validation (Human Enhancement)
@@ -60,6 +50,9 @@ CREATE TABLE funding_source_candidate (
     rejection_reason TEXT,
     
     -- Constraints
+    CONSTRAINT funding_source_candidate_status_check
+        CHECK (status IN ('PENDING_REVIEW', 'IN_REVIEW', 'APPROVED', 'REJECTED')),
+    
     CONSTRAINT funding_source_candidate_duplicate_fk 
         FOREIGN KEY (duplicate_of_candidate_id) 
         REFERENCES funding_source_candidate(candidate_id) 
@@ -105,13 +98,10 @@ CREATE INDEX idx_funding_source_candidate_search
 -- JSONB indexes for filtering
 CREATE INDEX idx_funding_source_candidate_tags 
     ON funding_source_candidate USING gin(tags);
-    
-CREATE INDEX idx_funding_source_candidate_geographic_eligibility 
-    ON funding_source_candidate USING gin(geographic_eligibility);
 
 -- Comments for Domain Understanding
 COMMENT ON TABLE funding_source_candidate IS 'Aggregate Root: Discovered funding opportunities pending human validation. Core entity in Funding Sources bounded context.';
-COMMENT ON COLUMN funding_source_candidate.status IS 'Workflow state: PENDING_REVIEW → IN_REVIEW → APPROVED/REJECTED';
+COMMENT ON COLUMN funding_source_candidate.status IS 'Workflow state: PENDING_REVIEW, IN_REVIEW, APPROVED, or REJECTED. Using VARCHAR with CHECK constraint for Spring Data JDBC compatibility.';
 COMMENT ON COLUMN funding_source_candidate.confidence_score IS 'AI-generated quality score (0.0-1.0) for prioritizing human review';
 COMMENT ON COLUMN funding_source_candidate.extracted_data IS 'Raw scraped data as JSON for audit and improvement';
 COMMENT ON COLUMN funding_source_candidate.duplicate_of_candidate_id IS 'Self-reference for duplicate detection across discovery sessions';
