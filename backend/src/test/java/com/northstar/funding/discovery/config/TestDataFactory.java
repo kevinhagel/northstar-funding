@@ -36,10 +36,11 @@ public class TestDataFactory {
      * All required fields are pre-populated, optional fields can be customized.
      */
     public AdminUser.AdminUserBuilder adminUserBuilder() {
+        String uniqueId = UUID.randomUUID().toString().substring(0, 8);
         return AdminUser.builder()
-            .username("test.user." + System.currentTimeMillis()) // Unique username
+            .username("test.user." + uniqueId) // Unique username
             .fullName("Test User")
-            .email("test.user." + System.currentTimeMillis() + "@northstar.com")
+            .email("test.user." + uniqueId + "@northstar.com")
             .role(AdminRole.REVIEWER) // Default role
             .isActive(true)
             .specializations(Set.of("general"))
