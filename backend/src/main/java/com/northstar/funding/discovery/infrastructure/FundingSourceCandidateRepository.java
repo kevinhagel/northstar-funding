@@ -36,10 +36,15 @@ public interface FundingSourceCandidateRepository extends CrudRepository<Funding
      * Primary query for admin review dashboard
      */
     Page<FundingSourceCandidate> findByStatusOrderByConfidenceScoreDesc(
-        CandidateStatus status, 
+        CandidateStatus status,
         Pageable pageable
     );
-    
+
+    /**
+     * Find all candidates by status (for integration tests and workflows)
+     */
+    List<FundingSourceCandidate> findByStatus(CandidateStatus status);
+
     /**
      * Find candidates by status and minimum confidence threshold
      * Used for filtering high-quality candidates

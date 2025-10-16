@@ -23,43 +23,58 @@ CREATE TABLE enhancement_record (
     
     -- Change Tracking (Immutable Audit Trail)
     field_name VARCHAR(100), -- Which field was modified
-    old_value TEXT,          -- Previous value (nullable for new additions)
-    new_value TEXT NOT NULL, -- New value
+    original_value TEXT,     -- Previous value (nullable for new additions)
+    suggested_value TEXT NOT NULL, -- New value
     notes TEXT,              -- Explanation of changes
-    
+
+    -- AI Tracking (Human-AI Collaboration)
+    ai_model VARCHAR(100),           -- LM Studio model used (e.g., "llama-3.1-8b")
+    confidence_score DECIMAL(3,2),   -- AI confidence (0.00-1.00)
+    human_approved BOOLEAN DEFAULT FALSE, -- Did human approve AI suggestion?
+    approved_by UUID,                -- AdminUser who approved (if applicable)
+    approved_at TIMESTAMPTZ,         -- When approved
+
     -- Context & Validation
     source_reference TEXT,   -- URL, document, or source of information
     confidence_improvement DECIMAL(3,2) DEFAULT 0.00, -- How much this improved candidate confidence
     validation_method VARCHAR(100), -- How enhancement was validated
-    
+
     -- Quality Metrics
     review_complexity VARCHAR(20) DEFAULT 'SIMPLE', -- SIMPLE, MODERATE, COMPLEX
-    ai_assistance_used BOOLEAN DEFAULT false, -- Whether AI tools were used for enhancement
+    ai_assistance_used BOOLEAN DEFAULT false -- Whether AI tools were used for enhancement
     
     -- CHECK constraints for enum-like validation (Spring Data JDBC compatible)
     CONSTRAINT enhancement_record_enhancement_type_check
         CHECK (enhancement_type IN (
-            'CONTACT_ADDED',
-            'DATA_CORRECTED',
-            'NOTES_ADDED',
-            'DUPLICATE_MERGED',
-            'STATUS_CHANGED',
-            'VALIDATION_COMPLETED'
+            'AI_SUGGESTED',      -- AI suggested this enhancement
+            'MANUAL',            -- Human created without AI
+            'HUMAN_MODIFIED'     -- Human modified AI suggestion
         )),
-    
+
     CONSTRAINT enhancement_record_review_complexity_check
         CHECK (review_complexity IN ('SIMPLE', 'MODERATE', 'COMPLEX')),
-    
+
+    CONSTRAINT enhancement_record_ai_consistency
+        CHECK (
+            (enhancement_type = 'AI_SUGGESTED' AND ai_model IS NOT NULL) OR
+            (enhancement_type != 'AI_SUGGESTED')
+        ),
+
     -- Foreign Key Constraints
-    CONSTRAINT enhancement_record_candidate_fk 
-        FOREIGN KEY (candidate_id) 
-        REFERENCES funding_source_candidate(candidate_id) 
+    CONSTRAINT enhancement_record_candidate_fk
+        FOREIGN KEY (candidate_id)
+        REFERENCES funding_source_candidate(candidate_id)
         ON DELETE CASCADE,
-        
-    CONSTRAINT enhancement_record_enhanced_by_fk 
-        FOREIGN KEY (enhanced_by) 
-        REFERENCES admin_user(user_id) 
+
+    CONSTRAINT enhancement_record_enhanced_by_fk
+        FOREIGN KEY (enhanced_by)
+        REFERENCES admin_user(user_id)
         ON DELETE RESTRICT, -- Preserve audit trail even if admin user deleted
+
+    CONSTRAINT enhancement_record_approved_by_fk
+        FOREIGN KEY (approved_by)
+        REFERENCES admin_user(user_id)
+        ON DELETE RESTRICT, -- Preserve audit trail
         
     -- Business Rules (Immutable Audit Log)
     CONSTRAINT enhancement_record_immutable
@@ -97,11 +112,11 @@ CREATE INDEX idx_enhancement_record_confidence_improvement
     WHERE confidence_improvement > 0;
 
 -- Full-text search for enhancement notes and changes
-CREATE INDEX idx_enhancement_record_search 
-    ON enhancement_record 
-    USING gin(to_tsvector('english', 
-        COALESCE(field_name, '') || ' ' || 
-        COALESCE(new_value, '') || ' ' ||
+CREATE INDEX idx_enhancement_record_search
+    ON enhancement_record
+    USING gin(to_tsvector('english',
+        COALESCE(field_name, '') || ' ' ||
+        COALESCE(suggested_value, '') || ' ' ||
         COALESCE(notes, '')
     ));
 
@@ -138,12 +153,17 @@ CREATE TRIGGER enhancement_record_update_admin_stats
     FOR EACH ROW
     EXECUTE FUNCTION update_admin_user_enhancement_stats();
 
--- Comments for Domain Understanding  
-COMMENT ON TABLE enhancement_record IS 'Immutable audit trail of manual improvements by admin users. Constitutional requirement for human-AI collaboration tracking.';
-COMMENT ON COLUMN enhancement_record.enhancement_type IS 'Enhancement type: CONTACT_ADDED, DATA_CORRECTED, NOTES_ADDED, DUPLICATE_MERGED, STATUS_CHANGED, or VALIDATION_COMPLETED. Using VARCHAR with CHECK constraint for Spring Data JDBC compatibility.';
+-- Comments for Domain Understanding
+COMMENT ON TABLE enhancement_record IS 'Immutable audit trail of AI suggestions and human improvements. Constitutional requirement for human-AI collaboration tracking.';
+COMMENT ON COLUMN enhancement_record.enhancement_type IS 'Enhancement origin: AI_SUGGESTED (AI proposed), MANUAL (human created), or HUMAN_MODIFIED (human modified AI suggestion). Using VARCHAR with CHECK constraint for Spring Data JDBC compatibility.';
 COMMENT ON COLUMN enhancement_record.field_name IS 'Which field was modified (e.g. "organization_name", "contact_email", "description")';
-COMMENT ON COLUMN enhancement_record.old_value IS 'Previous value before enhancement (NULL for new additions)';
-COMMENT ON COLUMN enhancement_record.new_value IS 'New value after enhancement (required for audit trail)';
+COMMENT ON COLUMN enhancement_record.original_value IS 'Previous value before enhancement (NULL for new additions)';
+COMMENT ON COLUMN enhancement_record.suggested_value IS 'New value after enhancement (required for audit trail)';
+COMMENT ON COLUMN enhancement_record.ai_model IS 'LM Studio model that generated this suggestion (e.g., "llama-3.1-8b"). Required for AI_SUGGESTED type.';
+COMMENT ON COLUMN enhancement_record.confidence_score IS 'AI confidence in this suggestion (0.00-1.00). Only for AI_SUGGESTED type.';
+COMMENT ON COLUMN enhancement_record.human_approved IS 'Whether human reviewer approved the AI suggestion';
+COMMENT ON COLUMN enhancement_record.approved_by IS 'AdminUser UUID who approved this enhancement';
+COMMENT ON COLUMN enhancement_record.approved_at IS 'Timestamp when enhancement was approved';
 COMMENT ON COLUMN enhancement_record.confidence_improvement IS 'How much this enhancement improved candidate confidence score (-1.00 to +1.00)';
 COMMENT ON COLUMN enhancement_record.ai_assistance_used IS 'Whether LM Studio or other AI tools were used to assist with this enhancement';
 COMMENT ON COLUMN enhancement_record.validation_method IS 'How enhancement was validated: "website_verification", "email_confirmation", "phone_call", etc.';
@@ -195,11 +215,14 @@ COMMENT ON VIEW candidate_enhancement_history IS 'Complete enhancement history f
 
 -- Constitutional Compliance Verification
 -- ✅ Immutable audit trail (append-only, no updates/deletes allowed)
--- ✅ Human-AI collaboration tracking (ai_assistance_used field)
+-- ✅ Human-AI collaboration tracking (AI_SUGGESTED, MANUAL, HUMAN_MODIFIED types)
+-- ✅ AI model and confidence tracking for LM Studio integration
+-- ✅ Human approval workflow (human_approved, approved_by, approved_at)
 -- ✅ Quality metrics with confidence improvement scoring
 -- ✅ Time tracking for performance analysis and workload balancing
 -- ✅ Foreign key relationships with cascade/restrict rules for audit integrity
--- ✅ Automatic statistics updates for admin user performance tracking  
+-- ✅ Automatic statistics updates for admin user performance tracking
 -- ✅ Analytics views for continuous improvement of enhancement processes
 -- ✅ Full-text search capabilities for enhancement mining and analysis
 -- ✅ VARCHAR with CHECK constraints for Spring Data JDBC compatibility
+-- ✅ AI consistency validation (AI_SUGGESTED must have ai_model)

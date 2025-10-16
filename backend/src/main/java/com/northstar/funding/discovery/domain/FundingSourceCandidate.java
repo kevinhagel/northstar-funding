@@ -49,7 +49,13 @@ public class FundingSourceCandidate {
     // Review Assignment
     private UUID assignedReviewerId; // nullable
     private LocalDateTime reviewStartedAt; // nullable
-    
+
+    // Approval/Rejection Tracking (Audit Trail)
+    private UUID approvedBy; // nullable
+    private LocalDateTime approvedAt; // nullable
+    private UUID rejectedBy; // nullable
+    private LocalDateTime rejectedAt; // nullable
+
     // Funding Source Information
     private String organizationName;
     private String programName;

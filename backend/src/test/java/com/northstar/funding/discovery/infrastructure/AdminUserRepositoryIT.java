@@ -30,6 +30,7 @@ import static org.assertj.core.api.Assertions.*;
 @Transactional
 class AdminUserRepositoryIT {
 
+    @SuppressWarnings("resource")
     @Container
     static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:16-alpine")
             .withDatabaseName("northstar_test")

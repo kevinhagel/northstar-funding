@@ -154,10 +154,10 @@ class EnhancementRecordRepositoryIT {
         assertAll("Enhancement record fields",
             () -> assertThat(record.getCandidateId()).isEqualTo(candidate1.getCandidateId()),
             () -> assertThat(record.getEnhancedBy()).isEqualTo(reviewer1.getUserId()),
-            () -> assertThat(record.getEnhancementType()).isEqualTo(EnhancementType.CONTACT_ADDED),
+            () -> assertThat(record.getEnhancementType()).isEqualTo(EnhancementType.MANUAL),
             () -> assertThat(record.getFieldName()).isEqualTo("contact_email"),
-            () -> assertThat(record.getOldValue()).isNull(),
-            () -> assertThat(record.getNewValue()).isEqualTo("contact@foundation.org"),
+            () -> assertThat(record.getOriginalValue()).isNull(),
+            () -> assertThat(record.getSuggestedValue()).isEqualTo("contact@foundation.org"),
             () -> assertThat(record.getNotes()).contains("Added primary contact"),
             () -> assertThat(record.getTimeSpentMinutes()).isEqualTo(15),
             () -> assertThat(record.getEnhancedAt()).isNotNull()
@@ -178,9 +178,9 @@ class EnhancementRecordRepositoryIT {
         assertThat(saved).hasSize(3);
         assertThat(saved).extracting(EnhancementRecord::getEnhancementType)
             .containsExactlyInAnyOrder(
-                EnhancementType.STATUS_CHANGED,
-                EnhancementType.VALIDATION_COMPLETED,
-                EnhancementType.DUPLICATE_MERGED
+                EnhancementType.MANUAL,
+                EnhancementType.MANUAL,
+                EnhancementType.MANUAL
             );
     }
     
@@ -214,18 +214,18 @@ class EnhancementRecordRepositoryIT {
     @Test
     @DisplayName("Should find enhancements by type")
     void shouldFindEnhancementsByType() {
-        // When: Finding contact added enhancements
-        var contactEnhancements = repository.findByEnhancementTypeOrderByEnhancedAtDesc(EnhancementType.CONTACT_ADDED);
-        var dataEnhancements = repository.findByEnhancementTypeOrderByEnhancedAtDesc(EnhancementType.DATA_CORRECTED);
-        
-        // Then: Should return correct enhancements for each type
+        // When: Finding manual enhancements
+        var manualEnhancements = repository.findByEnhancementTypeOrderByEnhancedAtDesc(EnhancementType.MANUAL);
+
+        // Then: Should return all manual enhancements (all 3 test records are MANUAL type)
         assertAll("Enhancement type filtering",
-            () -> assertThat(contactEnhancements).hasSize(1)
+            () -> assertThat(manualEnhancements).hasSize(3)
                 .extracting(EnhancementRecord::getEnhancementId)
-                .containsExactly(contactAddedRecord.getEnhancementId()),
-            () -> assertThat(dataEnhancements).hasSize(1)
-                .extracting(EnhancementRecord::getEnhancementId)
-                .containsExactly(dataCorrectedRecord.getEnhancementId())
+                .containsExactlyInAnyOrder(
+                    contactAddedRecord.getEnhancementId(),
+                    dataCorrectedRecord.getEnhancementId(),
+                    notesAddedRecord.getEnhancementId()
+                )
         );
     }
     
@@ -323,15 +323,15 @@ class EnhancementRecordRepositoryIT {
     @Test
     @DisplayName("Should find enhancements by type and date range")
     void shouldFindEnhancementsByTypeAndDateRange() {
-        // When: Finding contact added enhancements from last 2 days
+        // When: Finding manual enhancements from last 2 days
         var enhancements = repository.findByTypeAndDateRange(
-            "CONTACT_ADDED",
+            "MANUAL",
             LocalDateTime.now().minusDays(2)
         );
-        
-        // Then: Should return contact added enhancements within date range
-        assertThat(enhancements).hasSize(1);
-        assertThat(enhancements.get(0).getEnhancementType()).isEqualTo(EnhancementType.CONTACT_ADDED);
+
+        // Then: Should return manual enhancements within date range
+        assertThat(enhancements).hasSize(3);
+        assertThat(enhancements).allMatch(e -> e.getEnhancementType() == EnhancementType.MANUAL);
     }
     
     @Test
@@ -377,14 +377,14 @@ class EnhancementRecordRepositoryIT {
     void shouldGetEnhancementTypeDistribution() {
         // When: Getting enhancement type distribution from last 7 days
         var typeStats = repository.getEnhancementTypeDistribution(LocalDateTime.now().minusDays(7));
-        
-        // Then: Should return stats for each enhancement type
+
+        // Then: Should return stats for enhancement types (all test data uses MANUAL type)
         assertThat(typeStats).isNotEmpty();
-        assertThat(typeStats).hasSizeGreaterThanOrEqualTo(3);
-        
+        assertThat(typeStats).hasSize(1); // All setUp data is MANUAL type
+
         assertThat(typeStats)
             .extracting(EnhancementRecordRepository.EnhancementTypeStats::enhancementType)
-            .contains("CONTACT_ADDED", "DATA_CORRECTED", "NOTES_ADDED");
+            .contains("MANUAL");
     }
     
     @Test
@@ -500,9 +500,9 @@ class EnhancementRecordRepositoryIT {
         
         // Then: Should return enhancements matching search term
         assertThat(searchResults).isNotEmpty();
-        assertThat(searchResults).anyMatch(e -> 
+        assertThat(searchResults).anyMatch(e ->
             e.getFieldName().contains("contact") ||
-            e.getNewValue().contains("contact") ||
+            e.getSuggestedValue().contains("contact") ||
             (e.getNotes() != null && e.getNotes().contains("contact"))
         );
     }

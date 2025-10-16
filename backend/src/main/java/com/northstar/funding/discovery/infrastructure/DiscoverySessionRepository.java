@@ -92,16 +92,22 @@ public interface DiscoverySessionRepository extends CrudRepository<DiscoverySess
      * Get performance metrics for dashboard analytics
      */
     @Query("""
-        SELECT 
+        SELECT
             AVG(candidates_found) as avg_candidates_found,
-            AVG(duration_minutes) as avg_duration_minutes, 
+            AVG(duration_minutes) as avg_duration_minutes,
             AVG(average_confidence_score) as avg_confidence_score,
             COUNT(*) FILTER (WHERE status = 'COMPLETED') as successful_sessions,
             COUNT(*) FILTER (WHERE status = 'FAILED') as failed_sessions
-        FROM discovery_session 
+        FROM discovery_session
         WHERE executed_at > :since
     """)
     DiscoveryMetrics getPerformanceMetrics(@Param("since") LocalDateTime since);
+
+    /**
+     * Get average discovery metrics (simplified for service layer)
+     */
+    @Query("SELECT AVG(candidates_found) FROM discovery_session WHERE executed_at > :since")
+    Double getAverageDiscoveryMetrics(@Param("since") LocalDateTime since);
     
     /**
      * Find sessions by type for workflow analysis

@@ -38,6 +38,25 @@ spring:
   threads:
     virtual:
       enabled: true
+  
+  # Database Configuration (Mac Studio PostgreSQL)
+  datasource:
+    url: jdbc:postgresql://192.168.1.10:5432/northstar_funding
+    username: northstar_user
+    password: northstar_password
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 5
+      idle-timeout: 600000
+      connection-timeout: 30000
+  
+  # Security
+  security:
+    user:
+      name: admin
+      password: admin123
+      roles: ADMIN
 
 # Server Configuration  
 server:
@@ -64,25 +83,6 @@ logging:
   pattern:
     file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
     console: "%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
-
-  # Default Database Configuration (Mac Studio PostgreSQL)
-  datasource:
-    url: jdbc:postgresql://192.168.1.10:5432/northstar_funding
-    username: northstar_user
-    password: northstar_password
-    driver-class-name: org.postgresql.Driver
-    hikari:
-      maximum-pool-size: 10
-      minimum-idle: 5
-      idle-timeout: 600000
-      connection-timeout: 30000
-
-  # Default Security
-  security:
-    user:
-      name: admin
-      password: admin123
-      roles: ADMIN
 
 ---
 # Production Profile (same database, different settings)

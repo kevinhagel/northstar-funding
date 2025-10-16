@@ -392,124 +392,151 @@ public class TestDataFactory {
     /**
      * Create a basic EnhancementRecord with sensible defaults.
      * All required fields are pre-populated, optional fields can be customized.
+     * NOTE: enhancementId is NOT set - Spring Data JDBC will generate it on insert
      */
     public EnhancementRecord enhancementRecordBuilder() {
-        return new EnhancementRecord(
-            UUID.randomUUID(), // candidateId - will be overridden in tests
-            UUID.randomUUID(), // enhancedBy - will be overridden in tests
-            EnhancementType.DATA_CORRECTED,
-            "test_field",
-            "old value",
-            "new value",
-            "Test enhancement"
-        );
+        return EnhancementRecord.builder()
+            // .enhancementId() - omitted, Spring Data JDBC generates on insert
+            .candidateId(UUID.randomUUID()) // Will be overridden in tests
+            .enhancedBy(UUID.randomUUID()) // Will be overridden in tests
+            .enhancementType(EnhancementType.MANUAL)
+            .fieldName("test_field")
+            .originalValue("old value")
+            .suggestedValue("new value")
+            .notes("Test enhancement")
+            .enhancedAt(LocalDateTime.now())
+            .build();
     }
 
     /**
-     * Create a contact added enhancement.
+     * Create a contact added enhancement (manual human enhancement).
+     * NOTE: enhancementId is NOT set - Spring Data JDBC will generate it on insert
      */
     public EnhancementRecord contactAddedEnhancement(UUID candidateId, UUID enhancedBy) {
-        EnhancementRecord record = new EnhancementRecord(
-            candidateId,
-            enhancedBy,
-            EnhancementType.CONTACT_ADDED,
-            "contact_email",
-            null,
-            "contact@foundation.org",
-            "Added primary contact email from foundation website"
-        );
-        record.setTimeSpentMinutes(15);
-        record.setEnhancedAt(LocalDateTime.now().minusMinutes(5)); // Older timestamp for consistent ordering
-        return record;
+        return EnhancementRecord.builder()
+            // .enhancementId() - omitted, Spring Data JDBC generates on insert
+            .candidateId(candidateId)
+            .enhancedBy(enhancedBy)
+            .enhancementType(EnhancementType.MANUAL)
+            .fieldName("contact_email")
+            .originalValue(null)
+            .suggestedValue("contact@foundation.org")
+            .notes("Added primary contact email from foundation website")
+            .timeSpentMinutes(15)
+            .enhancedAt(LocalDateTime.now().minusMinutes(5))
+            .humanApproved(true)
+            .approvedBy(enhancedBy)
+            .approvedAt(LocalDateTime.now().minusMinutes(5))
+            .build();
     }
 
     /**
-     * Create a data corrected enhancement.
+     * Create a data corrected enhancement (manual human correction).
+     * NOTE: enhancementId is NOT set - Spring Data JDBC will generate it on insert
      */
     public EnhancementRecord dataCorrectedEnhancement(UUID candidateId, UUID enhancedBy) {
-        EnhancementRecord record = new EnhancementRecord(
-            candidateId,
-            enhancedBy,
-            EnhancementType.DATA_CORRECTED,
-            "organization_name",
-            "Old Foundation Name",
-            "Correct Foundation Name",
-            "Corrected organization name from official website"
-        );
-        record.setTimeSpentMinutes(10);
-        record.setEnhancedAt(LocalDateTime.now().minusMinutes(10)); // Older timestamp for consistent ordering
-        return record;
+        return EnhancementRecord.builder()
+            // .enhancementId() - omitted, Spring Data JDBC generates on insert
+            .candidateId(candidateId)
+            .enhancedBy(enhancedBy)
+            .enhancementType(EnhancementType.MANUAL)
+            .fieldName("organization_name")
+            .originalValue("Old Foundation Name")
+            .suggestedValue("Correct Foundation Name")
+            .notes("Corrected organization name from official website")
+            .timeSpentMinutes(10)
+            .enhancedAt(LocalDateTime.now().minusMinutes(10))
+            .humanApproved(true)
+            .approvedBy(enhancedBy)
+            .approvedAt(LocalDateTime.now().minusMinutes(10))
+            .build();
     }
 
     /**
-     * Create a notes added enhancement.
+     * Create a notes added enhancement (manual human enhancement).
+     * NOTE: enhancementId is NOT set - Spring Data JDBC will generate it on insert
      */
     public EnhancementRecord notesAddedEnhancement(UUID candidateId, UUID enhancedBy) {
-        EnhancementRecord record = new EnhancementRecord(
-            candidateId,
-            enhancedBy,
-            EnhancementType.NOTES_ADDED,
-            "validation_notes",
-            null,
-            "Verified eligibility criteria match our requirements. Previous applicant mentioned positive experience.",
-            "Added context from research and network contacts"
-        );
-        record.setTimeSpentMinutes(20);
-        record.setEnhancedAt(LocalDateTime.now().minusMinutes(2)); // Newest for consistent ordering
-        return record;
+        return EnhancementRecord.builder()
+            // .enhancementId() - omitted, Spring Data JDBC generates on insert
+            .candidateId(candidateId)
+            .enhancedBy(enhancedBy)
+            .enhancementType(EnhancementType.MANUAL)
+            .fieldName("validation_notes")
+            .originalValue(null)
+            .suggestedValue("Verified eligibility criteria match our requirements. Previous applicant mentioned positive experience.")
+            .notes("Added context from research and network contacts")
+            .timeSpentMinutes(20)
+            .enhancedAt(LocalDateTime.now().minusMinutes(2))
+            .humanApproved(true)
+            .approvedBy(enhancedBy)
+            .approvedAt(LocalDateTime.now().minusMinutes(2))
+            .build();
     }
 
     /**
-     * Create a duplicate merged enhancement.
+     * Create a duplicate merged enhancement (manual human action).
+     * NOTE: enhancementId is NOT set - Spring Data JDBC will generate it on insert
      */
     public EnhancementRecord duplicateMergedEnhancement(UUID candidateId, UUID enhancedBy) {
-        EnhancementRecord record = new EnhancementRecord(
-            candidateId,
-            enhancedBy,
-            EnhancementType.DUPLICATE_MERGED,
-            "duplicate_of_candidate_id",
-            null,
-            UUID.randomUUID().toString(),
-            "Merged duplicate entry - same foundation, different program name format"
-        );
-        record.setTimeSpentMinutes(25);
-        record.setEnhancedAt(LocalDateTime.now());
-        return record;
+        return EnhancementRecord.builder()
+            // .enhancementId() - omitted, Spring Data JDBC generates on insert
+            .candidateId(candidateId)
+            .enhancedBy(enhancedBy)
+            .enhancementType(EnhancementType.MANUAL)
+            .fieldName("duplicate_of_candidate_id")
+            .originalValue(null)
+            .suggestedValue(UUID.randomUUID().toString())
+            .notes("Merged duplicate entry - same foundation, different program name format")
+            .timeSpentMinutes(25)
+            .enhancedAt(LocalDateTime.now())
+            .humanApproved(true)
+            .approvedBy(enhancedBy)
+            .approvedAt(LocalDateTime.now())
+            .build();
     }
 
     /**
-     * Create a status changed enhancement.
+     * Create a status changed enhancement (manual human action).
+     * NOTE: enhancementId is NOT set - Spring Data JDBC will generate it on insert
      */
     public EnhancementRecord statusChangedEnhancement(UUID candidateId, UUID enhancedBy) {
-        EnhancementRecord record = new EnhancementRecord(
-            candidateId,
-            enhancedBy,
-            EnhancementType.STATUS_CHANGED,
-            "status",
-            "PENDING_REVIEW",
-            "VALIDATED",
-            "Manual review completed - candidate meets all criteria"
-        );
-        record.setTimeSpentMinutes(30);
-        record.setEnhancedAt(LocalDateTime.now());
-        return record;
+        return EnhancementRecord.builder()
+            // .enhancementId() - omitted, Spring Data JDBC generates on insert
+            .candidateId(candidateId)
+            .enhancedBy(enhancedBy)
+            .enhancementType(EnhancementType.MANUAL)
+            .fieldName("status")
+            .originalValue("PENDING_REVIEW")
+            .suggestedValue("VALIDATED")
+            .notes("Manual review completed - candidate meets all criteria")
+            .timeSpentMinutes(30)
+            .enhancedAt(LocalDateTime.now())
+            .humanApproved(true)
+            .approvedBy(enhancedBy)
+            .approvedAt(LocalDateTime.now())
+            .build();
     }
 
     /**
-     * Create a validation completed enhancement.
+     * Create a validation completed enhancement (manual human validation).
+     * NOTE: enhancementId is NOT set - Spring Data JDBC will generate it on insert
      */
     public EnhancementRecord validationCompletedEnhancement(UUID candidateId, UUID enhancedBy) {
-        EnhancementRecord record = new EnhancementRecord(
-            candidateId,
-            enhancedBy,
-            EnhancementType.VALIDATION_COMPLETED,
-            "validation_status",
-            "not_validated",
-            "validated",
-            "Full validation completed including website verification and contact confirmation"
-        );
-        record.setTimeSpentMinutes(45);
-        record.setEnhancedAt(LocalDateTime.now());
-        return record;
+        return EnhancementRecord.builder()
+            // .enhancementId() - omitted, Spring Data JDBC generates on insert
+            .candidateId(candidateId)
+            .enhancedBy(enhancedBy)
+            .enhancementType(EnhancementType.MANUAL)
+            .fieldName("validation_status")
+            .originalValue("not_validated")
+            .suggestedValue("validated")
+            .notes("Full validation completed including website verification and contact confirmation")
+            .timeSpentMinutes(45)
+            .enhancedAt(LocalDateTime.now())
+            .humanApproved(true)
+            .approvedBy(enhancedBy)
+            .approvedAt(LocalDateTime.now())
+            .build();
     }
 }

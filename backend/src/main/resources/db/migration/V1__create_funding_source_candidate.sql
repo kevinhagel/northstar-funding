@@ -20,7 +20,13 @@ CREATE TABLE funding_source_candidate (
     -- Review Assignment (Human-AI Collaboration)
     assigned_reviewer_id UUID NULL, -- FK to AdminUser (will be added in V3)
     review_started_at TIMESTAMPTZ NULL,
-    
+
+    -- Approval/Rejection Tracking (Audit Trail)
+    approved_by UUID NULL, -- FK to AdminUser (who approved)
+    approved_at TIMESTAMPTZ NULL,
+    rejected_by UUID NULL, -- FK to AdminUser (who rejected)
+    rejected_at TIMESTAMPTZ NULL,
+
     -- Core Funding Source Data (Domain Model)
     organization_name VARCHAR(500) NOT NULL,
     program_name VARCHAR(500) NOT NULL,
@@ -103,6 +109,10 @@ CREATE INDEX idx_funding_source_candidate_tags
 COMMENT ON TABLE funding_source_candidate IS 'Aggregate Root: Discovered funding opportunities pending human validation. Core entity in Funding Sources bounded context.';
 COMMENT ON COLUMN funding_source_candidate.status IS 'Workflow state: PENDING_REVIEW, IN_REVIEW, APPROVED, or REJECTED. Using VARCHAR with CHECK constraint for Spring Data JDBC compatibility.';
 COMMENT ON COLUMN funding_source_candidate.confidence_score IS 'AI-generated quality score (0.0-1.0) for prioritizing human review';
+COMMENT ON COLUMN funding_source_candidate.approved_by IS 'AdminUser UUID who approved this candidate for audit trail';
+COMMENT ON COLUMN funding_source_candidate.approved_at IS 'Timestamp when candidate was approved';
+COMMENT ON COLUMN funding_source_candidate.rejected_by IS 'AdminUser UUID who rejected this candidate for audit trail';
+COMMENT ON COLUMN funding_source_candidate.rejected_at IS 'Timestamp when candidate was rejected';
 COMMENT ON COLUMN funding_source_candidate.extracted_data IS 'Raw scraped data as JSON for audit and improvement';
 COMMENT ON COLUMN funding_source_candidate.duplicate_of_candidate_id IS 'Self-reference for duplicate detection across discovery sessions';
 COMMENT ON COLUMN funding_source_candidate.tags IS 'Categorization tags as JSON array for filtering and organization';

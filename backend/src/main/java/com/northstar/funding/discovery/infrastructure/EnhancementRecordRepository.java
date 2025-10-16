@@ -35,17 +35,27 @@ public interface EnhancementRecordRepository extends CrudRepository<EnhancementR
      * Primary query for candidate enhancement history
      */
     List<EnhancementRecord> findByCandidateIdOrderByEnhancedAtDesc(UUID candidateId);
-    
+
+    /**
+     * Find enhancements by candidate ID (simple version for tests)
+     */
+    List<EnhancementRecord> findByCandidateId(UUID candidateId);
+
     /**
      * Find enhancements by admin user
      * Primary query for user performance tracking
      */
     List<EnhancementRecord> findByEnhancedByOrderByEnhancedAtDesc(UUID enhancedBy);
-    
+
     /**
      * Find enhancements by type
      */
     List<EnhancementRecord> findByEnhancementTypeOrderByEnhancedAtDesc(EnhancementType enhancementType);
+
+    /**
+     * Find enhancements by type (simple version for tests)
+     */
+    List<EnhancementRecord> findByEnhancementType(EnhancementType enhancementType);
     
     /**
      * Find recent enhancements for dashboard monitoring
@@ -245,10 +255,10 @@ public interface EnhancementRecordRepository extends CrudRepository<EnhancementR
      * Find enhancements with notes containing search term (full-text search)
      */
     @Query("""
-        SELECT * FROM enhancement_record 
-        WHERE to_tsvector('english', 
-            COALESCE(field_name, '') || ' ' || 
-            COALESCE(new_value, '') || ' ' ||
+        SELECT * FROM enhancement_record
+        WHERE to_tsvector('english',
+            COALESCE(field_name, '') || ' ' ||
+            COALESCE(suggested_value, '') || ' ' ||
             COALESCE(notes, '')
         ) @@ plainto_tsquery('english', :searchTerm)
         ORDER BY enhanced_at DESC

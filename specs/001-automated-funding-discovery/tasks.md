@@ -64,23 +64,23 @@
 - [x] **T006** [P] Set up Docker Compose for Mac Studio deployment in `/Users/kevin/github/northstar-funding/docker/docker-compose.yml` ✅
 
 ## Phase 3.2: Database Schema (TDD Foundation)
-- [ ] **T007** [P] Create PostgreSQL schema migration for FundingSourceCandidate table in `backend/src/main/resources/db/migration/V1__create_funding_source_candidate.sql`
-- [ ] **T008** [P] Create ContactIntelligence table migration with encrypted fields in `backend/src/main/resources/db/migration/V2__create_contact_intelligence.sql`  
-- [ ] **T009** [P] Create AdminUser table migration in `backend/src/main/resources/db/migration/V3__create_admin_user.sql`
-- [ ] **T010** [P] Create DiscoverySession table migration in `backend/src/main/resources/db/migration/V4__create_discovery_session.sql`
-- [ ] **T011** [P] Create EnhancementRecord table migration in `backend/src/main/resources/db/migration/V5__create_enhancement_record.sql`
-- [ ] **T012** Create database indexes for performance in `backend/src/main/resources/db/migration/V6__create_indexes.sql`
+- [x] **T007** [P] Create PostgreSQL schema migration for FundingSourceCandidate table in `backend/src/main/resources/db/migration/V1__create_funding_source_candidate.sql` ✅
+- [x] **T008** [P] Create ContactIntelligence table migration with encrypted fields in `backend/src/main/resources/db/migration/V2__create_contact_intelligence.sql` ✅
+- [x] **T009** [P] Create AdminUser table migration in `backend/src/main/resources/db/migration/V3__create_admin_user.sql` ✅
+- [x] **T010** [P] Create DiscoverySession table migration in `backend/src/main/resources/db/migration/V4__create_discovery_session.sql` ✅
+- [x] **T011** [P] Create EnhancementRecord table migration in `backend/src/main/resources/db/migration/V5__create_enhancement_record.sql` ✅
+- [x] **T012** Create database indexes for performance in `backend/src/main/resources/db/migration/V6__create_indexes.sql` ✅
 
-## Phase 3.2.5: Persistence Layer Testing (MISSING - CRITICAL TDD FOUNDATION)
-⚠️ **ARCHITECTURAL REQUIREMENT:** These tests MUST pass before implementing any repositories or domain models
+## Phase 3.2.5: Persistence Layer Testing (CRITICAL TDD FOUNDATION)
+✅ **ARCHITECTURAL REQUIREMENT:** These tests MUST pass before implementing any repositories or domain models
 
 **WHY CRITICAL:** Controllers return domain objects from repositories. If persistence layer fails, controllers return corrupted/incomplete data regardless of business logic correctness.
 
-- [ ] **T012.1** [P] FundingSourceCandidate repository persistence test in `backend/src/test/java/com/northstar/funding/discovery/infrastructure/FundingSourceCandidateRepositoryTest.java`
-- [ ] **T012.2** [P] ContactIntelligence repository persistence test in `backend/src/test/java/com/northstar/funding/discovery/infrastructure/ContactIntelligenceRepositoryTest.java`
-- [ ] **T012.3** [P] AdminUser repository persistence test in `backend/src/test/java/com/northstar/funding/discovery/infrastructure/AdminUserRepositoryTest.java`
-- [ ] **T012.4** [P] DiscoverySession repository persistence test in `backend/src/test/java/com/northstar/funding/discovery/infrastructure/DiscoverySessionRepositoryTest.java`
-- [ ] **T012.5** [P] EnhancementRecord repository persistence test in `backend/src/test/java/com/northstar/funding/discovery/infrastructure/EnhancementRecordRepositoryTest.java`
+- [x] **T012.1** [P] FundingSourceCandidate repository persistence test in `backend/src/test/java/com/northstar/funding/discovery/infrastructure/FundingSourceCandidateRepositoryIT.java` ✅
+- [x] **T012.2** [P] ContactIntelligence repository persistence test in `backend/src/test/java/com/northstar/funding/discovery/infrastructure/ContactIntelligenceRepositoryIT.java` ✅
+- [x] **T012.3** [P] AdminUser repository persistence test in `backend/src/test/java/com/northstar/funding/discovery/infrastructure/AdminUserRepositoryIT.java` ✅
+- [x] **T012.4** [P] DiscoverySession repository persistence test in `backend/src/test/java/com/northstar/funding/discovery/infrastructure/DiscoverySessionRepositoryIT.java` ✅
+- [x] **T012.5** [P] EnhancementRecord repository persistence test in `backend/src/test/java/com/northstar/funding/discovery/infrastructure/EnhancementRecordRepositoryIT.java` ✅
 
 **PERSISTENCE LAYER TEST REQUIREMENTS:**
 - Use @DataJdbcTest for isolated repository testing
@@ -91,16 +91,16 @@
 - Test null handling and optional fields
 - Verify cascade deletes and foreign key constraints
 
-## Phase 3.3: Contract Tests First (TDD) ⚠️ MUST COMPLETE BEFORE 3.4
+## Phase 3.3: Contract Tests First (TDD) ✅ COMPLETED - TESTS MUST FAIL BEFORE IMPLEMENTATION
 **CRITICAL: These tests MUST be written and MUST FAIL before ANY implementation**
-- [ ] **T013** [P] Contract test GET /api/candidates in `backend/src/test/java/com/northstar/funding/web/CandidateControllerContractTest.java`
-- [ ] **T014** [P] Contract test GET /api/candidates/{id} in `backend/src/test/java/com/northstar/funding/web/CandidateDetailControllerContractTest.java`
-- [ ] **T015** [P] Contract test PUT /api/candidates/{id} in `backend/src/test/java/com/northstar/funding/web/CandidateUpdateControllerContractTest.java`
-- [ ] **T016** [P] Contract test POST /api/candidates/{id}/approve in `backend/src/test/java/com/northstar/funding/web/CandidateApprovalControllerContractTest.java`
-- [ ] **T017** [P] Contract test POST /api/candidates/{id}/reject in `backend/src/test/java/com/northstar/funding/web/CandidateRejectionControllerContractTest.java`
-- [ ] **T018** [P] Contract test GET/POST /api/candidates/{id}/contacts in `backend/src/test/java/com/northstar/funding/web/ContactIntelligenceControllerContractTest.java`
-- [ ] **T019** [P] Contract test POST /api/discovery/trigger in `backend/src/test/java/com/northstar/funding/web/DiscoveryControllerContractTest.java`
-- [ ] **T020** [P] Contract test GET /api/discovery/sessions in `backend/src/test/java/com/northstar/funding/web/DiscoverySessionControllerContractTest.java`
+- [x] **T013** [P] Contract test GET /api/candidates in `backend/src/test/java/com/northstar/funding/web/CandidateControllerContractTest.java` ✅
+- [x] **T014** [P] Contract test GET /api/candidates/{id} in `backend/src/test/java/com/northstar/funding/web/CandidateDetailControllerContractTest.java` ✅
+- [x] **T015** [P] Contract test PUT /api/candidates/{id} in `backend/src/test/java/com/northstar/funding/web/CandidateUpdateControllerContractTest.java` ✅
+- [x] **T016** [P] Contract test POST /api/candidates/{id}/approve in `backend/src/test/java/com/northstar/funding/web/CandidateApprovalControllerContractTest.java` ✅
+- [x] **T017** [P] Contract test POST /api/candidates/{id}/reject in `backend/src/test/java/com/northstar/funding/web/CandidateRejectionControllerContractTest.java` ✅
+- [x] **T018** [P] Contract test GET/POST /api/candidates/{id}/contacts in `backend/src/test/java/com/northstar/funding/web/ContactIntelligenceControllerContractTest.java` ✅
+- [x] **T019** [P] Contract test POST /api/discovery/trigger in `backend/src/test/java/com/northstar/funding/web/DiscoveryControllerContractTest.java` ✅
+- [x] **T020** [P] Contract test GET /api/discovery/sessions in `backend/src/test/java/com/northstar/funding/web/DiscoverySessionControllerContractTest.java` ✅
 
 ## Phase 3.4: Integration Tests (User Stories)
 - [ ] **T021** [P] Integration test: Complete discovery to approval workflow in `backend/src/test/java/com/northstar/funding/integration/DiscoveryWorkflowIntegrationTest.java`
@@ -109,33 +109,35 @@
 - [ ] **T024** [P] Integration test: Audit trail and enhancement tracking in `backend/src/test/java/com/northstar/funding/integration/AuditTrailIntegrationTest.java`
 
 ## Phase 3.5: Domain Models (ONLY after tests are failing)
-- [ ] **T025** [P] FundingSourceCandidate JPA entity with JSON fields in `backend/src/main/java/com/northstar/funding/discovery/domain/FundingSourceCandidate.java`
-- [ ] **T026** [P] ContactIntelligence JPA entity with encrypted fields in `backend/src/main/java/com/northstar/funding/discovery/domain/ContactIntelligence.java`
-- [ ] **T027** [P] AdminUser JPA entity with security integration in `backend/src/main/java/com/northstar/funding/discovery/domain/AdminUser.java`
-- [ ] **T028** [P] DiscoverySession JPA entity with metrics tracking in `backend/src/main/java/com/northstar/funding/discovery/domain/DiscoverySession.java`
-- [ ] **T029** [P] EnhancementRecord value object for audit trail in `backend/src/main/java/com/northstar/funding/discovery/domain/EnhancementRecord.java`
+- [x] **T025** [P] FundingSourceCandidate entity with JSON fields in `backend/src/main/java/com/northstar/funding/discovery/domain/FundingSourceCandidate.java` ✅
+- [x] **T026** [P] ContactIntelligence entity with encrypted fields in `backend/src/main/java/com/northstar/funding/discovery/domain/ContactIntelligence.java` ✅
+- [x] **T027** [P] AdminUser entity with security integration in `backend/src/main/java/com/northstar/funding/discovery/domain/AdminUser.java` ✅
+- [x] **T028** [P] DiscoverySession entity with metrics tracking in `backend/src/main/java/com/northstar/funding/discovery/domain/DiscoverySession.java` ✅
+- [x] **T029** [P] EnhancementRecord value object for audit trail in `backend/src/main/java/com/northstar/funding/discovery/domain/EnhancementRecord.java` ✅
 
 ## Phase 3.6: Repository Layer
-- [ ] **T030** [P] FundingSourceCandidateRepository with Spring Data JDBC queries in `backend/src/main/java/com/northstar/funding/discovery/infrastructure/FundingSourceCandidateRepository.java`
-- [ ] **T031** [P] ContactIntelligenceRepository with Spring Data JDBC methods in `backend/src/main/java/com/northstar/funding/discovery/infrastructure/ContactIntelligenceRepository.java`
-- [ ] **T032** [P] DiscoverySessionRepository with custom query methods in `backend/src/main/java/com/northstar/funding/discovery/infrastructure/DiscoverySessionRepository.java`
+- [x] **T030** [P] FundingSourceCandidateRepository with Spring Data JDBC queries in `backend/src/main/java/com/northstar/funding/discovery/infrastructure/FundingSourceCandidateRepository.java` ✅
+- [x] **T031** [P] ContactIntelligenceRepository with Spring Data JDBC methods in `backend/src/main/java/com/northstar/funding/discovery/infrastructure/ContactIntelligenceRepository.java` ✅
+- [x] **T032** [P] DiscoverySessionRepository with custom query methods in `backend/src/main/java/com/northstar/funding/discovery/infrastructure/DiscoverySessionRepository.java` ✅
+- [x] **T032a** [P] AdminUserRepository with Spring Data JDBC methods in `backend/src/main/java/com/northstar/funding/discovery/infrastructure/AdminUserRepository.java` ✅
+- [x] **T032b** [P] EnhancementRecordRepository with Spring Data JDBC methods in `backend/src/main/java/com/northstar/funding/discovery/infrastructure/EnhancementRecordRepository.java` ✅
 
-## Phase 3.6.5: Service Layer Testing (MISSING - CRITICAL BUSINESS LOGIC FOUNDATION)
-⚠️ **ARCHITECTURAL REQUIREMENT:** These tests MUST pass before implementing service layer or controllers
+## Phase 3.6.5: Service Layer Testing ✅ COMPLETED - CRITICAL BUSINESS LOGIC FOUNDATION
+✅ **ARCHITECTURAL REQUIREMENT:** These tests MUST pass before implementing service layer or controllers
 
 **WHY CRITICAL:** Controllers delegate all business logic to services. Services orchestrate repositories to fulfill business requirements. If service layer fails, controllers return incorrect business results even with perfect persistence layer.
 
 **SERVICE LAYER RESPONSIBILITIES:**
 - Business rule validation and enforcement
-- Transaction coordination across multiple repositories  
+- Transaction coordination across multiple repositories
 - Domain logic orchestration and workflow management
 - Data transformation and business calculations
 - Security and authorization enforcement
 - Error handling and business exception translation
 
-- [ ] **T032.1** [P] CandidateValidationService business logic test in `backend/src/test/java/com/northstar/funding/discovery/application/CandidateValidationServiceTest.java`
-- [ ] **T032.2** [P] ContactIntelligenceService business logic test in `backend/src/test/java/com/northstar/funding/discovery/application/ContactIntelligenceServiceTest.java` 
-- [ ] **T032.3** [P] DiscoveryOrchestrationService workflow test in `backend/src/test/java/com/northstar/funding/discovery/application/DiscoveryOrchestrationServiceTest.java`
+- [x] **T032.1** [P] CandidateValidationService business logic test in `backend/src/test/java/com/northstar/funding/discovery/application/CandidateValidationServiceTest.java` ✅
+- [x] **T032.2** [P] ContactIntelligenceService business logic test in `backend/src/test/java/com/northstar/funding/discovery/application/ContactIntelligenceServiceTest.java` ✅
+- [x] **T032.3** [P] DiscoveryOrchestrationService workflow test in `backend/src/test/java/com/northstar/funding/discovery/application/DiscoveryOrchestrationServiceTest.java` ✅
 
 **SERVICE LAYER TEST REQUIREMENTS:**
 - Use @ExtendWith(MockitoExtension.class) for isolated service testing
@@ -147,16 +149,16 @@
 - Test workflow coordination and multi-repository operations
 - Verify data transformation and business calculations
 
-## Phase 3.7: Service Layer (Business Logic)
-- [ ] **T033** CandidateValidationService with Spring Data JDBC repositories in `backend/src/main/java/com/northstar/funding/discovery/application/CandidateValidationService.java`
-- [ ] **T034** ContactIntelligenceService with Spring Data JDBC and encryption in `backend/src/main/java/com/northstar/funding/discovery/application/ContactIntelligenceService.java`
-- [ ] **T035** DiscoveryOrchestrationService for workflow coordination in `backend/src/main/java/com/northstar/funding/discovery/application/DiscoveryOrchestrationService.java`
+## Phase 3.7: Service Layer (Business Logic) ✅ COMPLETED
+- [x] **T033** CandidateValidationService with Spring Data JDBC repositories in `backend/src/main/java/com/northstar/funding/discovery/application/CandidateValidationService.java` ✅
+- [x] **T034** ContactIntelligenceService with Spring Data JDBC and encryption in `backend/src/main/java/com/northstar/funding/discovery/application/ContactIntelligenceService.java` ✅
+- [x] **T035** DiscoveryOrchestrationService for workflow coordination in `backend/src/main/java/com/northstar/funding/discovery/application/DiscoveryOrchestrationService.java` ✅
 
-## Phase 3.8: REST Controllers (Make Tests Pass)
-- [ ] **T036** CandidateController (GET, PUT endpoints) in `backend/src/main/java/com/northstar/funding/discovery/web/CandidateController.java`
-- [ ] **T037** CandidateActionController (approve, reject, assign) in `backend/src/main/java/com/northstar/funding/discovery/web/CandidateActionController.java`
-- [ ] **T038** ContactIntelligenceController (GET, POST contacts) in `backend/src/main/java/com/northstar/funding/discovery/web/ContactIntelligenceController.java`
-- [ ] **T039** DiscoveryController (trigger, sessions) in `backend/src/main/java/com/northstar/funding/discovery/web/DiscoveryController.java`
+## Phase 3.8: REST Controllers (Make Tests Pass) ✅ COMPLETED
+- [x] **T036** CandidateController (GET, PUT endpoints) in `backend/src/main/java/com/northstar/funding/discovery/web/CandidateController.java` ✅
+- [x] **T037** CandidateActionController (approve, reject, assign) in `backend/src/main/java/com/northstar/funding/discovery/web/CandidateActionController.java` ✅
+- [x] **T038** ContactIntelligenceController (GET, POST contacts) in `backend/src/main/java/com/northstar/funding/discovery/web/ContactIntelligenceController.java` ✅
+- [x] **T039** DiscoveryController (trigger, sessions) in `backend/src/main/java/com/northstar/funding/discovery/web/DiscoveryController.java` ✅
 
 ## Phase 3.9: Security & Configuration
 - [ ] **T040** Spring Security configuration with admin user authentication in `backend/src/main/java/com/northstar/funding/config/SecurityConfig.java`
