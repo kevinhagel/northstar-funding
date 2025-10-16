@@ -419,6 +419,7 @@ public class TestDataFactory {
             "Added primary contact email from foundation website"
         );
         record.setTimeSpentMinutes(15);
+        record.setEnhancedAt(LocalDateTime.now().minusMinutes(5)); // Older timestamp for consistent ordering
         return record;
     }
 
@@ -436,6 +437,7 @@ public class TestDataFactory {
             "Corrected organization name from official website"
         );
         record.setTimeSpentMinutes(10);
+        record.setEnhancedAt(LocalDateTime.now().minusMinutes(10)); // Older timestamp for consistent ordering
         return record;
     }
 
@@ -453,6 +455,7 @@ public class TestDataFactory {
             "Added context from research and network contacts"
         );
         record.setTimeSpentMinutes(20);
+        record.setEnhancedAt(LocalDateTime.now().minusMinutes(2)); // Newest for consistent ordering
         return record;
     }
 
@@ -470,6 +473,7 @@ public class TestDataFactory {
             "Merged duplicate entry - same foundation, different program name format"
         );
         record.setTimeSpentMinutes(25);
+        record.setEnhancedAt(LocalDateTime.now());
         return record;
     }
 
@@ -487,6 +491,7 @@ public class TestDataFactory {
             "Manual review completed - candidate meets all criteria"
         );
         record.setTimeSpentMinutes(30);
+        record.setEnhancedAt(LocalDateTime.now());
         return record;
     }
 
@@ -504,6 +509,7 @@ public class TestDataFactory {
             "Full validation completed including website verification and contact confirmation"
         );
         record.setTimeSpentMinutes(45);
+        record.setEnhancedAt(LocalDateTime.now());
         return record;
     }
 }

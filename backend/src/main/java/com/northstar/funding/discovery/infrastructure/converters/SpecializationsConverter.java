@@ -25,6 +25,7 @@ public class SpecializationsConverter {
     @Component
     @ReadingConverter
     public static class SpecializationsReadingConverter implements Converter<String, Set<String>> {
+        @SuppressWarnings("null")
         @Override
         public Set<String> convert(String source) {
             if (source == null || source.isEmpty() || "[]".equals(source)) {

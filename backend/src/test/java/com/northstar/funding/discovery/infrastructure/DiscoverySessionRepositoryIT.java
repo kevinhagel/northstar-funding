@@ -19,7 +19,12 @@ import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabas
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.transaction.annotation.Transactional;
+import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 
 import com.northstar.funding.discovery.config.TestDataFactory;
 import com.northstar.funding.discovery.domain.DiscoverySession;
@@ -29,22 +34,35 @@ import com.northstar.funding.discovery.domain.SessionType;
 /**
  * Integration Tests for DiscoverySessionRepository
  * 
- * Tests PostgreSQL-specific functionality against Mac Studio PostgreSQL (192.168.1.10) including:
+ * Tests PostgreSQL-specific functionality using TestContainers including:
  * - JSONB operations (search_engines_used, search_queries, error_messages, search_engine_failures)
  * - Complex analytics queries with aggregations
  * - Status and type filtering
  * - Date range operations
  * - Performance metrics calculations
  * - Spring Data JDBC enum compatibility (VARCHAR with CHECK constraints)
- * 
- * NOTE: Uses actual PostgreSQL on Mac Studio instead of TestContainers.
- * Tests run in @Transactional mode with rollback to avoid affecting production data.
  */
 @SpringBootTest
+@Testcontainers
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @ActiveProfiles("test")
 @Transactional
 class DiscoverySessionRepositoryIT {
+
+    @Container
+    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:16-alpine")
+            .withDatabaseName("northstar_test")
+            .withUsername("test_user")
+            .withPassword("test_password")
+            .withReuse(true);
+
+    @DynamicPropertySource
+    static void configureProperties(DynamicPropertyRegistry registry) {
+        registry.add("spring.datasource.url", postgres::getJdbcUrl);
+        registry.add("spring.datasource.username", postgres::getUsername);
+        registry.add("spring.datasource.password", postgres::getPassword);
+        registry.add("spring.datasource.driver-class-name", () -> "org.postgresql.Driver");
+    }
 
     @Autowired
     private DiscoverySessionRepository repository;

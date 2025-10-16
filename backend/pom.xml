@@ -8,7 +8,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.5.4</version>
+        <version>3.5.6</version>
         <relativePath /> <!-- lookup parent from repository -->
     </parent>
 
@@ -26,9 +26,9 @@
         <maven.version>3.9.9</maven.version>
 
         <!-- Dependency Versions -->
-        <spring-boot.version>3.5.4</spring-boot.version>
+        <spring-boot.version>3.5.6</spring-boot.version>
         <testcontainers.version>1.19.1</testcontainers.version>
-        <vavr.version>0.10.4</vavr.version>
+        <vavr.version>0.10.6</vavr.version>
         <lombok.version>1.18.42</lombok.version>
 
         <!-- Maven Plugin Versions -->

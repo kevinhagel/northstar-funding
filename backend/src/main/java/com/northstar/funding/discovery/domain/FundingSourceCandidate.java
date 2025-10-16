@@ -10,7 +10,6 @@ import java.util.UUID;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
-import java.util.Map;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -80,7 +79,7 @@ public class FundingSourceCandidate {
     @Column("search_query")
     private String searchQuery;
     @Column("extracted_data")
-    private Map<String, Object> extractedData; // Raw scraped data as key-value pairs
+    private String extractedData; // Raw scraped data as JSON string
     @Column("duplicate_of_candidate_id")
     private UUID duplicateOfCandidateId;
     

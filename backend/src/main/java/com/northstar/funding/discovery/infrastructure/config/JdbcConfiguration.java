@@ -1,6 +1,7 @@
 package com.northstar.funding.discovery.infrastructure.config;
 
 import com.northstar.funding.discovery.infrastructure.converters.AdminRoleConverter;
+import com.northstar.funding.discovery.infrastructure.converters.CandidateStatusConverter;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.jdbc.core.convert.JdbcCustomConversions;
 import org.springframework.data.jdbc.repository.config.AbstractJdbcConfiguration;
@@ -22,7 +23,10 @@ public class JdbcConfiguration extends AbstractJdbcConfiguration {
         return new JdbcCustomConversions(Arrays.asList(
             // AdminRole enum converters
             new AdminRoleConverter.AdminRoleReadingConverter(),
-            new AdminRoleConverter.AdminRoleWritingConverter()
+            new AdminRoleConverter.AdminRoleWritingConverter(),
+            // CandidateStatus enum converters
+            new CandidateStatusConverter.CandidateStatusReadingConverter(),
+            new CandidateStatusConverter.CandidateStatusWritingConverter()
             // No specializations converters needed - Spring Data JDBC handles Set<String> <-> TEXT[] natively
         ));
     }

@@ -6,12 +6,6 @@
 -- Drop table if exists (for development)  
 DROP TABLE IF EXISTS admin_user CASCADE;
 
--- Create ENUM types for Admin User domain
-CREATE TYPE admin_role AS ENUM (
-    'ADMINISTRATOR',
-    'REVIEWER'
-);
-
 -- AdminUser: System administrators for human validation workflows
 CREATE TABLE admin_user (
     -- Primary Key & Identity
@@ -20,8 +14,8 @@ CREATE TABLE admin_user (
     full_name VARCHAR(200) NOT NULL,
     email VARCHAR(300) NOT NULL UNIQUE,
     
-    -- Role & Authorization
-    role admin_role NOT NULL DEFAULT 'REVIEWER',
+    -- Role & Authorization (VARCHAR with CHECK constraint for Spring Data JDBC compatibility)
+    role VARCHAR(50) NOT NULL DEFAULT 'REVIEWER',
     is_active BOOLEAN NOT NULL DEFAULT true,
     
     -- Audit Timestamps
@@ -38,7 +32,10 @@ CREATE TABLE admin_user (
     current_workload INTEGER NOT NULL DEFAULT 0, -- Active assignments for load balancing
     max_concurrent_assignments INTEGER DEFAULT 10,
     
-    -- Constitutional Requirement: Support for Primary Users
+    -- Constraints
+    CONSTRAINT admin_user_role_check 
+        CHECK (role IN ('ADMINISTRATOR', 'REVIEWER')),
+    
     CONSTRAINT admin_user_kevin_huw_founders 
         CHECK (
             username IN ('kevin', 'huw') OR 
@@ -114,6 +111,7 @@ INSERT INTO admin_user (
 
 -- Comments for Domain Understanding
 COMMENT ON TABLE admin_user IS 'System administrators for human-AI collaboration workflows. Kevin & Huw as founders with ADMINISTRATOR role.';
+COMMENT ON COLUMN admin_user.role IS 'Admin role: ADMINISTRATOR or REVIEWER. Using VARCHAR with CHECK constraint for Spring Data JDBC compatibility.';
 COMMENT ON COLUMN admin_user.candidates_reviewed IS 'Total funding source candidates processed by this admin user';
 COMMENT ON COLUMN admin_user.average_review_time_minutes IS 'Average time spent reviewing each candidate (for workload estimation)';
 COMMENT ON COLUMN admin_user.approval_rate IS 'Percentage of candidates approved vs rejected (quality metric)';

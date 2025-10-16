@@ -53,11 +53,15 @@ public class EnhancementRecord {
     
     @Column("time_spent_minutes")
     private Integer timeSpentMinutes; // How long enhancement took
+    
+    @Column("review_complexity")
+    private String reviewComplexity; // SIMPLE, MODERATE, COMPLEX
 
     // Default constructor
     public EnhancementRecord() {
-        this.enhancedAt = LocalDateTime.now();
+        // Let database set enhanced_at via DEFAULT NOW() to avoid CHECK constraint issues
         this.timeSpentMinutes = 0;
+        this.reviewComplexity = "SIMPLE"; // Default value matching database default
     }
     
     // Constructor for creating new enhancement records
@@ -152,6 +156,14 @@ public class EnhancementRecord {
 
     public void setTimeSpentMinutes(Integer timeSpentMinutes) {
         this.timeSpentMinutes = timeSpentMinutes;
+    }
+    
+    public String getReviewComplexity() {
+        return reviewComplexity;
+    }
+    
+    public void setReviewComplexity(String reviewComplexity) {
+        this.reviewComplexity = reviewComplexity;
     }
 
     // Business methods for quality tracking

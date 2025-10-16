@@ -40,8 +40,8 @@ CREATE TABLE funding_source_candidate (
     
     -- Discovery Metadata (AI Processing Context)  
     discovery_session_id UUID NULL, -- FK to DiscoverySession (will be added in V4)
-    discovery_method VARCHAR(100) NOT NULL,
-    search_query TEXT NOT NULL,
+    discovery_method VARCHAR(100) NULL,
+    search_query TEXT NULL,
     extracted_data TEXT NOT NULL DEFAULT '{}',
     duplicate_of_candidate_id UUID NULL, -- Self-referential FK for deduplication
     

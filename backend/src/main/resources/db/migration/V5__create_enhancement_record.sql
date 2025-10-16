@@ -63,7 +63,7 @@ CREATE TABLE enhancement_record (
         
     -- Business Rules (Immutable Audit Log)
     CONSTRAINT enhancement_record_immutable
-        CHECK (enhanced_at <= NOW()), -- Cannot modify past records
+        CHECK (enhanced_at <= NOW() + INTERVAL '1 second'), -- Allow 1 second buffer for clock skew
         
     CONSTRAINT enhancement_record_confidence_improvement_range  
         CHECK (confidence_improvement >= -1.00 AND confidence_improvement <= 1.00),

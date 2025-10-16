@@ -45,7 +45,7 @@ public interface FundingSourceCandidateRepository extends CrudRepository<Funding
      * Used for filtering high-quality candidates
      */
     @Query("""
-        SELECT * FROM funding_source_candidates 
+        SELECT * FROM funding_source_candidate 
         WHERE status = :status 
         AND confidence_score >= :minConfidence 
         ORDER BY confidence_score DESC, discovered_at DESC
@@ -66,7 +66,7 @@ public interface FundingSourceCandidateRepository extends CrudRepository<Funding
      * Find unassigned candidates for automatic assignment
      */
     @Query("""
-        SELECT * FROM funding_source_candidates 
+        SELECT * FROM funding_source_candidate 
         WHERE status = 'PENDING_REVIEW' 
         AND assigned_reviewer_id IS NULL 
         ORDER BY confidence_score DESC, discovered_at ASC
@@ -78,7 +78,7 @@ public interface FundingSourceCandidateRepository extends CrudRepository<Funding
      * Critical for duplicate detection workflow
      */
     @Query("""
-        SELECT * FROM funding_source_candidates 
+        SELECT * FROM funding_source_candidate 
         WHERE LOWER(organization_name) = LOWER(:orgName) 
         AND LOWER(program_name) = LOWER(:programName)
         AND candidate_id != :excludeId
@@ -95,7 +95,7 @@ public interface FundingSourceCandidateRepository extends CrudRepository<Funding
      * Used for cleanup and escalation workflows
      */
     @Query("""
-        SELECT * FROM funding_source_candidates 
+        SELECT * FROM funding_source_candidate 
         WHERE status IN ('PENDING_REVIEW', 'IN_REVIEW')
         AND discovered_at < :threshold
         ORDER BY discovered_at ASC
@@ -112,7 +112,7 @@ public interface FundingSourceCandidateRepository extends CrudRepository<Funding
      * Used by complex search scenarios in admin UI
      */
     @Query("""
-        SELECT * FROM funding_source_candidates c
+        SELECT * FROM funding_source_candidate c
         WHERE (:status IS NULL OR c.status = :status)
         AND (:minConfidence IS NULL OR c.confidence_score >= :minConfidence)
         AND (:assignedTo IS NULL OR c.assigned_reviewer_id = :assignedTo)
@@ -134,14 +134,14 @@ public interface FundingSourceCandidateRepository extends CrudRepository<Funding
     /**
      * Count candidates by status for dashboard metrics
      */
-    @Query("SELECT COUNT(*) FROM funding_source_candidates WHERE status = :status")
+    @Query("SELECT COUNT(*) FROM funding_source_candidate WHERE status = :status")
     long countByStatus(@Param("status") CandidateStatus status);
     
     /**
      * Get average confidence score for quality metrics
      */
     @Query("""
-        SELECT AVG(confidence_score) FROM funding_source_candidates 
+        SELECT AVG(confidence_score) FROM funding_source_candidate 
         WHERE discovered_at > :since AND status != 'REJECTED'
     """)
     Double getAverageConfidenceScore(@Param("since") LocalDateTime since);
@@ -150,7 +150,7 @@ public interface FundingSourceCandidateRepository extends CrudRepository<Funding
      * Find top performing candidates for quality analysis
      */
     @Query("""
-        SELECT * FROM funding_source_candidates 
+        SELECT * FROM funding_source_candidate 
         WHERE status = 'APPROVED' 
         AND confidence_score >= 0.8
         ORDER BY confidence_score DESC
@@ -161,7 +161,7 @@ public interface FundingSourceCandidateRepository extends CrudRepository<Funding
      * Find candidates with specific tags for categorization
      */
     @Query("""
-        SELECT * FROM funding_source_candidates 
+        SELECT * FROM funding_source_candidate 
         WHERE tags::text LIKE CONCAT('%', :tag, '%')
         AND status = :status
         ORDER BY confidence_score DESC
@@ -176,7 +176,7 @@ public interface FundingSourceCandidateRepository extends CrudRepository<Funding
      * Find candidates within geographic eligibility
      */
     @Query("""
-        SELECT * FROM funding_source_candidates 
+        SELECT * FROM funding_source_candidate 
         WHERE geographic_eligibility::text LIKE CONCAT('%', :region, '%')
         AND status = 'APPROVED'
         ORDER BY confidence_score DESC
@@ -191,7 +191,7 @@ public interface FundingSourceCandidateRepository extends CrudRepository<Funding
      * Used by tests for basic duplicate detection
      */
     @Query("""
-        SELECT * FROM funding_source_candidates 
+        SELECT * FROM funding_source_candidate 
         WHERE LOWER(organization_name) = LOWER(:orgName) 
         AND LOWER(program_name) = LOWER(:programName)
         AND status != 'REJECTED'
