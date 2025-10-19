@@ -28,8 +28,9 @@
         <!-- Dependency Versions -->
         <spring-boot.version>3.5.6</spring-boot.version>
         <testcontainers.version>1.19.1</testcontainers.version>
-        <vavr.version>0.10.6</vavr.version>
+        <vavr.version>0.10.7</vavr.version>
         <lombok.version>1.18.42</lombok.version>
+        <resilience4j.version>2.2.0</resilience4j.version>
 
         <!-- Maven Plugin Versions -->
         <maven-compiler-plugin.version>3.14.1</maven-compiler-plugin.version>
@@ -96,7 +97,27 @@
             <version>${vavr.version}</version>
         </dependency>
 
-        <!-- HTTP Client for LM Studio Integration -->
+        <!-- Resilience4j for Fault Tolerance (Remote HTTP Calls) -->
+        <dependency>
+            <groupId>io.github.resilience4j</groupId>
+            <artifactId>resilience4j-spring-boot3</artifactId>
+            <version>${resilience4j.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>io.github.resilience4j</groupId>
+            <artifactId>resilience4j-circuitbreaker</artifactId>
+            <version>${resilience4j.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>io.github.resilience4j</groupId>
+            <artifactId>resilience4j-retry</artifactId>
+            <version>${resilience4j.version}</version>
+        </dependency>
+
+        <!-- HTTP Client for LM Studio and Search Engine Adapters -->
+        <!-- LM Studio uses OpenAI-compatible API at http://192.168.1.10:1234/v1 -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-webflux</artifactId>
@@ -169,6 +190,7 @@
     <!-- Dependency Management -->
     <dependencyManagement>
         <dependencies>
+            <!-- TestContainers BOM -->
             <dependency>
                 <groupId>org.testcontainers</groupId>
                 <artifactId>testcontainers-bom</artifactId>
