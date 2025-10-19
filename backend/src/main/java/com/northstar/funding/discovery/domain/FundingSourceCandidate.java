@@ -39,8 +39,16 @@ public class FundingSourceCandidate {
     @Id
     private UUID candidateId;
     private CandidateStatus status;
-    private Double confidenceScore; // 0.0-1.0 AI-generated confidence
-    
+
+    /**
+     * AI-generated confidence score (0.00-1.00)
+     * Uses BigDecimal with scale 2 for precise decimal arithmetic
+     */
+    private BigDecimal confidenceScore;
+
+    // Domain Relationship (for deduplication and quality tracking)
+    private UUID domainId; // FK to domain table
+
     // Discovery Audit Trail
     private UUID discoverySessionId;
     private LocalDateTime discoveredAt;

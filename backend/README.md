@@ -58,16 +58,21 @@ src/test/java/com/northstar/funding/
 ### 1. Verify Prerequisites
 
 ```bash
-# Check Java version
+# Check Java version (on MacBook M2)
 java -version
 # Should show: openjdk version "25" or similar
 
-# Check Maven version  
+# Check Maven version (on MacBook M2)
 mvn -version
 # Should show: Apache Maven 3.9.9
 
-# Verify Mac Studio PostgreSQL
-psql -h 192.168.1.10 -p 5432 -U northstar_user -d northstar_funding_dev
+# Verify Mac Studio PostgreSQL (SSH to Mac Studio first)
+ssh 192.168.1.10
+docker ps | grep northstar-postgres
+# Should show: northstar-postgres container running
+
+# Connect to PostgreSQL via Docker
+docker exec -it northstar-postgres psql -U northstar_user -d northstar_funding
 ```
 
 ### 2. Build Project
@@ -104,25 +109,44 @@ curl http://localhost:8080/api/actuator/health
 
 ## Database Setup
 
-### Development Database (Mac Studio)
+### Production Database (Mac Studio)
 
-The application expects PostgreSQL running on Mac Studio (192.168.1.10:5432) with:
+PostgreSQL runs in Docker on Mac Studio (192.168.1.10:5432):
 
-- **Database**: `northstar_funding_dev`  
+- **Container**: `northstar-postgres`
+- **Database**: `northstar_funding` (ONLY ONE - no dev/test variants)
 - **User**: `northstar_user`
 - **Password**: `northstar_password`
+- **Schema**: Managed by Flyway migrations in `src/main/resources/db/migration/`
+- **Initial Setup**: `docker/config/init-db.sql` contains PostgreSQL TYPE definitions
+- **Access**: `docker exec -it northstar-postgres psql -U northstar_user -d northstar_funding` (from Mac Studio)
+
+**Important**:
+- NO psql binary on MacBook M2 or Mac Studio host
+- Tests use TestContainers (ephemeral PostgreSQL containers), NOT the Mac Studio database
+- Spring Boot application connects to Mac Studio database at 192.168.1.10:5432
 
 ### Database Migrations
 
 Database schema is managed with Flyway migrations in `src/main/resources/db/migration/`:
 
 ```bash
-# Run migrations manually
+# Run migrations against Mac Studio database (from MacBook M2)
 mvn flyway:migrate
 
 # Check migration status
 mvn flyway:info
+
+# Note: Requires Mac Studio Docker containers to be running
 ```
+
+### Docker Infrastructure Changes
+
+To modify database or infrastructure configuration:
+
+1. Edit `docker/docker-compose.yml` or `docker/.env` on MacBook M2
+2. Kevin rsyncs changes to Mac Studio
+3. Kevin restarts containers: `ssh 192.168.1.10 "cd ~/northstar-infra && docker compose up -d"`
 
 ## Configuration Profiles
 

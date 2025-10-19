@@ -74,12 +74,124 @@ management:
     health:
       show-details: when-authorized
 
+# LM Studio Configuration (Local AI - Constitutional Requirement)
+# LM Studio uses OpenAI-compatible API at http://192.168.1.10:1234/v1
+lm-studio:
+  base-url: http://192.168.1.10:1234/v1
+  model: llama-3.1-8b-instruct
+  timeout-seconds: 30
+  max-tokens: 500
+  temperature: 0.7
+
+# Search Engine Configuration
+search:
+  engines:
+    # Searxng (self-hosted on Mac Studio)
+    searxng:
+      enabled: true
+      base-url: http://192.168.1.10:8080
+      max-results: 25
+      timeout-seconds: 10
+
+    # Browserbase (API-based)
+    browserbase:
+      enabled: true
+      api-key: ${BROWSERBASE_API_KEY:}
+      base-url: https://api.browserbase.com
+      max-results: 25
+      timeout-seconds: 15
+
+    # Tavily (API-based)
+    tavily:
+      enabled: true
+      api-key: ${TAVILY_API_KEY:}
+      base-url: https://api.tavily.com
+      max-results: 25
+      timeout-seconds: 10
+
+    # Perplexity (API-based)
+    perplexity:
+      enabled: true
+      api-key: ${PERPLEXITY_API_KEY:}
+      base-url: https://api.perplexity.ai
+      max-results: 25
+      timeout-seconds: 10
+
+# Resilience4j Configuration (Fault Tolerance for Remote HTTP Calls)
+resilience4j:
+  circuitbreaker:
+    instances:
+      searchEngines:
+        registerHealthIndicator: true
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 5
+        permittedNumberOfCallsInHalfOpenState: 3
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+        waitDurationInOpenState: 30s
+        failureRateThreshold: 50
+        eventConsumerBufferSize: 10
+
+      lmStudio:
+        registerHealthIndicator: true
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 3
+        permittedNumberOfCallsInHalfOpenState: 2
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+        waitDurationInOpenState: 20s
+        failureRateThreshold: 50
+
+  retry:
+    instances:
+      searchEngines:
+        maxAttempts: 3
+        waitDuration: 1s
+        exponentialBackoffMultiplier: 2
+        retryExceptions:
+          - java.net.SocketTimeoutException
+          - java.net.ConnectException
+
+      lmStudio:
+        maxAttempts: 2
+        waitDuration: 500ms
+
+# Discovery Configuration
+discovery:
+  schedule:
+    enabled: ${DISCOVERY_SCHEDULE_ENABLED:false}
+    cron: "0 0 2 * * ?" # 2 AM nightly
+
+  query-generation:
+    geography-templates:
+      - "Bulgaria"
+      - "Eastern Europe"
+      - "Balkans"
+      - "EU member states"
+      - "Romania"
+      - "Greece"
+      - "North Macedonia"
+
+    funding-types:
+      - "grants"
+      - "scholarships"
+      - "fellowships"
+      - "funding opportunities"
+      - "financial support"
+
+    organization-types:
+      - "NGO"
+      - "nonprofit"
+      - "foundation"
+      - "educational institutions"
+      - "social enterprises"
+
 # Logging Configuration
 logging:
   level:
     com.northstar.funding: INFO
+    com.northstar.funding.discovery: DEBUG
     org.springframework.security: INFO
     org.hibernate.SQL: WARN
+    io.github.resilience4j: INFO
   pattern:
     file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
     console: "%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
