@@ -1,5 +1,6 @@
 package com.northstar.funding.discovery.application;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -23,7 +24,7 @@ import com.northstar.funding.discovery.infrastructure.FundingSourceCandidateRepo
 @Transactional
 public class CandidateValidationService {
 
-    private static final double MINIMUM_CONFIDENCE_THRESHOLD = 0.5;
+    private static final BigDecimal MINIMUM_CONFIDENCE_THRESHOLD = new BigDecimal("0.50");
 
     private final FundingSourceCandidateRepository candidateRepository;
     private final AdminUserRepository adminUserRepository;
@@ -48,7 +49,7 @@ public class CandidateValidationService {
         }
 
         // Business rule: Minimum confidence score for approval
-        if (candidate.getConfidenceScore() < MINIMUM_CONFIDENCE_THRESHOLD) {
+        if (candidate.getConfidenceScore().compareTo(MINIMUM_CONFIDENCE_THRESHOLD) < 0) {
             throw new IllegalStateException(
                 "Cannot approve candidate with confidence score " + candidate.getConfidenceScore() +
                 " (minimum: " + MINIMUM_CONFIDENCE_THRESHOLD + ")"

@@ -1,5 +1,7 @@
 package com.northstar.funding;
 
+import java.math.BigDecimal;
+
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
@@ -38,7 +40,6 @@ public class NorthStarFundingApplication {
     public static void main(String[] args) {
         // Constitutional requirement: Virtual Threads for I/O operations
         System.setProperty("spring.threads.virtual.enabled", "true");
-        
         SpringApplication.run(NorthStarFundingApplication.class, args);
     }
 }

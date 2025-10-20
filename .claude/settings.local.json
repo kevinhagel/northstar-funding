@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "SlashCommand(/specify Create automated crawler infrastructure for Phase 1 metadata judging: system generates AI-powered search queries to discover funding sources across multiple search engines (Searxng, Tavily, Browserbase, Perplexity), performs domain-level deduplication to prevent reprocessing same domains, judges candidates based on search engine metadata only (no web crawling) using confidence scoring with funding keywords, domain credibility, geographic relevance, and organization type detection, registers domains with blacklist management and quality tracking, creates high-confidence candidates (>= 0.6) as PENDING_CRAWL status for Phase 2 deep crawling, skips low-confidence results to save processing resources, tracks domain quality metrics for continuous improvement, and uses Java 25 Virtual Threads for parallel processing of 20-25 search results per query with simple orchestrator pattern (no Kafka, no Spring Integration))",
+      "Bash(.specify/scripts/bash/create-new-feature.sh:*)",
+      "Read(//Users/kevin/github/springcrawler/**)",
+      "Read(//Users/kevin/github/springcrawler/eu-horizon-service/src/main/resources/**)",
+      "Bash(ssh macstudio \"curl -s http://localhost:1234/v1/models || echo ''LM Studio not responding at port 1234''\")",
+      "Bash(mvn clean compile:*)",
+      "Bash(mvn flyway:clean:*)",
+      "Bash(ssh:*)",
+      "Bash(mvn test:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

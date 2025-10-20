@@ -1,5 +1,6 @@
 package com.northstar.funding.discovery.application;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -159,10 +160,10 @@ class DiscoveryOrchestrationServiceTest {
         );
 
         // When
-        double avgConfidence = service.calculateAverageConfidence(candidates);
+        BigDecimal avgConfidence = service.calculateAverageConfidence(candidates);
 
         // Then
-        assertThat(avgConfidence).isEqualTo(0.8, within(0.01));
+        assertThat(avgConfidence).isEqualByComparingTo(new BigDecimal("0.80"));
     }
 
     @Test
@@ -185,9 +186,8 @@ class DiscoveryOrchestrationServiceTest {
 
         // Then
         assertThat(result.getContent()).hasSize(2);
-        assertThat(result.getContent().get(0).getConfidenceScore()).isGreaterThanOrEqualTo(
-                result.getContent().get(1).getConfidenceScore()
-        );
+        assertThat(result.getContent().get(0).getConfidenceScore())
+                .isGreaterThanOrEqualTo(result.getContent().get(1).getConfidenceScore());
     }
 
     @Test
@@ -278,7 +278,7 @@ class DiscoveryOrchestrationServiceTest {
         // Then
         // Only candidates with confidence >= 0.5 should be saved
         verify(candidateRepository, times(2)).save(argThat(c ->
-            c.getConfidenceScore() >= 0.5
+            c.getConfidenceScore().compareTo(new BigDecimal("0.5")) >= 0
         ));
     }
 
@@ -314,7 +314,7 @@ class DiscoveryOrchestrationServiceTest {
                 .organizationName(orgName)
                 .programName(programName)
                 .sourceUrl("https://example.com/" + orgName.toLowerCase().replace(" ", "-"))
-                .confidenceScore(confidence)
+                .confidenceScore(new BigDecimal(String.valueOf(confidence)))
                 .status(CandidateStatus.PENDING_REVIEW)
                 .discoveredAt(LocalDateTime.now())
                 .build();
@@ -327,7 +327,7 @@ class DiscoveryOrchestrationServiceTest {
                 .status(status)
                 .executedAt(LocalDateTime.now())
                 .candidatesFound(100)
-                .averageConfidenceScore(0.75)
+                .averageConfidenceScore(new BigDecimal("0.75"))
                 .build();
     }
 }

@@ -1,5 +1,7 @@
 package com.northstar.funding.discovery.infrastructure;
 
+import java.math.BigDecimal;
+
 import com.northstar.funding.discovery.domain.Domain;
 import com.northstar.funding.discovery.domain.DomainStatus;
 import org.junit.jupiter.api.BeforeEach;
@@ -225,13 +227,13 @@ class DomainRepositoryIT {
         // Given: High-quality domain with 5 candidates
         Domain domain1 = createDomain("high-quality.org", DomainStatus.PROCESSED_HIGH_QUALITY);
         domain1.setHighQualityCandidateCount(5);
-        domain1.setBestConfidenceScore(0.85);
+        domain1.setBestConfidenceScore(new BigDecimal("0.85"));
         domainRepository.save(domain1);
 
         // Given: High-quality domain with only 2 candidates
         Domain domain2 = createDomain("medium-quality.org", DomainStatus.PROCESSED_HIGH_QUALITY);
         domain2.setHighQualityCandidateCount(2);
-        domain2.setBestConfidenceScore(0.75);
+        domain2.setBestConfidenceScore(new BigDecimal("0.75"));
         domainRepository.save(domain2);
 
         // Given: Low-quality domain
@@ -253,17 +255,17 @@ class DomainRepositoryIT {
         // Given: Multiple high-quality domains
         Domain domain1 = createDomain("best.org", DomainStatus.PROCESSED_HIGH_QUALITY);
         domain1.setHighQualityCandidateCount(5);
-        domain1.setBestConfidenceScore(0.95);
+        domain1.setBestConfidenceScore(new BigDecimal("0.95"));
         domainRepository.save(domain1);
 
         Domain domain2 = createDomain("good.org", DomainStatus.PROCESSED_HIGH_QUALITY);
         domain2.setHighQualityCandidateCount(5);
-        domain2.setBestConfidenceScore(0.75);
+        domain2.setBestConfidenceScore(new BigDecimal("0.75"));
         domainRepository.save(domain2);
 
         Domain domain3 = createDomain("excellent.org", DomainStatus.PROCESSED_HIGH_QUALITY);
         domain3.setHighQualityCandidateCount(5);
-        domain3.setBestConfidenceScore(0.88);
+        domain3.setBestConfidenceScore(new BigDecimal("0.88"));
         domainRepository.save(domain3);
 
         // When: Query for high-quality domains

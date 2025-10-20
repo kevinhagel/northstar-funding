@@ -247,7 +247,7 @@ class DiscoveryWorkflowIntegrationTest {
                 .programName(programName)
                 .description("Funding program for startups and innovation")
                 .sourceUrl("https://example.com/" + orgName.toLowerCase().replace(" ", "-"))
-                .confidenceScore(confidence)
+                .confidenceScore(new BigDecimal(String.valueOf(confidence)))
                 .fundingAmountMin(BigDecimal.valueOf(10000))
                 .fundingAmountMax(BigDecimal.valueOf(100000))
                 .currency("EUR")

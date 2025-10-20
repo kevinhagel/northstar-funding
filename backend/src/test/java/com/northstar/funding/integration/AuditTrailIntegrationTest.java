@@ -125,7 +125,7 @@ class AuditTrailIntegrationTest {
                 .suggestedValue("Enhanced description with AI insights")
                 .enhancedAt(LocalDateTime.now())
                 .aiModel("llama-3.1-8b")
-                .confidenceScore(0.88)
+                .confidenceScore(new BigDecimal("0.88"))
                 .humanApproved(true)
                 .build();
         enhancementRepository.save(aiEnhancement);
@@ -191,7 +191,9 @@ class AuditTrailIntegrationTest {
                 .orElseThrow();
 
         assertThat(completed1.getCandidatesFound()).isEqualTo(2);
-        assertThat(completed1.getAverageConfidenceScore()).isBetween(0.90, 0.95);
+        assertThat(completed1.getAverageConfidenceScore())
+                .isGreaterThanOrEqualTo(new BigDecimal("0.90"))
+                .isLessThanOrEqualTo(new BigDecimal("0.95"));
 
         DiscoverySession completed2 = recentSessions.stream()
                 .filter(s -> s.getSessionId().equals(session2.getSessionId()))
@@ -298,7 +300,7 @@ class AuditTrailIntegrationTest {
                     .enhancedBy(i % 2 == 0 ? null : humanUser)
                     .enhancedAt(LocalDateTime.now().plusMinutes(i))
                     .aiModel(i % 2 == 0 ? "llama-3.1-8b" : null)
-                    .confidenceScore(i % 2 == 0 ? 0.85 : null)
+                    .confidenceScore(i % 2 == 0 ? new BigDecimal("0.85") : null)
                     .humanApproved(true)
                     .approvedBy(humanUser)
                     .approvedAt(LocalDateTime.now().plusMinutes(i + 1))
@@ -392,7 +394,7 @@ class AuditTrailIntegrationTest {
                 .programName(programName)
                 .description("Test program description")
                 .sourceUrl("https://example.com/" + orgName.toLowerCase().replace(" ", "-"))
-                .confidenceScore(confidence)
+                .confidenceScore(new BigDecimal(String.valueOf(confidence)))
                 .fundingAmountMin(BigDecimal.valueOf(5000))
                 .fundingAmountMax(BigDecimal.valueOf(50000))
                 .currency("EUR")

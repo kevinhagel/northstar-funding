@@ -119,7 +119,7 @@ class FundingSourceCandidateRepositoryIT {
         // Create test candidates with different statuses
         pendingCandidate = FundingSourceCandidate.builder()
             .status(CandidateStatus.PENDING_REVIEW)
-            .confidenceScore(0.85)
+            .confidenceScore(new BigDecimal("0.85"))
             .discoveredAt(LocalDateTime.now().minusDays(2))
             .lastUpdatedAt(LocalDateTime.now().minusDays(2))
             .organizationName("European Innovation Council")
@@ -142,7 +142,7 @@ class FundingSourceCandidateRepositoryIT {
             
         inReviewCandidate = FundingSourceCandidate.builder()
             .status(CandidateStatus.IN_REVIEW)
-            .confidenceScore(0.75)
+            .confidenceScore(new BigDecimal("0.75"))
             .discoveredAt(LocalDateTime.now().minusDays(5))
             .lastUpdatedAt(LocalDateTime.now().minusDays(1))
             .assignedReviewerId(reviewerId1)
@@ -168,7 +168,7 @@ class FundingSourceCandidateRepositoryIT {
             
         approvedCandidate = FundingSourceCandidate.builder()
             .status(CandidateStatus.APPROVED)
-            .confidenceScore(0.92)
+            .confidenceScore(new BigDecimal("0.92"))
             .discoveredAt(LocalDateTime.now().minusDays(10))
             .lastUpdatedAt(LocalDateTime.now().minusDays(3))
             .assignedReviewerId(reviewerId2)
@@ -193,7 +193,7 @@ class FundingSourceCandidateRepositoryIT {
             
         rejectedCandidate = FundingSourceCandidate.builder()
             .status(CandidateStatus.REJECTED)
-            .confidenceScore(0.45)
+            .confidenceScore(new BigDecimal("0.45"))
             .discoveredAt(LocalDateTime.now().minusDays(15))
             .lastUpdatedAt(LocalDateTime.now().minusDays(12))
             .assignedReviewerId(reviewerId3)
@@ -230,7 +230,7 @@ class FundingSourceCandidateRepositoryIT {
         
         assertAll("Funding source candidate fields",
             () -> assertThat(candidate.getStatus()).isEqualTo(CandidateStatus.PENDING_REVIEW),
-            () -> assertThat(candidate.getConfidenceScore()).isEqualTo(0.85),
+            () -> assertThat(candidate.getConfidenceScore()).isEqualByComparingTo(new BigDecimal("0.85")),
             () -> assertThat(candidate.getOrganizationName()).isEqualTo("European Innovation Council"),
             () -> assertThat(candidate.getProgramName()).isEqualTo("EIC Accelerator 2024"),
             () -> assertThat(candidate.getSourceUrl()).isEqualTo("https://eic.ec.europa.eu/accelerator"),
@@ -252,7 +252,7 @@ class FundingSourceCandidateRepositoryIT {
         // When: Creating candidates with all possible enum values
         var testPending = FundingSourceCandidate.builder()
             .status(CandidateStatus.PENDING_REVIEW)
-            .confidenceScore(0.8)
+            .confidenceScore(new BigDecimal("0.8"))
             .discoveredAt(LocalDateTime.now())
             .lastUpdatedAt(LocalDateTime.now())
             .organizationName("Test Org")
@@ -263,7 +263,7 @@ class FundingSourceCandidateRepositoryIT {
             
         var testInReview = FundingSourceCandidate.builder()
             .status(CandidateStatus.IN_REVIEW)
-            .confidenceScore(0.7)
+            .confidenceScore(new BigDecimal("0.7"))
             .discoveredAt(LocalDateTime.now())
             .lastUpdatedAt(LocalDateTime.now())
             .assignedReviewerId(reviewerId1)
@@ -276,7 +276,7 @@ class FundingSourceCandidateRepositoryIT {
             
         var testApproved = FundingSourceCandidate.builder()
             .status(CandidateStatus.APPROVED)
-            .confidenceScore(0.9)
+            .confidenceScore(new BigDecimal("0.9"))
             .discoveredAt(LocalDateTime.now())
             .lastUpdatedAt(LocalDateTime.now())
             .assignedReviewerId(reviewerId2)
@@ -289,7 +289,7 @@ class FundingSourceCandidateRepositoryIT {
             
         var testRejected = FundingSourceCandidate.builder()
             .status(CandidateStatus.REJECTED)
-            .confidenceScore(0.5)
+            .confidenceScore(new BigDecimal("0.5"))
             .discoveredAt(LocalDateTime.now())
             .lastUpdatedAt(LocalDateTime.now())
             .assignedReviewerId(reviewerId3)
@@ -327,7 +327,7 @@ class FundingSourceCandidateRepositoryIT {
         assertThat(pendingCandidates).isNotEmpty();
         assertThat(pendingCandidates.getContent())
             .allMatch(c -> c.getStatus() == CandidateStatus.PENDING_REVIEW)
-            .isSortedAccordingTo((c1, c2) -> Double.compare(c2.getConfidenceScore(), c1.getConfidenceScore()));
+            .isSortedAccordingTo((c1, c2) -> c2.getConfidenceScore().compareTo(c1.getConfidenceScore()));
     }
     
     @Test
@@ -364,7 +364,7 @@ class FundingSourceCandidateRepositoryIT {
         // Given: Create a potential duplicate
         var duplicateCandidate = FundingSourceCandidate.builder()
             .status(CandidateStatus.PENDING_REVIEW)
-            .confidenceScore(0.88)
+            .confidenceScore(new BigDecimal("0.88"))
             .discoveredAt(LocalDateTime.now())
             .lastUpdatedAt(LocalDateTime.now())
             .organizationName("european innovation council") // Different case
@@ -416,7 +416,7 @@ class FundingSourceCandidateRepositoryIT {
         // And: Candidate with that discovery session
         var sessionCandidate = FundingSourceCandidate.builder()
             .status(CandidateStatus.PENDING_REVIEW)
-            .confidenceScore(0.8)
+            .confidenceScore(new BigDecimal("0.8"))
             .discoveredAt(LocalDateTime.now())
             .lastUpdatedAt(LocalDateTime.now())
             .discoverySessionId(savedSession.getSessionId())
@@ -475,8 +475,8 @@ class FundingSourceCandidateRepositoryIT {
         assertThat(highQualityCandidates).isNotEmpty();
         assertThat(highQualityCandidates)
             .allMatch(c -> c.getStatus() == CandidateStatus.APPROVED)
-            .allMatch(c -> c.getConfidenceScore() >= 0.8)
-            .isSortedAccordingTo((c1, c2) -> Double.compare(c2.getConfidenceScore(), c1.getConfidenceScore()));
+            .allMatch(c -> c.getConfidenceScore().compareTo(new BigDecimal("0.8")) >= 0)
+            .isSortedAccordingTo((c1, c2) -> c2.getConfidenceScore().compareTo(c1.getConfidenceScore()));
     }
     
     @Test
@@ -516,7 +516,7 @@ class FundingSourceCandidateRepositoryIT {
         // Given: Multiple candidates with same org/program
         var duplicate1 = FundingSourceCandidate.builder()
             .status(CandidateStatus.PENDING_REVIEW)
-            .confidenceScore(0.8)
+            .confidenceScore(new BigDecimal("0.8"))
             .discoveredAt(LocalDateTime.now())
             .lastUpdatedAt(LocalDateTime.now())
             .organizationName("Duplicate Test Org")
@@ -527,7 +527,7 @@ class FundingSourceCandidateRepositoryIT {
             
         var duplicate2 = FundingSourceCandidate.builder()
             .status(CandidateStatus.APPROVED)
-            .confidenceScore(0.85)
+            .confidenceScore(new BigDecimal("0.85"))
             .discoveredAt(LocalDateTime.now())
             .lastUpdatedAt(LocalDateTime.now())
             .assignedReviewerId(reviewerId1)
@@ -567,13 +567,13 @@ class FundingSourceCandidateRepositoryIT {
     @DisplayName("Should find candidates with confidence score greater than threshold")
     void shouldFindCandidatesWithHighConfidenceScore() {
         // When: Finding candidates with confidence > 0.8
-        var highConfidenceCandidates = repository.findByConfidenceScoreGreaterThanOrderByConfidenceScoreDesc(0.8);
-        
+        var highConfidenceCandidates = repository.findByConfidenceScoreGreaterThanOrderByConfidenceScoreDesc(new BigDecimal("0.8"));
+
         // Then: Should return candidates with high confidence scores
         assertThat(highConfidenceCandidates).isNotEmpty();
         assertThat(highConfidenceCandidates)
-            .allMatch(c -> c.getConfidenceScore() > 0.8)
-            .isSortedAccordingTo((c1, c2) -> Double.compare(c2.getConfidenceScore(), c1.getConfidenceScore()));
+            .allMatch(c -> c.getConfidenceScore().compareTo(new BigDecimal("0.8")) > 0)
+            .isSortedAccordingTo((c1, c2) -> c2.getConfidenceScore().compareTo(c1.getConfidenceScore()));
     }
     
     @Test
@@ -674,7 +674,7 @@ class FundingSourceCandidateRepositoryIT {
         // Given: Candidate with minimal required fields
         var minimalCandidate = FundingSourceCandidate.builder()
             .status(CandidateStatus.PENDING_REVIEW)
-            .confidenceScore(0.7)
+            .confidenceScore(new BigDecimal("0.7"))
             .discoveredAt(LocalDateTime.now())
             .lastUpdatedAt(LocalDateTime.now())
             .organizationName("Minimal Org")

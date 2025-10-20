@@ -88,7 +88,7 @@ class AIEnhancementIntegrationTest {
                 .enhancedBy(null) // AI has no user ID
                 .enhancedAt(LocalDateTime.now())
                 .aiModel("llama-3.1-8b")
-                .confidenceScore(0.85)
+                .confidenceScore(new BigDecimal("0.85"))
                 .humanApproved(false)
                 .build();
 
@@ -131,7 +131,7 @@ class AIEnhancementIntegrationTest {
                 .suggestedValue(aiSuggestedTags.toString())
                 .enhancedAt(LocalDateTime.now())
                 .aiModel("llama-3.1-8b")
-                .confidenceScore(0.78)
+                .confidenceScore(new BigDecimal("0.78"))
                 .humanApproved(false)
                 .build();
 
@@ -238,7 +238,7 @@ class AIEnhancementIntegrationTest {
                 .suggestedValue("Enhanced AI description")
                 .enhancedAt(LocalDateTime.now())
                 .aiModel("llama-3.1-8b")
-                .confidenceScore(0.85)
+                .confidenceScore(new BigDecimal("0.85"))
                 .humanApproved(true)
                 .approvedBy(humanUser)
                 .approvedAt(LocalDateTime.now())
@@ -339,7 +339,7 @@ class AIEnhancementIntegrationTest {
                 .programName("Seed Funding Program")
                 .description("Minimal description")
                 .sourceUrl("https://example.com/fund")
-                .confidenceScore(0.75)
+                .confidenceScore(new BigDecimal("0.75"))
                 .fundingAmountMin(BigDecimal.valueOf(5000))
                 .fundingAmountMax(BigDecimal.valueOf(50000))
                 .currency("EUR")

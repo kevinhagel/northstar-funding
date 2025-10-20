@@ -1,5 +1,6 @@
 package com.northstar.funding.discovery.domain;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -65,8 +66,12 @@ public class EnhancementRecord {
     @Column("ai_model")
     private String aiModel; // LM Studio model (e.g., "llama-3.1-8b")
 
+    /**
+     * AI confidence score (0.00-1.00)
+     * Uses BigDecimal with scale 2 for precise decimal arithmetic
+     */
     @Column("confidence_score")
-    private Double confidenceScore; // AI confidence (0.0-1.0)
+    private BigDecimal confidenceScore;
 
     @Column("human_approved")
     private Boolean humanApproved; // Did human approve AI suggestion?

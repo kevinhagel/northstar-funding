@@ -291,7 +291,7 @@ class DuplicateDetectionIntegrationTest {
                 .programName(programName)
                 .description("Test funding program")
                 .sourceUrl("https://example.com/" + orgName.toLowerCase().replace(" ", "-"))
-                .confidenceScore(confidence)
+                .confidenceScore(new BigDecimal(String.valueOf(confidence)))
                 .fundingAmountMin(BigDecimal.valueOf(5000))
                 .fundingAmountMax(BigDecimal.valueOf(50000))
                 .currency("EUR")

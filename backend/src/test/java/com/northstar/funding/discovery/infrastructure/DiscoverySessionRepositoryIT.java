@@ -1,5 +1,7 @@
 package com.northstar.funding.discovery.infrastructure;
 
+import java.math.BigDecimal;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
 import static org.junit.jupiter.api.Assertions.assertAll;
@@ -94,7 +96,7 @@ class DiscoverySessionRepositoryIT {
             .candidatesFound(25)
             .duplicatesDetected(3)
             .sourcesScraped(50)
-            .averageConfidenceScore(0.85)
+            .averageConfidenceScore(new BigDecimal("0.85"))
             .errorMessages(new ArrayList<>())
             .searchEngineFailures("{}")
             .llmModelUsed("llama-3.1-8b")
@@ -115,7 +117,7 @@ class DiscoverySessionRepositoryIT {
             .candidatesFound(10)
             .duplicatesDetected(1)
             .sourcesScraped(25)
-            .averageConfidenceScore(0.75)
+            .averageConfidenceScore(new BigDecimal("0.75"))
             .errorMessages(new ArrayList<>())
             .searchEngineFailures("{}")
             .llmModelUsed("llama-3.1-70b")
@@ -136,7 +138,7 @@ class DiscoverySessionRepositoryIT {
             .candidatesFound(0)
             .duplicatesDetected(0)
             .sourcesScraped(5)
-            .averageConfidenceScore(0.0)
+            .averageConfidenceScore(BigDecimal.ZERO)
             .errorMessages(new ArrayList<>(List.of("Search engine timeout", "Rate limit exceeded")))
             .searchEngineFailures("{\"searxng\":[\"Connection timeout\"],\"tavily\":[\"Rate limit reached\",\"Authentication failed\"]}")
             .llmModelUsed("llama-3.1-8b")

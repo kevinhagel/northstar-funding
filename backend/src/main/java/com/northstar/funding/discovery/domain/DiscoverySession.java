@@ -1,5 +1,6 @@
 package com.northstar.funding.discovery.domain;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -82,8 +83,12 @@ public class DiscoverySession {
     @Column("sources_scraped")
     private Integer sourcesScraped;
     
+    /**
+     * Average AI confidence score of candidates found (0.00-1.00)
+     * Uses BigDecimal with scale 2 for precise decimal arithmetic
+     */
     @Column("average_confidence_score")
-    private Double averageConfidenceScore;
+    private BigDecimal averageConfidenceScore;
     
     // Error Handling & Diagnostics
     @Column("error_messages")

@@ -1,5 +1,7 @@
 package com.northstar.funding.discovery.infrastructure;
 
+import java.math.BigDecimal;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
 import static org.junit.jupiter.api.Assertions.assertAll;
@@ -99,7 +101,7 @@ class EnhancementRecordRepositoryIT {
         // Create test candidates (required for foreign key constraint)
         candidate1 = FundingSourceCandidate.builder()
             .status(CandidateStatus.PENDING_REVIEW)
-            .confidenceScore(0.85)
+            .confidenceScore(new BigDecimal("0.85"))
             .discoveredAt(LocalDateTime.now().minusDays(3))
             .lastUpdatedAt(LocalDateTime.now().minusDays(3))
             .organizationName("Test Foundation 1")
@@ -111,7 +113,7 @@ class EnhancementRecordRepositoryIT {
             
         candidate2 = FundingSourceCandidate.builder()
             .status(CandidateStatus.PENDING_REVIEW)
-            .confidenceScore(0.75)
+            .confidenceScore(new BigDecimal("0.75"))
             .discoveredAt(LocalDateTime.now().minusDays(2))
             .lastUpdatedAt(LocalDateTime.now().minusDays(2))
             .organizationName("Test Foundation 2")
@@ -298,7 +300,7 @@ class EnhancementRecordRepositoryIT {
         // Given: Create a new candidate for this test to avoid interfering with setUp data
         FundingSourceCandidate testCandidate = FundingSourceCandidate.builder()
             .status(CandidateStatus.PENDING_REVIEW)
-            .confidenceScore(0.75)
+            .confidenceScore(new BigDecimal("0.75"))
             .discoveredAt(LocalDateTime.now())
             .lastUpdatedAt(LocalDateTime.now())
             .organizationName("Test Foundation for Improvements")

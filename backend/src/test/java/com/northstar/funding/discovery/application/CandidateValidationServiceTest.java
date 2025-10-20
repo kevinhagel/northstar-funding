@@ -1,5 +1,6 @@
 package com.northstar.funding.discovery.application;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -55,7 +56,7 @@ class CandidateValidationServiceTest {
                 .organizationName("Test Foundation")
                 .programName("Test Program")
                 .sourceUrl("https://example.com")
-                .confidenceScore(0.85)
+                .confidenceScore(new BigDecimal("0.85"))
                 .discoveredAt(LocalDateTime.now())
                 .build();
 
@@ -82,7 +83,7 @@ class CandidateValidationServiceTest {
                 .organizationName("Test Foundation")
                 .programName("Test Program")
                 .sourceUrl("https://example.com")
-                .confidenceScore(0.85)
+                .confidenceScore(new BigDecimal("0.85"))
                 .discoveredAt(LocalDateTime.now())
                 .build();
 
@@ -104,7 +105,7 @@ class CandidateValidationServiceTest {
                 .organizationName("Test Foundation")
                 .programName("Test Program")
                 .sourceUrl("https://example.com")
-                .confidenceScore(0.35)
+                .confidenceScore(new BigDecimal("0.35"))
                 .discoveredAt(LocalDateTime.now())
                 .build();
 
@@ -134,7 +135,7 @@ class CandidateValidationServiceTest {
                 .organizationName("Test Foundation")
                 .programName("Test Program")
                 .sourceUrl("https://example.com")
-                .confidenceScore(0.75)
+                .confidenceScore(new BigDecimal("0.75"))
                 .discoveredAt(LocalDateTime.now())
                 .build();
 
@@ -172,7 +173,7 @@ class CandidateValidationServiceTest {
                 .organizationName("Test Foundation")
                 .programName("Test Program")
                 .sourceUrl("https://example.com")
-                .confidenceScore(0.75)
+                .confidenceScore(new BigDecimal("0.75"))
                 .discoveredAt(LocalDateTime.now())
                 .build();
 
@@ -213,7 +214,7 @@ class CandidateValidationServiceTest {
                 .organizationName("Test Foundation")
                 .programName("Test Program")
                 .sourceUrl("https://example.com")
-                .confidenceScore(0.4) // Below threshold
+                .confidenceScore(new BigDecimal("0.4")) // Below threshold
                 .discoveredAt(LocalDateTime.now())
                 .build();
 
@@ -235,7 +236,7 @@ class CandidateValidationServiceTest {
                 .organizationName("Test Foundation")
                 .programName(null) // Missing required field
                 .sourceUrl("https://example.com")
-                .confidenceScore(0.85)
+                .confidenceScore(new BigDecimal("0.85"))
                 .discoveredAt(LocalDateTime.now())
                 .build();
 
@@ -259,7 +260,7 @@ class CandidateValidationServiceTest {
                 .organizationName(orgName)
                 .programName(programName)
                 .sourceUrl("https://example.com")
-                .confidenceScore(0.85)
+                .confidenceScore(new BigDecimal("0.85"))
                 .discoveredAt(LocalDateTime.now())
                 .build();
 
@@ -298,7 +299,7 @@ class CandidateValidationServiceTest {
                 .organizationName("Test Org")
                 .programName("Test Program")
                 .sourceUrl("https://example.com")
-                .confidenceScore(0.8)
+                .confidenceScore(new BigDecimal("0.8"))
                 .discoveredAt(LocalDateTime.now())
                 .build();
     }

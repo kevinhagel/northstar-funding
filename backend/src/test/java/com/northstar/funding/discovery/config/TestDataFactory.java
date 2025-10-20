@@ -1,5 +1,6 @@
 package com.northstar.funding.discovery.config;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -256,7 +257,7 @@ public class TestDataFactory {
             .candidatesFound(0)
             .duplicatesDetected(0)
             .sourcesScraped(0)
-            .averageConfidenceScore(0.0)
+            .averageConfidenceScore(BigDecimal.ZERO)
             .errorMessages(new ArrayList<>())
             .searchEngineFailures("{}")
             .llmModelUsed("llama-3.1-8b")
@@ -278,7 +279,7 @@ public class TestDataFactory {
             .candidatesFound(15)
             .duplicatesDetected(2)
             .sourcesScraped(45)
-            .averageConfidenceScore(0.78)
+            .averageConfidenceScore(new BigDecimal("0.78"))
             .searchEnginesUsed(new HashSet<>(Set.of("searxng", "tavily")))
             .searchQueries(new ArrayList<>(List.of("EU funding technology", "innovation grants Europe")));
     }
@@ -298,7 +299,7 @@ public class TestDataFactory {
             .candidatesFound(0)
             .duplicatesDetected(0)
             .sourcesScraped(3)
-            .averageConfidenceScore(0.0)
+            .averageConfidenceScore(BigDecimal.ZERO)
             .errorMessages(new ArrayList<>(List.of("Connection timeout", "Rate limit exceeded")))
             .searchEngineFailures("{\"searxng\":[\"Connection timeout\"],\"tavily\":[\"Rate limit exceeded\",\"Authentication failed\"]}");
     }
@@ -311,7 +312,7 @@ public class TestDataFactory {
             .candidatesFound(50)
             .duplicatesDetected(5)
             .sourcesScraped(120)
-            .averageConfidenceScore(0.92)
+            .averageConfidenceScore(new BigDecimal("0.92"))
             .durationMinutes(20)
             .searchEnginesUsed(new HashSet<>(Set.of("searxng", "tavily", "perplexity")))
             .llmModelUsed("llama-3.1-70b")
@@ -380,7 +381,7 @@ public class TestDataFactory {
             .candidatesFound(12)
             .duplicatesDetected(1)
             .sourcesScraped(30)
-            .averageConfidenceScore(0.65)
+            .averageConfidenceScore(new BigDecimal("0.65"))
             .searchEngineFailures("{\"searxng\":[\"Occasional timeout\"],\"tavily\":[\"Rate limit warning\"]}")
             .errorMessages(new ArrayList<>(List.of("Some search engines experienced issues but session completed")));
     }

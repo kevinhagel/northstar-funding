@@ -1,5 +1,6 @@
 package com.northstar.funding.discovery.infrastructure;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -216,5 +217,5 @@ public interface FundingSourceCandidateRepository extends CrudRepository<Funding
      * Find candidates with confidence score greater than threshold
      * Used for filtering high-confidence candidates
      */
-    List<FundingSourceCandidate> findByConfidenceScoreGreaterThanOrderByConfidenceScoreDesc(Double confidenceScore);
+    List<FundingSourceCandidate> findByConfidenceScoreGreaterThanOrderByConfidenceScoreDesc(BigDecimal confidenceScore);
 }

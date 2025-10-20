@@ -1,5 +1,7 @@
 package com.northstar.funding.discovery.application;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -28,7 +30,7 @@ import com.northstar.funding.discovery.infrastructure.FundingSourceCandidateRepo
 @Transactional
 public class DiscoveryOrchestrationService {
 
-    private static final double MINIMUM_CONFIDENCE_THRESHOLD = 0.5;
+    private static final BigDecimal MINIMUM_CONFIDENCE_THRESHOLD = new BigDecimal("0.50");
 
     private final DiscoverySessionRepository sessionRepository;
     private final FundingSourceCandidateRepository candidateRepository;
@@ -75,7 +77,7 @@ public class DiscoveryOrchestrationService {
 
         for (FundingSourceCandidate candidate : candidates) {
             // Filter out low confidence candidates
-            if (candidate.getConfidenceScore() < MINIMUM_CONFIDENCE_THRESHOLD) {
+            if (candidate.getConfidenceScore().compareTo(MINIMUM_CONFIDENCE_THRESHOLD) < 0) {
                 continue;
             }
 
@@ -131,15 +133,21 @@ public class DiscoveryOrchestrationService {
     /**
      * Calculate average confidence score from candidates
      */
-    public double calculateAverageConfidence(List<FundingSourceCandidate> candidates) {
+    public BigDecimal calculateAverageConfidence(List<FundingSourceCandidate> candidates) {
         if (candidates.isEmpty()) {
-            return 0.0;
+            return BigDecimal.ZERO;
         }
 
-        return candidates.stream()
-                .mapToDouble(FundingSourceCandidate::getConfidenceScore)
-                .average()
-                .orElse(0.0);
+        // Calculate average using BigDecimal arithmetic
+        BigDecimal sum = candidates.stream()
+                .map(FundingSourceCandidate::getConfidenceScore)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        return sum.divide(
+            BigDecimal.valueOf(candidates.size()),
+            2,
+            RoundingMode.HALF_UP
+        );
     }
 
     /**
