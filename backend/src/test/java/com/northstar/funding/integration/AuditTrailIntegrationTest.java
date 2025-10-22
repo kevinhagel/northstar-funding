@@ -389,7 +389,6 @@ class AuditTrailIntegrationTest {
 
     private FundingSourceCandidate createCandidate(String orgName, String programName, double confidence) {
         return FundingSourceCandidate.builder()
-                .candidateId(UUID.randomUUID())
                 .organizationName(orgName)
                 .programName(programName)
                 .description("Test program description")
@@ -402,6 +401,8 @@ class AuditTrailIntegrationTest {
                 .organizationTypes(List.of("Startup"))
                 .tags(Set.of("test"))
                 .discoveredAt(LocalDateTime.now())
+                .lastUpdatedAt(LocalDateTime.now())
+                .extractedData("{}")
                 .build();
     }
 }

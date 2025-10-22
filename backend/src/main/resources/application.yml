@@ -121,7 +121,39 @@ search:
 resilience4j:
   circuitbreaker:
     instances:
+      # Generic search engines configuration (fallback)
       searchEngines:
+        registerHealthIndicator: true
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 5
+        permittedNumberOfCallsInHalfOpenState: 3
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+        waitDurationInOpenState: 30s
+        failureRateThreshold: 50
+        eventConsumerBufferSize: 10
+
+      # Individual search engine configurations
+      tavily:
+        registerHealthIndicator: true
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 5
+        permittedNumberOfCallsInHalfOpenState: 3
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+        waitDurationInOpenState: 30s
+        failureRateThreshold: 50
+        eventConsumerBufferSize: 10
+
+      searxng:
+        registerHealthIndicator: true
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 5
+        permittedNumberOfCallsInHalfOpenState: 3
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+        waitDurationInOpenState: 30s
+        failureRateThreshold: 50
+        eventConsumerBufferSize: 10
+
+      perplexity:
         registerHealthIndicator: true
         slidingWindowSize: 10
         minimumNumberOfCalls: 5
@@ -160,6 +192,141 @@ discovery:
     enabled: ${DISCOVERY_SCHEDULE_ENABLED:false}
     cron: "0 0 2 * * ?" # 2 AM nightly
 
+  # Query Library for Search Execution (Feature 003)
+  # Hardcoded queries organized by day of week
+  # MVP: 5-10 queries per day for Bulgaria/Balkans/Eastern Europe focus
+  query-library:
+    monday:
+      - query: "bulgaria education grants 2025"
+        tags:
+          - type: GEOGRAPHY
+            value: "Bulgaria"
+          - type: CATEGORY
+            value: "Education"
+        target-engines: ["SEARXNG", "TAVILY", "PERPLEXITY"]
+      - query: "eastern europe infrastructure funding opportunities"
+        tags:
+          - type: GEOGRAPHY
+            value: "Eastern Europe"
+          - type: CATEGORY
+            value: "Infrastructure"
+        target-engines: ["SEARXNG", "TAVILY", "PERPLEXITY"]
+      - query: "balkans stem education scholarships"
+        tags:
+          - type: GEOGRAPHY
+            value: "Balkans"
+          - type: CATEGORY
+            value: "STEM"
+        target-engines: ["SEARXNG", "TAVILY", "PERPLEXITY"]
+      - query: "romania teacher development grants 2025"
+        tags:
+          - type: GEOGRAPHY
+            value: "Romania"
+          - type: CATEGORY
+            value: "Teacher Development"
+        target-engines: ["SEARXNG", "TAVILY", "PERPLEXITY"]
+      - query: "eu cultural heritage funding bulgaria"
+        tags:
+          - type: GEOGRAPHY
+            value: "Bulgaria"
+          - type: CATEGORY
+            value: "Cultural Heritage"
+          - type: AUTHORITY
+            value: "EU"
+        target-engines: ["SEARXNG", "TAVILY", "PERPLEXITY"]
+
+    tuesday:
+      - query: "greece nonprofit capacity building grants"
+        tags:
+          - type: GEOGRAPHY
+            value: "Greece"
+          - type: CATEGORY
+            value: "Capacity Building"
+        target-engines: ["SEARXNG", "TAVILY", "PERPLEXITY"]
+      - query: "north macedonia youth employment programs"
+        tags:
+          - type: GEOGRAPHY
+            value: "North Macedonia"
+          - type: CATEGORY
+            value: "Youth Programs"
+        target-engines: ["SEARXNG", "TAVILY", "PERPLEXITY"]
+      - query: "eastern europe digital skills training funding"
+        tags:
+          - type: GEOGRAPHY
+            value: "Eastern Europe"
+          - type: CATEGORY
+            value: "Digital Skills"
+        target-engines: ["SEARXNG", "TAVILY", "PERPLEXITY"]
+
+    wednesday:
+      - query: "bulgaria healthcare research grants"
+        tags:
+          - type: GEOGRAPHY
+            value: "Bulgaria"
+          - type: CATEGORY
+            value: "Healthcare"
+        target-engines: ["SEARXNG", "TAVILY", "PERPLEXITY"]
+      - query: "balkans environmental sustainability funding"
+        tags:
+          - type: GEOGRAPHY
+            value: "Balkans"
+          - type: CATEGORY
+            value: "Environment"
+        target-engines: ["SEARXNG", "TAVILY", "PERPLEXITY"]
+
+    thursday:
+      - query: "romania arts culture grants 2025"
+        tags:
+          - type: GEOGRAPHY
+            value: "Romania"
+          - type: CATEGORY
+            value: "Arts & Culture"
+        target-engines: ["SEARXNG", "TAVILY", "PERPLEXITY"]
+      - query: "eastern europe social innovation funding"
+        tags:
+          - type: GEOGRAPHY
+            value: "Eastern Europe"
+          - type: CATEGORY
+            value: "Social Innovation"
+        target-engines: ["SEARXNG", "TAVILY", "PERPLEXITY"]
+
+    friday:
+      - query: "bulgaria startup entrepreneurship grants"
+        tags:
+          - type: GEOGRAPHY
+            value: "Bulgaria"
+          - type: CATEGORY
+            value: "Entrepreneurship"
+        target-engines: ["SEARXNG", "TAVILY", "PERPLEXITY"]
+      - query: "balkans rural development funding opportunities"
+        tags:
+          - type: GEOGRAPHY
+            value: "Balkans"
+          - type: CATEGORY
+            value: "Rural Development"
+        target-engines: ["SEARXNG", "TAVILY", "PERPLEXITY"]
+
+    saturday:
+      - query: "eastern europe women empowerment grants"
+        tags:
+          - type: GEOGRAPHY
+            value: "Eastern Europe"
+          - type: CATEGORY
+            value: "Women's Programs"
+        target-engines: ["SEARXNG", "TAVILY", "PERPLEXITY"]
+
+    sunday:
+      - query: "bulgaria eu horizon europe funding"
+        tags:
+          - type: GEOGRAPHY
+            value: "Bulgaria"
+          - type: AUTHORITY
+            value: "EU"
+          - type: CATEGORY
+            value: "Research"
+        target-engines: ["SEARXNG", "TAVILY", "PERPLEXITY"]
+
+  # Legacy query generation templates (will be moved to Feature 004)
   query-generation:
     geography-templates:
       - "Bulgaria"

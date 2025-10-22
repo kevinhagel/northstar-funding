@@ -23,6 +23,8 @@ CREATE TABLE domain (
     best_confidence_score DECIMAL(3,2) CHECK (best_confidence_score >= 0.00 AND best_confidence_score <= 1.00),
     high_quality_candidate_count INTEGER NOT NULL DEFAULT 0,
     low_quality_candidate_count INTEGER NOT NULL DEFAULT 0,
+    quality_tier VARCHAR(20) NOT NULL DEFAULT 'UNKNOWN',
+    last_seen_at TIMESTAMP WITH TIME ZONE NULL,
 
     -- Blacklist and Administrative Actions
     blacklisted_by UUID REFERENCES admin_user(user_id),
@@ -40,7 +42,11 @@ CREATE TABLE domain (
     CONSTRAINT domain_status_check
         CHECK (status IN ('DISCOVERED', 'PROCESSING', 'PROCESSED_HIGH_QUALITY',
                          'PROCESSED_LOW_QUALITY', 'BLACKLISTED', 'NO_FUNDS_THIS_YEAR',
-                         'PROCESSING_FAILED'))
+                         'PROCESSING_FAILED')),
+
+    -- Feature 004: Quality tier validation
+    CONSTRAINT chk_domain_quality_tier
+        CHECK (quality_tier IN ('HIGH', 'MEDIUM', 'LOW', 'UNKNOWN'))
 );
 
 -- Indexes for common queries
@@ -52,6 +58,10 @@ CREATE INDEX idx_domain_last_processed ON domain(last_processed_at);
 -- Index for finding domains ready for retry after failure
 CREATE INDEX idx_domain_retry ON domain(status, retry_after)
     WHERE status = 'PROCESSING_FAILED' AND retry_after IS NOT NULL;
+
+-- Feature 004: Quality tier indexes
+CREATE INDEX idx_domain_quality_tier ON domain(quality_tier);
+CREATE INDEX idx_domain_last_seen ON domain(last_seen_at DESC);
 
 -- Add domain_id foreign key to funding_source_candidate
 ALTER TABLE funding_source_candidate

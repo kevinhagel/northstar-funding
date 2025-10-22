@@ -1,0 +1,352 @@
+# SearchEngineAdapter Interface Contract
+# Feature: 003-search-execution-infrastructure
+# Date: 2025-10-20
+#
+# This document defines the unified interface contract that all search engine adapters
+# (Searxng, Browserbase, Tavily, Perplexity) must implement. It ensures consistent
+# behavior across different search engines.
+
+openapi: 3.0.3
+info:
+  title: SearchEngineAdapter Interface Contract
+  description: |
+    Unified interface for all search engine adapters in the NorthStar Funding discovery system.
+    All adapters (Searxng, Tavily, Perplexity, Browserbase) must conform to this contract.
+
+    **Design Principles**:
+    - Adapter Pattern: Hide engine-specific APIs behind unified interface
+    - Vavr Try: Error handling via functional Try<T> type
+    - Circuit Breakers: Resilience4j annotations for fault tolerance
+    - Virtual Threads: Parallel execution via Java 25 Virtual Threads
+  version: 1.0.0
+  contact:
+    name: NorthStar Funding Team
+
+paths: {}  # No REST endpoints - this is a Java interface contract
+
+components:
+  schemas:
+    SearchEngineAdapter:
+      type: object
+      description: |
+        Java interface that all search engine adapters must implement.
+
+        ```java
+        public interface SearchEngineAdapter {
+            Try<List<SearchResult>> search(SearchEngineRequest request);
+            SearchEngineType getEngineType();
+            boolean isEnabled();
+            HealthStatus checkHealth();
+        }
+        ```
+      required:
+        - search
+        - getEngineType
+        - isEnabled
+        - checkHealth
+
+    SearchEngineRequest:
+      type: object
+      description: Request DTO for search execution
+      required:
+        - query
+        - maxResults
+        - language
+        - timeout
+      properties:
+        query:
+          type: string
+          minLength: 1
+          maxLength: 500
+          example: "bulgaria funding grants 2025"
+          description: Search query text
+        maxResults:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 25
+          description: Maximum number of results to return
+        language:
+          type: string
+          pattern: '^[a-z]{2}$'
+          default: "en"
+          example: "en"
+          description: ISO 639-1 language code
+        timeout:
+          type: string
+          format: duration
+          example: "PT15S"
+          description: Request timeout in ISO 8601 duration format
+
+    SearchEngineResponse:
+      type: object
+      description: Response DTO from search engine adapter
+      required:
+        - engine
+        - results
+        - totalResults
+        - responseTime
+        - isSuccess
+      properties:
+        engine:
+          $ref: '#/components/schemas/SearchEngineType'
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/SearchResult'
+          description: List of search results
+        totalResults:
+          type: integer
+          minimum: 0
+          description: Total number of results available (may be > results.length)
+        responseTime:
+          type: string
+          format: duration
+          example: "PT2.5S"
+          description: How long the search request took
+        isSuccess:
+          type: boolean
+          description: Whether the request succeeded
+        errorMessage:
+          type: string
+          nullable: true
+          description: Error message if request failed
+
+    SearchResult:
+      type: object
+      description: Single search result from any search engine
+      required:
+        - url
+        - title
+        - snippet
+        - source
+        - originatingQuery
+        - resultPosition
+        - timestamp
+      properties:
+        url:
+          type: string
+          format: uri
+          example: "https://example.org/grants"
+          description: URL of the search result
+        title:
+          type: string
+          example: "Bulgaria Education Grants 2025"
+          description: Title of the search result
+        snippet:
+          type: string
+          example: "Find funding opportunities for educational programs in Bulgaria..."
+          description: Snippet or description from search result
+        source:
+          $ref: '#/components/schemas/SearchEngineType'
+        originatingQuery:
+          type: string
+          example: "bulgaria education grants"
+          description: Original search query that produced this result
+        resultPosition:
+          type: integer
+          minimum: 1
+          example: 1
+          description: Position in search results (1-based)
+        timestamp:
+          type: string
+          format: date-time
+          example: "2025-10-20T02:15:30Z"
+          description: When the result was retrieved
+
+    SearchEngineType:
+      type: string
+      enum:
+        - SEARXNG
+        - BROWSERBASE
+        - TAVILY
+        - PERPLEXITY
+      description: |
+        Supported search engines:
+        - SEARXNG: Self-hosted meta-search engine (192.168.1.10:8080)
+        - BROWSERBASE: Browser automation service (DEFERRED to Phase 2)
+        - TAVILY: AI-optimized search API
+        - PERPLEXITY: AI-enhanced search with reasoning
+
+    HealthStatus:
+      type: object
+      description: Health check result for search engine
+      required:
+        - engine
+        - isHealthy
+        - lastChecked
+      properties:
+        engine:
+          $ref: '#/components/schemas/SearchEngineType'
+        isHealthy:
+          type: boolean
+          description: Whether the engine is currently healthy
+        lastChecked:
+          type: string
+          format: date-time
+          description: When the health check was last performed
+        circuitBreakerState:
+          type: string
+          enum:
+            - CLOSED
+            - OPEN
+            - HALF_OPEN
+          description: Current circuit breaker state
+        errorMessage:
+          type: string
+          nullable: true
+          description: Error message if unhealthy
+
+  # Adapter-Specific Request/Response Formats (for internal use)
+
+  # Searxng JSON API
+  # Example: GET http://192.168.1.10:8080/search?q=query&format=json&language=en
+
+  SearxngResponse:
+    type: object
+    description: Searxng JSON API response format
+    properties:
+      query:
+        type: string
+      number_of_results:
+        type: integer
+      results:
+        type: array
+        items:
+          type: object
+          properties:
+            title:
+              type: string
+            url:
+              type: string
+            content:
+              type: string
+            engine:
+              type: string
+            score:
+              type: number
+
+  # Tavily API
+  # Example: POST https://api.tavily.com/search
+
+  TavilyRequest:
+    type: object
+    required:
+      - query
+    properties:
+      query:
+        type: string
+      max_results:
+        type: integer
+        default: 25
+      include_answer:
+        type: boolean
+        default: false
+      include_raw_content:
+        type: boolean
+        default: false
+      include_images:
+        type: boolean
+        default: false
+
+  TavilyResponse:
+    type: object
+    properties:
+      query:
+        type: string
+      results:
+        type: array
+        items:
+          type: object
+          properties:
+            title:
+              type: string
+            url:
+              type: string
+            content:
+              type: string
+            score:
+              type: number
+
+  # Perplexity API
+  # Example: POST https://api.perplexity.ai/chat/completions
+
+  PerplexityRequest:
+    type: object
+    required:
+      - model
+      - messages
+    properties:
+      model:
+        type: string
+        enum:
+          - sonar
+          - sonar-pro
+        default: sonar
+      messages:
+        type: array
+        items:
+          type: object
+          properties:
+            role:
+              type: string
+              enum:
+                - user
+                - assistant
+            content:
+              type: string
+      search_domain_filter:
+        type: array
+        items:
+          type: string
+        example: ["*.org", "*.gov", "*.edu"]
+
+  PerplexityResponse:
+    type: object
+    properties:
+      id:
+        type: string
+      model:
+        type: string
+      choices:
+        type: array
+        items:
+          type: object
+          properties:
+            message:
+              type: object
+              properties:
+                role:
+                  type: string
+                content:
+                  type: string
+            finish_reason:
+              type: string
+      citations:
+        type: array
+        items:
+          type: string
+        description: URLs cited in the response
+
+# Resilience4j Annotations (for implementation)
+#
+# @CircuitBreaker(name = "searxng", fallbackMethod = "fallbackSearch")
+# @Retry(name = "searchEngines")
+# public Try<List<SearchResult>> search(SearchEngineRequest request) { ... }
+#
+# fallbackMethod signature must match original method + Exception parameter:
+# private Try<List<SearchResult>> fallbackSearch(SearchEngineRequest request, Exception ex) { ... }
+
+# Virtual Threads Parallelism (for SearchExecutionService)
+#
+# try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
+#     List<Future<Try<List<SearchResult>>>> futures = adapters.stream()
+#         .map(adapter -> executor.submit(() -> adapter.search(request)))
+#         .toList();
+#
+#     return futures.stream()
+#         .map(this::getFutureResult)
+#         .filter(Try::isSuccess)
+#         .flatMap(t -> t.get().stream())
+#         .toList();
+# }

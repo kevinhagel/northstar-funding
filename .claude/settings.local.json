@@ -9,7 +9,16 @@
       "Bash(mvn clean compile:*)",
       "Bash(mvn flyway:clean:*)",
       "Bash(ssh:*)",
-      "Bash(mvn test:*)"
+      "Bash(mvn test:*)",
+      "mcp__code-index__search_code_advanced",
+      "mcp__exa__get_code_context_exa",
+      "mcp__code-index__find_files",
+      "Bash(mvn flyway:migrate:*)",
+      "Bash(mvn flyway:info:*)",
+      "Bash(cat:*)",
+      "Bash(mvn test-compile:*)",
+      "Bash(find:*)",
+      "Bash(tee:*)"
     ],
     "deny": [],
     "ask": []

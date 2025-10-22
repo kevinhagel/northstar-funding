@@ -242,7 +242,6 @@ class DiscoveryWorkflowIntegrationTest {
 
     private FundingSourceCandidate createCandidate(String orgName, String programName, double confidence) {
         return FundingSourceCandidate.builder()
-                .candidateId(UUID.randomUUID())
                 .organizationName(orgName)
                 .programName(programName)
                 .description("Funding program for startups and innovation")
@@ -256,6 +255,8 @@ class DiscoveryWorkflowIntegrationTest {
                 .tags(Set.of("innovation", "technology"))
                 .status(CandidateStatus.PENDING_REVIEW)
                 .discoveredAt(LocalDateTime.now())
+                .lastUpdatedAt(LocalDateTime.now())
+                .extractedData("{}")
                 .build();
     }
 }

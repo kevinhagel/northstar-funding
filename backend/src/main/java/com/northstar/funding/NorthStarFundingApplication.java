@@ -5,6 +5,7 @@ import java.math.BigDecimal;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
+import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 
@@ -25,8 +26,9 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
  * @since Java 25
  */
 @SpringBootApplication
-@EnableWebSecurity  
+@EnableWebSecurity
 @EnableTransactionManagement
+@EnableScheduling
 @ConfigurationPropertiesScan
 public class NorthStarFundingApplication {
 

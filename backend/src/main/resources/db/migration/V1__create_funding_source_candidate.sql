@@ -54,10 +54,23 @@ CREATE TABLE funding_source_candidate (
     -- Enhancement & Validation (Human Enhancement)
     validation_notes TEXT,
     rejection_reason TEXT,
-    
+
+    -- Feature 004: Metadata Judging Fields
+    metadata_title TEXT NULL,
+    metadata_description TEXT NULL,
+    search_engine_source VARCHAR(50) NULL,
+    metadata_judgment_id BIGINT NULL, -- FK added after metadata_judgments table exists
+    domain_quality_tier VARCHAR(20) NULL,
+
     -- Constraints
     CONSTRAINT funding_source_candidate_status_check
-        CHECK (status IN ('PENDING_REVIEW', 'IN_REVIEW', 'APPROVED', 'REJECTED')),
+        CHECK (status IN ('PENDING_REVIEW', 'IN_REVIEW', 'APPROVED', 'REJECTED', 'PENDING_CRAWL')),
+
+    CONSTRAINT chk_candidate_search_engine
+        CHECK (search_engine_source IS NULL OR search_engine_source IN ('SEARXNG', 'TAVILY', 'PERPLEXITY')),
+
+    CONSTRAINT chk_candidate_domain_quality_tier
+        CHECK (domain_quality_tier IS NULL OR domain_quality_tier IN ('HIGH', 'MEDIUM', 'LOW', 'UNKNOWN')),
     
     CONSTRAINT funding_source_candidate_duplicate_fk 
         FOREIGN KEY (duplicate_of_candidate_id) 
@@ -97,13 +110,18 @@ CREATE INDEX idx_funding_source_candidate_discovery_session
     WHERE discovery_session_id IS NOT NULL;
 
 -- Full-text search for funding source content
-CREATE INDEX idx_funding_source_candidate_search 
-    ON funding_source_candidate 
+CREATE INDEX idx_funding_source_candidate_search
+    ON funding_source_candidate
     USING gin(to_tsvector('english', organization_name || ' ' || program_name || ' ' || COALESCE(description, '')));
 
 -- JSONB indexes for filtering
-CREATE INDEX idx_funding_source_candidate_tags 
+CREATE INDEX idx_funding_source_candidate_tags
     ON funding_source_candidate USING gin(tags);
+
+-- Feature 004: Metadata Judging Indexes
+CREATE INDEX idx_candidate_judgment ON funding_source_candidate(metadata_judgment_id) WHERE metadata_judgment_id IS NOT NULL;
+CREATE INDEX idx_candidate_domain_quality ON funding_source_candidate(domain_quality_tier) WHERE domain_quality_tier IS NOT NULL;
+CREATE INDEX idx_candidate_search_engine ON funding_source_candidate(search_engine_source) WHERE search_engine_source IS NOT NULL;
 
 -- Comments for Domain Understanding
 COMMENT ON TABLE funding_source_candidate IS 'Aggregate Root: Discovered funding opportunities pending human validation. Core entity in Funding Sources bounded context.';

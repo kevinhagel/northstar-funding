@@ -334,7 +334,6 @@ class AIEnhancementIntegrationTest {
 
     private FundingSourceCandidate createMinimalCandidate() {
         return FundingSourceCandidate.builder()
-                .candidateId(UUID.randomUUID())
                 .organizationName("Bulgarian Innovation Fund")
                 .programName("Seed Funding Program")
                 .description("Minimal description")
@@ -348,6 +347,8 @@ class AIEnhancementIntegrationTest {
                 .tags(Set.of())
                 .status(CandidateStatus.PENDING_REVIEW)
                 .discoveredAt(LocalDateTime.now())
+                .lastUpdatedAt(LocalDateTime.now())
+                .extractedData("{}")
                 .build();
     }
 }
