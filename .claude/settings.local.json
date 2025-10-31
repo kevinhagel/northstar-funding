@@ -18,7 +18,13 @@
       "Bash(cat:*)",
       "Bash(mvn test-compile:*)",
       "Bash(find:*)",
-      "Bash(tee:*)"
+      "Bash(tee:*)",
+      "Bash(for enum in CandidateStatus DomainStatus ContactType AuthorityLevel SessionType SessionStatus EnhancementType AdminRole)",
+      "Bash(do )",
+      "Bash(\"northstar-domain/src/main/java/com/northstar/funding/domain/$enum.java\")",
+      "Bash(echo:*)",
+      "Bash(done)",
+      "Bash(mvn clean install:*)"
     ],
     "deny": [],
     "ask": []
