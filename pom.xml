@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+         http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.northstar.funding</groupId>
+    <artifactId>northstar-funding</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
+    <packaging>pom</packaging>
+
+    <name>NorthStar Funding Discovery</name>
+    <description>AI-powered funding discovery platform for NGOs and educational institutions</description>
+
+    <modules>
+        <module>northstar-domain</module>
+        <module>northstar-persistence</module>
+        <module>northstar-crawler</module>
+        <module>northstar-judging</module>
+        <module>northstar-application</module>
+    </modules>
+
+    <properties>
+        <!-- Java -->
+        <java.version>25</java.version>
+        <maven.compiler.source>25</maven.compiler.source>
+        <maven.compiler.target>25</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+
+        <!-- Spring Boot -->
+        <spring-boot.version>3.5.6</spring-boot.version>
+
+        <!-- Libraries -->
+        <lombok.version>1.18.42</lombok.version>
+        <vavr.version>0.10.7</vavr.version>
+        <resilience4j.version>2.2.0</resilience4j.version>
+
+        <!-- Testing -->
+        <junit.version>5.11.4</junit.version>
+        <testcontainers.version>1.20.4</testcontainers.version>
+
+        <!-- Database -->
+        <postgresql.version>42.7.5</postgresql.version>
+        <flyway.version>10.20.1</flyway.version>
+
+        <!-- Plugins -->
+        <maven-compiler-plugin.version>3.14.0</maven-compiler-plugin.version>
+        <maven-surefire-plugin.version>3.5.2</maven-surefire-plugin.version>
+    </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <!-- Spring Boot BOM -->
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-dependencies</artifactId>
+                <version>${spring-boot.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
+            <!-- Internal Modules -->
+            <dependency>
+                <groupId>com.northstar.funding</groupId>
+                <artifactId>northstar-domain</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.northstar.funding</groupId>
+                <artifactId>northstar-persistence</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.northstar.funding</groupId>
+                <artifactId>northstar-crawler</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.northstar.funding</groupId>
+                <artifactId>northstar-judging</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <!-- Lombok -->
+            <dependency>
+                <groupId>org.projectlombok</groupId>
+                <artifactId>lombok</artifactId>
+                <version>${lombok.version}</version>
+                <scope>provided</scope>
+            </dependency>
+
+            <!-- Vavr (Functional Programming) -->
+            <dependency>
+                <groupId>io.vavr</groupId>
+                <artifactId>vavr</artifactId>
+                <version>${vavr.version}</version>
+            </dependency>
+
+            <!-- Resilience4j -->
+            <dependency>
+                <groupId>io.github.resilience4j</groupId>
+                <artifactId>resilience4j-spring-boot3</artifactId>
+                <version>${resilience4j.version}</version>
+            </dependency>
+
+            <!-- PostgreSQL -->
+            <dependency>
+                <groupId>org.postgresql</groupId>
+                <artifactId>postgresql</artifactId>
+                <version>${postgresql.version}</version>
+            </dependency>
+
+            <!-- Flyway -->
+            <dependency>
+                <groupId>org.flywaydb</groupId>
+                <artifactId>flyway-core</artifactId>
+                <version>${flyway.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.flywaydb</groupId>
+                <artifactId>flyway-database-postgresql</artifactId>
+                <version>${flyway.version}</version>
+            </dependency>
+
+            <!-- Testing -->
+            <dependency>
+                <groupId>org.junit.jupiter</groupId>
+                <artifactId>junit-jupiter</artifactId>
+                <version>${junit.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.testcontainers</groupId>
+                <artifactId>testcontainers</artifactId>
+                <version>${testcontainers.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.testcontainers</groupId>
+                <artifactId>postgresql</artifactId>
+                <version>${testcontainers.version}</version>
+                <scope>test</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+    <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <version>${maven-compiler-plugin.version}</version>
+                    <configuration>
+                        <source>${java.version}</source>
+                        <target>${java.version}</target>
+                        <release>${java.version}</release>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-surefire-plugin</artifactId>
+                    <version>${maven-surefire-plugin.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.springframework.boot</groupId>
+                    <artifactId>spring-boot-maven-plugin</artifactId>
+                    <version>${spring-boot.version}</version>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+    </build>
+</project>

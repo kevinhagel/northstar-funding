@@ -6,6 +6,16 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 NorthStar Funding Discovery is an automated funding discovery workflow with human-AI collaboration. The system discovers funding sources across multiple search engines, performs domain-level deduplication, judges candidates based on metadata, and creates high-confidence funding source candidates for review.
 
+### Project Context
+
+**Developer**: American expat living in Burgas, Bulgaria
+
+This context may influence:
+- Geographic focus of funding searches (Eastern Europe, EU, Bulgaria-specific opportunities)
+- Time zone considerations for development and scheduling
+- Local infrastructure setup and connectivity patterns
+- Target funding sources and regional priorities
+
 ## Technology Stack
 
 ### Core Technologies
@@ -238,15 +248,16 @@ Use helper methods like `getParsedTags()`, `getParsedTargetEngines()` to parse s
 
 ### TestContainers Integration Tests
 
+**ABSOLUTE RULE**: ALWAYS use @SpringBootTest for TestContainers integration tests. NEVER use @DataJdbcTest.
+
 **MANDATORY**: Before writing any new test with @Testcontainers, read an existing working test (e.g., `DiscoveryWorkflowIntegrationTest.java`) and copy the exact pattern.
 
 **Required Annotations**:
 ```java
-@SpringBootTest
-@Testcontainers
-@Transactional
-@ActiveProfiles("postgres-test")
-public class YourIntegrationTest {
+@SpringBootTest              // REQUIRED - Full application context
+@Testcontainers              // REQUIRED - TestContainers lifecycle
+@Transactional               // REQUIRED - Automatic rollback
+class YourIntegrationTest {
     @Container
     static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:16-alpine")
         .withDatabaseName("testdb")
@@ -259,14 +270,43 @@ public class YourIntegrationTest {
         registry.add("spring.datasource.username", postgres::getUsername);
         registry.add("spring.datasource.password", postgres::getPassword);
     }
+
+    @Autowired
+    private YourRepository repository;
+
+    @Test
+    void yourTest() {
+        // Test implementation
+    }
 }
 ```
 
+**DO NOT USE - FORBIDDEN PATTERN**:
+```java
+// ❌ NEVER DO THIS - WILL FAIL
+@DataJdbcTest
+@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
+@ContextConfiguration(classes = TestConfiguration.class)
+public class WrongTest {
+    // This approach causes configuration errors and is NOT our pattern
+}
+```
+
+**Why @SpringBootTest, Not @DataJdbcTest**:
+- @SpringBootTest loads full application context with all required beans
+- @DataJdbcTest is a sliced test that requires complex manual configuration
+- Our existing tests all use @SpringBootTest successfully
+- Deviation from this pattern causes identifier property errors and configuration hell
+- **This is not negotiable - use the proven pattern**
+
 **Key Points**:
+- `@SpringBootTest`: Full Spring Boot application context (NOT @DataJdbcTest)
 - `@DynamicPropertySource`: Override properties for test environment
 - `@Transactional`: Automatic cleanup between tests
-- `@ActiveProfiles("postgres-test")`: Uses postgres-test profile from application.yml
 - PostgreSQL 16 Alpine image for fast startup
+- Copy exact pattern from `DiscoveryWorkflowIntegrationTest.java`
+
+**Reference**: See ADR 002 in `northstar-notes/decisions/002-testcontainers-integration-test-pattern.md`
 
 ### Test Organization
 - **Unit tests**: `backend/src/test/java/com/northstar/funding/discovery/`
