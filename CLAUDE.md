@@ -4,13 +4,27 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-NorthStar Funding Discovery is an automated funding discovery workflow with human-AI collaboration. The system discovers funding sources across multiple search engines, performs domain-level deduplication, judges candidates based on metadata, and creates high-confidence funding source candidates for review.
+NorthStar Funding Discovery is a **planned** automated funding discovery platform. Currently, the project consists of a **foundational domain model and persistence layer** with **no application logic implemented yet**.
+
+### Current State (What Actually Exists)
+
+✅ **Domain Model**: 19 entities representing funding sources, organizations, programs, domains, sessions, etc.
+✅ **Persistence Layer**: 9 Spring Data JDBC repositories + 5 service classes providing business logic
+✅ **Database Schema**: 17 Flyway migrations creating complete database structure
+✅ **Unit Tests**: 110 Mockito-based tests (all passing)
+✅ **Multi-Module Maven Project**: 5 modules with clean separation of concerns
+
+❌ **NO Crawler** - northstar-crawler module is empty
+❌ **NO Search Integration** - No search engine adapters
+❌ **NO AI Integration** - No LM Studio or AI-powered features
+❌ **NO Application Layer** - No REST API, no orchestration, no scheduler
+❌ **NO Judging** - northstar-judging module is empty
 
 ### Project Context
 
 **Developer**: American expat living in Burgas, Bulgaria
 
-This context may influence:
+This context influences:
 - Geographic focus of funding searches (Eastern Europe, EU, Bulgaria-specific opportunities)
 - Time zone considerations for development and scheduling
 - Local infrastructure setup and connectivity patterns
@@ -20,27 +34,19 @@ This context may influence:
 
 ### Core Technologies
 - **Java 25** (source and target level 25) via SDKMAN
-- **Spring Boot 3.5.6** with Spring Data JDBC
+- **Spring Boot 3.5.6** with Spring Data JDBC (not JPA)
 - **PostgreSQL 16** (Mac Studio @ 192.168.1.10:5432)
-- **Vavr 0.10.7** for functional programming patterns
-- **Lombok 1.18.42** for boilerplate reduction
-- **Java 25 Virtual Threads** for parallel I/O operations
-
-### Fault Tolerance & HTTP
-- **Resilience4j 2.2.0** for circuit breakers and retry logic
-- **Spring RestClient** (Spring 6.1+) for HTTP calls
-- **Spring WebFlux** for LM Studio and search engine adapters
+- **Vavr 0.10.7** for functional programming patterns (planned usage)
+- **Lombok 1.18.42** for boilerplate reduction (domain entities only)
 
 ### Testing
 - **JUnit 5** with Spring Boot Test
-- **TestContainers** for PostgreSQL integration tests
-- **REST Assured** for API testing
-- **Mockito** for unit testing
+- **Mockito** for unit testing (110 tests implemented)
+- **TestContainers** for PostgreSQL integration tests (planned, not yet implemented)
 
 ### Infrastructure
 - **Flyway** for database migrations
-- **Spring Actuator** for health monitoring
-- **LM Studio** @ http://192.168.1.10:1234/v1 (OpenAI-compatible API)
+- **PostgreSQL 16** running on Mac Studio @ 192.168.1.10:5432
 
 ## Build & Development Commands
 
@@ -61,128 +67,146 @@ mvn test-compile
 # Run all tests
 mvn test
 
-# Run specific test
-mvn test -Dtest=ClassName
-mvn test -Dtest=MondayNightlyDiscoveryTest
-mvn test -Dtest=DomainDeduplicationTest
+# Run specific test class
+mvn test -Dtest=DomainServiceTest
+mvn test -Dtest=OrganizationServiceTest
 
-# Run integration tests
-mvn verify
+# Run all service tests
+mvn test -Dtest='*ServiceTest'
 
-# Run with specific profile
-mvn spring-boot:run -Pdev
-mvn spring-boot:run -Pmac-studio
+# Install to local Maven repo
+mvn clean install
 ```
 
 ### Database (Flyway)
 ```bash
 # Apply all migrations
-mvn flyway:migrate
+mvn flyway:migrate -pl northstar-persistence
 
 # Clean database (DESTRUCTIVE - drops all objects)
-mvn flyway:clean
+mvn flyway:clean -pl northstar-persistence
 
 # Clean and re-migrate (fresh start)
-mvn flyway:clean flyway:migrate
+mvn flyway:clean flyway:migrate -pl northstar-persistence
 
 # Show migration status
-mvn flyway:info
+mvn flyway:info -pl northstar-persistence
 
 # Validate migrations
-mvn flyway:validate
+mvn flyway:validate -pl northstar-persistence
 ```
+
+**Note**: Flyway commands must use `-pl northstar-persistence` to target the correct module.
 
 ### Running the Application
-```bash
-# Start application (default port 8080, context /api)
-mvn spring-boot:run
-
-# Start with environment variables
-DISCOVERY_SCHEDULE_ENABLED=true \
-TAVILY_API_KEY=tvly-xxx \
-PERPLEXITY_API_KEY=pplx-xxx \
-mvn spring-boot:run
-
-# Check health
-curl http://localhost:8080/api/actuator/health
-
-# Check circuit breaker status
-curl http://localhost:8080/api/actuator/health | jq '.components.circuitBreakers'
-```
+**Currently there is NO application to run.** The northstar-application module is empty. Only the domain model and persistence layer exist.
 
 ## Architecture
 
-### Package Structure
+### Multi-Module Maven Structure
 ```
-backend/src/main/java/com/northstar/funding/
-├── discovery/
-│   ├── domain/                    # Core entities (Candidate, Domain, Session, etc.)
-│   ├── application/               # Application services
-│   ├── service/                   # Business logic services
-│   ├── infrastructure/
-│   │   ├── config/               # Infrastructure configuration
-│   │   ├── converters/           # Spring Data JDBC custom converters
-│   │   └── client/               # External API clients
-│   ├── search/
-│   │   ├── domain/               # SearchQuery, QueryTag, SearchEngineType
-│   │   ├── application/          # SearchExecutionService, NightlyDiscoveryScheduler
-│   │   └── infrastructure/
-│   │       └── adapters/         # SearxngAdapter, TavilyAdapter, PerplexityAdapter
-│   ├── config/                   # JdbcConfiguration (custom converters)
-│   └── web/                      # REST controllers
-└── common/                        # Shared utilities
-
-backend/src/main/resources/
-├── db/migration/                  # Flyway migrations (V1__*.sql, V2__*.sql, etc.)
-├── application.yml                # Main configuration
-└── application-*.yml              # Profile-specific configs
-
-backend/src/test/java/com/northstar/funding/
-├── discovery/                     # Unit tests
-├── integration/                   # Integration tests with TestContainers
-└── web/                          # Controller tests
+northstar-funding/
+├── pom.xml (parent POM)
+├── northstar-domain/          # Domain entities
+├── northstar-persistence/     # Repositories + Services + Flyway
+├── northstar-crawler/         # (EMPTY - not implemented)
+├── northstar-judging/         # (EMPTY - not implemented)
+└── northstar-application/     # (EMPTY - not implemented)
 ```
 
-### Core Domain Model
+### Domain Module (`northstar-domain`)
 
-**FundingSourceCandidate**: Main entity representing potential funding sources
-- Status: NEW → PENDING_CRAWL → CRAWLED → ENHANCED → JUDGED
-- Tracks URL, domain, discovery method, confidence scores
+**19 Domain Entities** (all using Lombok):
 
-**Domain**: Represents website domains for deduplication
-- Tracks blacklist status, quality metrics
-- Prevents reprocessing same domains
+**Core Workflow Entities:**
+1. `FundingSourceCandidate` - Main workflow entity tracking funding source discovery
+2. `Domain` - Domain-level deduplication and blacklist management
+3. `Organization` - Funding organizations
+4. `FundingProgram` - Specific funding programs offered by organizations
+5. `SearchResult` - Search engine results (planned feature)
 
-**DiscoverySession**: Tracks nightly discovery runs
-- Session type, status, statistics
-- Links to search session statistics
+**Supporting Entities:**
+6. `DiscoverySession` - Session tracking for discovery runs
+7. `ContactIntelligence` - Contact information for organizations
+8. `EnhancementRecord` - Tracking of data enrichment operations
+9. `AdminUser` - System administrators
 
-**SearchQuery**: Query library entity (7-day schedule)
-- Tags stored as TEXT[] (e.g., "GEOGRAPHY:Bulgaria")
-- Target engines as TEXT[] (e.g., "SEARXNG", "TAVILY")
+**Enums** (10 total):
+- `CandidateStatus` - NEW, PENDING_CRAWL, CRAWLED, ENHANCED, JUDGED, etc.
+- `DomainStatus` - DISCOVERED, PROCESSED_HIGH_QUALITY, PROCESSED_LOW_QUALITY, BLACKLISTED, etc.
+- `ProgramStatus` - ACTIVE, EXPIRED, SUSPENDED, etc.
+- `SessionStatus`, `SessionType`, `ContactType`, `EnhancementType`
+- `AdminRole`, `AuthorityLevel`, `SearchEngineType`
 
-**SearchSessionStatistics**: Per-engine performance metrics
-- Queries executed, results returned, response times, failure counts
+**Location**: `northstar-domain/src/main/java/com/northstar/funding/domain/`
 
-### Search Engine Infrastructure
+### Persistence Module (`northstar-persistence`)
 
-**Three Search Adapters** (adapter pattern):
-1. **Searxng**: Self-hosted @ http://192.168.1.10:8080 (no API key)
-2. **Tavily**: API-based (requires TAVILY_API_KEY)
-3. **Perplexity**: API-based (requires PERPLEXITY_API_KEY)
+**9 Repository Interfaces** (Spring Data JDBC):
+1. `FundingSourceCandidateRepository` - Main candidate management
+2. `DomainRepository` - Domain deduplication and blacklist queries
+3. `OrganizationRepository` - Organization lookup and validation
+4. `FundingProgramRepository` - Program queries by status, deadline, etc.
+5. `SearchResultRepository` - Search result queries (planned feature)
+6. `DiscoverySessionRepository` - Session analytics and statistics
+7. `ContactIntelligenceRepository` - Contact lookup
+8. `EnhancementRecordRepository` - Enhancement tracking
+9. `AdminUserRepository` - Admin user management
 
-**Key Features**:
-- Circuit breaker protection per engine (Resilience4j)
-- Virtual Threads for parallel search execution (3x speedup)
-- Domain-level deduplication using `java.net.URI.getHost()`
-- Graceful degradation (system continues with working engines)
-- 7-day query library in application.yml (Monday-Sunday)
+**5 Service Classes** (Business Logic):
+1. `DomainService` - Domain registration, blacklist management, quality tracking
+2. `OrganizationService` - Organization validation, confidence scoring
+3. `FundingProgramService` - Program management, deadline tracking, expiration
+4. `SearchResultService` - Search result processing, deduplication
+5. `DiscoverySessionService` - Session statistics and analytics
 
-**Circuit Breaker Configuration**:
-- Minimum calls: 5
-- Failure rate threshold: 50%
-- Wait duration in open state: 30s
-- Retry: 3 attempts with exponential backoff (1s, 2s, 4s)
+**Service Layer Pattern:**
+- Use `private final` fields for dependencies
+- Explicit constructor (NO @Autowired, NO Lombok @RequiredArgsConstructor)
+- Services are marked `@Service` and `@Transactional`
+- Read-only methods use `@Transactional(readOnly = true)`
+
+**Example Service Pattern:**
+```java
+@Service
+@Transactional
+public class DomainService {
+    private final DomainRepository domainRepository;
+
+    public DomainService(DomainRepository domainRepository) {
+        this.domainRepository = domainRepository;
+    }
+
+    // Business methods...
+}
+```
+
+**Location**: `northstar-persistence/src/main/java/com/northstar/funding/persistence/`
+
+### Database Schema (17 Flyway Migrations)
+
+**Core Tables:**
+- V1: `funding_source_candidate` - Main workflow table
+- V2: `contact_intelligence` - Contact information
+- V3: `admin_user` - System administrators
+- V4: `discovery_session` - Session tracking
+- V5: `enhancement_record` - Data enrichment tracking
+- V6: Indexes for performance
+- V7: Fix enhancement_record constraint
+- V8: `domain` - Domain deduplication and blacklist
+- V9: Update candidate_status enum for two-phase workflow
+
+**Tables for Planned Features (Schema Exists, No Application Code):**
+- V10: `search_queries` - Query library (planned)
+- V11: `search_session_statistics` - Per-engine performance metrics (planned)
+- V12: Extend discovery_session for search tracking
+- V13: `query_generation_sessions` - AI query generation tracking (planned)
+- V14: `metadata_judgments` - Phase 1 judging results (planned)
+- V15: `organization` - Funding organizations
+- V16: `funding_program` - Funding programs
+- V17: `search_result` - Search engine results (planned)
+
+**Location**: `northstar-persistence/src/main/resources/db/migration/`
 
 ## Database
 
@@ -192,22 +216,19 @@ backend/src/test/java/com/northstar/funding/
 - **User**: northstar_user
 - **Password**: northstar_password (configured in pom.xml Flyway plugin)
 
-### Flyway Migrations
-Migrations are located in `backend/src/main/resources/db/migration/`:
-- V1: Create funding_source_candidate table
-- V2: Create contact_intelligence table
-- V3: Create admin_user table
-- V4: Create discovery_session table
-- V5: Create enhancement_record table
-- V6: Create indexes
-- V7: Fix enhancement_record constraint
-- V8: Create domain table
-- V9: Update candidate status (two-phase workflow)
-- V10: Create search_queries table
-- V11: Create search_session_statistics table
-- V12: Extend discovery_session for search
-- V13: Create query_generation_sessions table
-- V14: Create metadata_judgments table
+### Flyway Configuration
+Located in `northstar-persistence/pom.xml`:
+```xml
+<plugin>
+    <groupId>org.flywaydb</groupId>
+    <artifactId>flyway-maven-plugin</artifactId>
+    <configuration>
+        <url>jdbc:postgresql://192.168.1.10:5432/northstar_funding</url>
+        <user>northstar_user</user>
+        <password>northstar_password</password>
+    </configuration>
+</plugin>
+```
 
 ## Spring Data JDBC Best Practices
 
@@ -216,48 +237,102 @@ Migrations are located in `backend/src/main/resources/db/migration/`:
 
 **Pattern**:
 ```java
-// Entity field
+// Entity field (in some planned features)
 private Set<String> tags;  // Stored as TEXT[] in PostgreSQL
 
-// Custom converter
+// Custom converter (example from planned features)
 @Component
-public class QueryTagSetConverter implements Converter<String[], Set<String>> {
+public class StringSetConverter implements Converter<String[], Set<String>> {
     @Override
     public Set<String> convert(String[] source) {
         return source != null ? Set.of(source) : Set.of();
     }
 }
-
-// Register in JdbcConfiguration
-@EnableJdbcRepositories(basePackages = "com.northstar.funding.discovery.search.domain")
 ```
 
-**Why**: Avoids Spring Data JDBC interpreting `Set<ComplexObject>` as one-to-many relationships.
+**See**: `northstar-notes/decisions/001-text-array-over-jsonb.md` for detailed rationale.
 
 ### Custom Converters
-Register custom converters for:
-- `QueryTagSetConverter`: TEXT[] ↔ Set<String> for tags
-- `SearchEngineTypeSetConverter`: TEXT[] ↔ Set<String> for engines
+Register custom converters in `northstar-persistence/src/main/java/com/northstar/funding/persistence/config/JdbcConfiguration.java`
 
-Update `JdbcConfiguration` with `@EnableJdbcRepositories` when adding new repository packages.
+Update `@EnableJdbcRepositories` annotation when adding new repository packages.
 
-### Application-Layer Parsing
-Use helper methods like `getParsedTags()`, `getParsedTargetEngines()` to parse stored Set<String> values in the application layer, not in the database.
+### Lombok Usage
+
+**DO use Lombok for:**
+- Domain entities (`@Data`, `@Builder`, `@NoArgsConstructor`, `@AllArgsConstructor`)
+
+**DO NOT use Lombok for:**
+- Service classes (use explicit constructors for Spring DI)
+- Test classes (explicit constructors are clearer)
+
+**Lombok Configuration**:
+Both `northstar-domain/pom.xml` and `northstar-persistence/pom.xml` include:
+```xml
+<plugin>
+    <groupId>org.apache.maven.plugins</groupId>
+    <artifactId>maven-compiler-plugin</artifactId>
+    <configuration>
+        <annotationProcessorPaths>
+            <path>
+                <groupId>org.projectlombok</groupId>
+                <artifactId>lombok</artifactId>
+                <version>${lombok.version}</version>
+            </path>
+        </annotationProcessorPaths>
+    </configuration>
+</plugin>
+```
 
 ## Testing Best Practices
 
-### TestContainers Integration Tests
+### Unit Tests (Mockito)
 
-**ABSOLUTE RULE**: ALWAYS use @SpringBootTest for TestContainers integration tests. NEVER use @DataJdbcTest.
+**Current Status**: 110 unit tests implemented for all 5 service classes, all passing.
 
-**MANDATORY**: Before writing any new test with @Testcontainers, read an existing working test (e.g., `DiscoveryWorkflowIntegrationTest.java`) and copy the exact pattern.
-
-**Required Annotations**:
+**Pattern**:
 ```java
-@SpringBootTest              // REQUIRED - Full application context
-@Testcontainers              // REQUIRED - TestContainers lifecycle
-@Transactional               // REQUIRED - Automatic rollback
-class YourIntegrationTest {
+@ExtendWith(MockitoExtension.class)
+class DomainServiceTest {
+    @Mock
+    private DomainRepository domainRepository;
+
+    @InjectMocks
+    private DomainService domainService;
+
+    @Test
+    void registerDomain_WhenNew_ShouldCreateDomain() {
+        // Given
+        when(domainRepository.findByDomainName("test.org"))
+            .thenReturn(Optional.empty());
+        when(domainRepository.save(any(Domain.class)))
+            .thenReturn(testDomain);
+
+        // When
+        Domain result = domainService.registerDomain("test.org", sessionId);
+
+        // Then
+        assertThat(result).isNotNull();
+        verify(domainRepository).save(any(Domain.class));
+    }
+}
+```
+
+**Test Organization**:
+- Unit tests: `northstar-persistence/src/test/java/com/northstar/funding/persistence/service/`
+- 5 test classes: `DomainServiceTest`, `OrganizationServiceTest`, `FundingProgramServiceTest`, `SearchResultServiceTest`, `DiscoverySessionServiceTest`
+
+### Integration Tests (TestContainers)
+
+**Status**: NOT YET IMPLEMENTED. Planned for future development.
+
+**When implemented**, follow this pattern:
+```java
+@SpringBootTest
+@Testcontainers
+@Transactional
+@ActiveProfiles("postgres-test")
+public class YourIntegrationTest {
     @Container
     static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:16-alpine")
         .withDatabaseName("testdb")
@@ -270,217 +345,52 @@ class YourIntegrationTest {
         registry.add("spring.datasource.username", postgres::getUsername);
         registry.add("spring.datasource.password", postgres::getPassword);
     }
-
-    @Autowired
-    private YourRepository repository;
-
-    @Test
-    void yourTest() {
-        // Test implementation
-    }
 }
 ```
 
-**DO NOT USE - FORBIDDEN PATTERN**:
-```java
-// ❌ NEVER DO THIS - WILL FAIL
-@DataJdbcTest
-@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
-@ContextConfiguration(classes = TestConfiguration.class)
-public class WrongTest {
-    // This approach causes configuration errors and is NOT our pattern
-}
-```
-
-**Why @SpringBootTest, Not @DataJdbcTest**:
-- @SpringBootTest loads full application context with all required beans
-- @DataJdbcTest is a sliced test that requires complex manual configuration
-- Our existing tests all use @SpringBootTest successfully
-- Deviation from this pattern causes identifier property errors and configuration hell
-- **This is not negotiable - use the proven pattern**
-
-**Key Points**:
-- `@SpringBootTest`: Full Spring Boot application context (NOT @DataJdbcTest)
-- `@DynamicPropertySource`: Override properties for test environment
-- `@Transactional`: Automatic cleanup between tests
-- PostgreSQL 16 Alpine image for fast startup
-- Copy exact pattern from `DiscoveryWorkflowIntegrationTest.java`
-
-**Reference**: See ADR 002 in `northstar-notes/decisions/002-testcontainers-integration-test-pattern.md`
-
-### Test Organization
-- **Unit tests**: `backend/src/test/java/com/northstar/funding/discovery/`
-- **Integration tests**: `backend/src/test/java/com/northstar/funding/integration/`
-- **Web tests**: `backend/src/test/java/com/northstar/funding/web/`
+**See**: `northstar-notes/decisions/002-testcontainers-integration-test-pattern.md`
 
 ### Running Tests
 ```bash
 # All tests
 mvn test
 
-# Specific integration test
-mvn test -Dtest=MondayNightlyDiscoveryTest
-mvn test -Dtest=DomainDeduplicationTest
-mvn test -Dtest=CircuitBreakerTest
+# Specific service test
+mvn test -Dtest=DomainServiceTest
 
-# Performance tests (longer runtime)
-mvn test -Dtest=SearchPerformanceTest
+# All service tests
+mvn test -Dtest='*ServiceTest'
 ```
-
-## Configuration Profiles
-
-### Available Profiles
-- **dev** (default): Development with Mac Studio PostgreSQL
-- **mac-studio**: Production on Mac Studio
-- **test**: Standard test configuration
-- **postgres-test**: TestContainers integration tests
-
-### Key Configuration Files
-- `application.yml`: Main configuration with query library
-- Circuit breaker instances: tavily, searxng, perplexity, lmStudio
-- Nightly scheduler: Disabled by default (enable with `DISCOVERY_SCHEDULE_ENABLED=true`)
 
 ## Development Workflow
 
-### Feature Development
-1. Create feature spec in `specs/00X-feature-name/`
-2. Design database schema (Flyway migration)
-3. Create domain entities with Spring Data JDBC
-4. Implement application services
-5. Add infrastructure adapters if needed
-6. Write comprehensive tests (unit + integration)
-7. Update CLAUDE.md with new patterns
+### Adding New Domain Entities
+1. Create entity in `northstar-domain/src/main/java/com/northstar/funding/domain/`
+2. Use Lombok (`@Data`, `@Builder`, `@NoArgsConstructor`, `@AllArgsConstructor`)
+3. Use `@Table(name = "table_name")` for Spring Data JDBC
+4. Create Flyway migration in `northstar-persistence/src/main/resources/db/migration/`
+5. Create repository in `northstar-persistence/.../repository/`
+6. Create service in `northstar-persistence/.../service/`
+7. Write unit tests with Mockito
 
-### Adding New Search Engines
-1. Create adapter implementing `SearchEngineAdapter` interface
-2. Add circuit breaker configuration in `application.yml`
-3. Add configuration properties for API keys/URLs
-4. Register in SearchExecutionService
-5. Add integration tests
+### Adding New Repositories
+1. Create interface extending `CrudRepository<Entity, ID>`
+2. Add custom query methods using `@Query` annotation
+3. Update `JdbcConfiguration` if needed for custom converters
+4. Write service layer methods that use the repository
+5. Write unit tests for the service
 
-### Adding New Query Library Entries
-Edit `application.yml` under `discovery.query-library`:
-```yaml
-discovery:
-  query-library:
-    monday:
-      - query: "your search query"
-        tags:
-          - type: GEOGRAPHY
-            value: "Bulgaria"
-          - type: CATEGORY
-            value: "Education"
-        target-engines: ["SEARXNG", "TAVILY", "PERPLEXITY"]
-```
-
-## Performance Characteristics
-
-### Search Execution
-- Single query (3 engines parallel): 3-8 seconds
-- 10 queries (sequential): 5-15 minutes
-- Deduplication rate: 40-60% (typical)
-
-### Database Operations
-- findByDayOfWeekAndEnabled: <50ms
-- save with TEXT[] columns: <100ms
-- Flyway migrations: <1s total
-
-### Virtual Threads
-- 3x speedup vs sequential execution
-- Scales to hundreds of concurrent searches
-- Optimized for I/O-bound operations (HTTP calls)
-
-## Common Patterns
-
-### Functional Error Handling (Vavr)
-```java
-import io.vavr.control.Try;
-
-Try<List<SearchResult>> result = Try.of(() -> adapter.search(query, maxResults))
-    .onFailure(e -> log.error("Search failed", e))
-    .recover(ex -> List.of());  // Graceful degradation
-```
-
-### Virtual Threads Parallel Execution
-```java
-try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
-    var futures = engines.stream()
-        .map(engine -> executor.submit(() -> engine.search(query)))
-        .toList();
-
-    var results = futures.stream()
-        .map(CompletableFuture::join)
-        .flatMap(List::stream)
-        .toList();
-}
-```
-
-### Circuit Breaker Protection
-```java
-@CircuitBreaker(name = "tavily", fallbackMethod = "searchFallback")
-@Retry(name = "searchEngines")
-public List<SearchResult> search(String query, int maxResults) {
-    // Call external API
-}
-
-private List<SearchResult> searchFallback(String query, int maxResults, Throwable t) {
-    log.warn("Circuit breaker fallback for query: {}", query, t);
-    return List.of();  // Graceful degradation
-}
-```
-
-## Recent Features
-
-### Feature 003: Search Execution Infrastructure (COMPLETED)
-- Search engine adapters (Searxng, Tavily, Perplexity)
-- Virtual Threads parallel execution
-- Circuit breaker protection per engine
-- Domain-level deduplication
-- 7-day query library (Monday-Sunday)
-- Nightly discovery scheduler
-- Integration tests: MondayNightlyDiscoveryTest, DomainDeduplicationTest, CircuitBreakerTest
-
-See `specs/003-search-execution-infrastructure/COMPLETION-SUMMARY.md` for detailed documentation.
-
-## Key Design Decisions
-
-### Set<String> Instead of Complex Objects
-Use `Set<String>` with TEXT[] columns instead of complex objects to avoid Spring Data JDBC relationship interpretation. Parse in application layer with helper methods.
-
-### No JSONB in Early Development
-Use TEXT[] for simplicity. Can migrate to JSONB later if complex querying is needed.
-
-### Domain-Level Deduplication (Simple)
-Use `java.net.URI.getHost()` for domain extraction. Defers complex normalization (www/non-www) to future enhancement.
-
-### Circuit Breaker Per Engine
-Separate Resilience4j instance for each search engine for better fault isolation and independent failure handling.
-
-## Project Structure
-
-### Documentation
-- `CLAUDE.md`: This file
-- `docs/`: Architecture and research documents
-- `specs/`: Feature specifications and implementation plans
-- `.specify/`: Feature planning templates and scripts
-- `northstar-notes/`: Obsidian vault for development notes (see Obsidian Vault section below)
-
-### External Infrastructure
-All infrastructure runs on Mac Studio @ 192.168.1.10:
-- PostgreSQL 16 (port 5432)
-- Searxng (port 8080)
-- LM Studio (port 1234)
-
-### API Keys (Environment Variables)
-```bash
-export TAVILY_API_KEY=tvly-xxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-export PERPLEXITY_API_KEY=pplx-xxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-export DISCOVERY_SCHEDULE_ENABLED=true  # Enable nightly scheduler
-```
+### Adding New Services
+1. Create service class with `@Service` and `@Transactional`
+2. Use `private final` fields for repository dependencies
+3. Create explicit constructor (NO @Autowired, NO Lombok)
+4. Implement business logic methods
+5. Use `@Transactional(readOnly = true)` for read-only methods
+6. Write comprehensive Mockito unit tests
 
 ## Obsidian Vault Integration
 
-The project includes an **Obsidian vault** at `northstar-notes/` for development notes, planning, and knowledge management. Claude Code should actively read from and write to this vault.
+The project includes an **Obsidian vault** at `northstar-notes/` for development notes, planning, and knowledge management.
 
 ### Vault Structure
 
@@ -488,11 +398,15 @@ The project includes an **Obsidian vault** at `northstar-notes/` for development
 northstar-notes/
 ├── .obsidian/           # Obsidian configuration (do not modify)
 ├── README.md            # Vault overview and usage guide
-├── daily-notes/         # Daily work logs (YYYY-MM-DD.md)
 ├── session-summaries/   # Claude Code session summaries
-├── feature-planning/    # WIP planning before formal specs
 ├── decisions/           # Architecture Decision Records (ADRs)
-└── inbox/               # Quick capture, unprocessed notes
+├── inbox/               # Quick capture, unprocessed notes
+├── project/             # (empty - planned for project documentation)
+├── architecture/        # (empty - planned for architecture docs)
+├── technology/          # (empty - planned for tech notes)
+├── features/            # (empty - planned for feature docs)
+├── feature-planning/    # (empty - planned for WIP planning)
+└── daily-notes/         # (empty - planned for daily logs)
 ```
 
 ### When Claude Code Should Write to the Vault
@@ -501,275 +415,128 @@ northstar-notes/
 
 1. **Session Summaries** (`session-summaries/`)
    - After completing major feature work or milestone
-   - After fixing complex bugs or making architectural decisions
-   - After major refactoring or performance improvements
-   - Format: `YYYY-MM-DD-feature-name.md` or `YYYY-MM-DD-session-N.md`
-   - Include: What was accomplished, decisions made, blockers, next steps
+   - After making architectural decisions
+   - Format: `YYYY-MM-DD-description.md`
 
 2. **Architecture Decision Records** (`decisions/`)
    - When making significant technical decisions
-   - When choosing between competing approaches
-   - When deviating from established patterns
    - Format: `NNN-decision-title.md` (numbered sequentially)
-   - Structure: Context, Decision, Consequences, Alternatives Considered
-
-3. **Feature Planning** (`feature-planning/`)
-   - When brainstorming new features before creating formal specs
-   - When exploring design alternatives
-   - When user provides rough requirements that need refinement
-   - Move to `/specs` once solidified
-
-**OPTIONAL - Write when helpful:**
-
-4. **Daily Notes** (`daily-notes/`)
-   - When user explicitly requests daily log updates
-   - When tracking progress across multiple days on same feature
-
-5. **Inbox** (`inbox/`)
-   - For quick TODOs or ideas that come up during development
-   - For unresolved questions or blockers to address later
-
-### When Claude Code Should Read from the Vault
-
-**Always check vault before:**
-
-1. **Starting new features** - Check `feature-planning/` for existing drafts
-2. **Making architectural decisions** - Review `decisions/` for precedents
-3. **Understanding project history** - Read `session-summaries/` for context
-4. **Resuming work** - Check today's `daily-notes/` for current status
+   - Current ADRs:
+     - 001-text-array-over-jsonb.md
+     - 002-domain-level-deduplication.md
+     - 002-testcontainers-integration-test-pattern.md
 
 ### Writing Conventions for Java Projects
 
 **1. Link to Code Files:**
 ```markdown
-See `backend/src/main/java/com/northstar/funding/discovery/service/MetadataJudgingService.java:42`
+See `northstar-persistence/src/main/java/com/northstar/funding/persistence/service/DomainService.java:42`
 ```
 
 **2. Link to Database Schema:**
 ```markdown
-Migration `V14__create_metadata_judgments_table.sql` adds confidence scoring
+Migration `V8__create_domain.sql` adds domain deduplication
 ```
 
-**3. Tag with Feature Numbers:**
+**3. Reference Java Classes:**
 ```markdown
-#feature-003 #feature-004 #search-infrastructure
+The `DomainService` uses `DomainRepository` for persistence
 ```
 
-**4. Tag with Categories:**
+**4. Reference Test Classes:**
 ```markdown
-#architecture #performance #testing #bug #refactor
+Added unit test: `DomainServiceTest.registerDomain_WhenNew_ShouldCreateDomain()`
 ```
 
-**5. Link to Related Notes:**
-```markdown
-See [[001-text-array-over-jsonb]] for rationale on TEXT[] vs JSONB
-```
+## Key Design Decisions
 
-**6. Reference Java Classes:**
-```markdown
-The `SearchExecutionService` uses Virtual Threads for parallel execution
-```
+### Domain-Level Deduplication
+Use `Domain` entity to track unique domains and prevent reprocessing. See ADR: `northstar-notes/decisions/002-domain-level-deduplication.md`
 
-**7. Reference Test Classes:**
-```markdown
-Added integration test: `MondayNightlyDiscoveryTest.shouldLoadCorrectQueries()`
-```
+### TEXT[] Instead of JSONB
+Use PostgreSQL TEXT[] arrays for simple string collections to avoid Spring Data JDBC complexity with JSONB. See ADR: `northstar-notes/decisions/001-text-array-over-jsonb.md`
 
-### Session Summary Template
+### Service Layer Pattern
+- `private final` fields for dependencies
+- Explicit constructors (NO @Autowired, NO Lombok)
+- @Transactional for write operations
+- @Transactional(readOnly = true) for read operations
 
-When writing session summaries, use this structure:
+### No Lombok in Services
+Spring manages service beans, so we use explicit constructors for clarity and to avoid Lombok annotation processing issues with Spring DI.
 
-```markdown
-# Session Summary: [Feature Name or Work Description]
+## Project Structure
 
-**Date**: YYYY-MM-DD
-**Duration**: ~X hours
-**Feature**: #feature-00X
-**Branch**: feature-branch-name
+### Documentation
+- `CLAUDE.md`: This file
+- `specs/`: Feature specifications
+  - `001-automated-funding-discovery/`: Original project spec (may be outdated)
+- `northstar-notes/`: Obsidian vault for development notes
+- `docs/`: (various design documents - may be outdated)
 
-## What Was Accomplished
+### External Infrastructure
+All infrastructure runs on Mac Studio @ 192.168.1.10:
+- PostgreSQL 16 (port 5432)
 
-- [ ] Task 1 description
-- [x] Task 2 description (completed)
-- [ ] Task 3 description
+### Database Tables Created (But Application Code Not Implemented)
 
-## Key Decisions Made
+Several database tables exist for **planned features** that are **not yet implemented**:
+- `search_queries` - Query library (V10)
+- `search_session_statistics` - Per-engine metrics (V11)
+- `query_generation_sessions` - AI query generation (V13)
+- `metadata_judgments` - Phase 1 judging (V14)
+- `search_result` - Search results (V17)
 
-### Decision 1: Title
-**Context**: Why this decision was needed
-**Decision**: What was chosen
-**Rationale**: Why this approach
-**Alternatives**: What else was considered
+These tables were created in anticipation of future features but no application code uses them yet.
 
-## Code Changes
+## What's Next?
 
-### New Files
-- `path/to/NewService.java` - Description of purpose
-- `path/to/migration/V15__*.sql` - Database changes
+The current implementation provides a solid foundation of domain entities and persistence layer. Future development might include:
 
-### Modified Files
-- `path/to/ExistingService.java` - What changed and why
+1. **Application Layer** - REST API, orchestration, scheduling
+2. **Crawler Infrastructure** - Web scraping and content extraction
+3. **Search Integration** - Multiple search engine adapters
+4. **AI Integration** - LM Studio for query generation and judging
+5. **Judging Logic** - Metadata-based confidence scoring
+6. **Integration Tests** - TestContainers-based integration testing
 
-## Tests Added/Modified
-- `SomeIntegrationTest.testSomething()` - What it validates
-- Current status: X passing, Y failing
-
-## Blockers & Issues
-
-1. **Issue description** - What's blocking and what's needed to resolve
-2. **Test failures** - Which tests are failing and why
-
-## Next Steps
-
-1. [ ] Immediate next task
-2. [ ] Following task
-3. [ ] Future consideration
-
-## Related Documentation
-
-- [[Related Note in Vault]]
-- `specs/00X-feature/plan.md`
-- `CLAUDE.md` updates needed
-```
-
-### Architecture Decision Record Template
-
-When writing ADRs, use this structure:
-
-```markdown
-# ADR NNN: Decision Title
-
-**Status**: Accepted | Proposed | Superseded
-**Date**: YYYY-MM-DD
-**Context Tags**: #architecture #database #performance
-
-## Context
-
-What is the problem we're trying to solve? What are the constraints and requirements?
-
-## Decision
-
-What did we decide to do? Be specific and concrete.
-
-## Consequences
-
-### Positive
-- Benefit 1
-- Benefit 2
-
-### Negative
-- Trade-off 1
-- Trade-off 2
-
-### Neutral
-- Side effect 1
-
-## Alternatives Considered
-
-### Alternative 1: Name
-**Description**: What it is
-**Pros**: Why it's good
-**Cons**: Why we didn't choose it
-
-### Alternative 2: Name
-**Description**: What it is
-**Pros**: Why it's good
-**Cons**: Why we didn't choose it
-
-## Implementation Notes
-
-Code locations, patterns to follow, examples:
-
-```java
-// Example implementation pattern
-public class Example {
-    // ...
-}
-```
-
-## References
-
-- [[Related ADR]]
-- External documentation links
-- Java/Spring documentation
-- Feature specs that motivated this decision
-```
-
-### Best Practices for Vault Management
-
-**DO:**
-- Write session summaries after significant work sessions
-- Document "why" decisions, not just "what" was done
-- Use wiki links `[[like-this]]` to connect related notes
-- Tag notes with feature numbers and categories
-- Link to specific code files and line numbers
-- Reference Java class names, test names, migration files
-- Update vault regularly as work progresses
-
-**DON'T:**
-- Don't duplicate content that belongs in `CLAUDE.md` (project-wide patterns)
-- Don't duplicate content that belongs in `/specs` (formal feature specs)
-- Don't write executable code in vault (code examples are fine, but implementations go in `/backend`)
-- Don't modify `.obsidian/` configuration directory
-- Don't use vault for sensitive data (API keys, credentials)
-
-### Integration with Project Workflow
-
-**Daily Workflow:**
-1. **Morning**: Check `daily-notes/YYYY-MM-DD.md` for current tasks
-2. **During Development**: Add quick notes to `inbox/` as needed
-3. **After Major Work**: Write session summary to `session-summaries/`
-4. **When Deciding**: Document decisions in `decisions/` with ADR format
-5. **Planning Features**: Draft in `feature-planning/`, move to `/specs` when ready
-
-**Weekly Workflow:**
-1. Review and process notes in `inbox/`
-2. Update `decisions/` index if new ADRs added
-3. Archive or expand notes in `feature-planning/`
-4. Review `session-summaries/` for patterns or recurring issues
-
-### Linking Between Vault and Project Files
-
-**From Vault to Code:**
-```markdown
-Implemented in `backend/src/main/java/com/northstar/funding/discovery/service/MetadataJudgingService.java`
-Database schema: `backend/src/main/resources/db/migration/V14__create_metadata_judgments_table.sql`
-Tests: `backend/src/test/java/com/northstar/funding/integration/MetadataJudgingIntegrationTest.java`
-```
-
-**From Vault to Specs:**
-```markdown
-Formal spec: [Feature 004](../specs/004-ai-query-generation-metadata-judging/spec.md)
-Implementation plan: [Feature 004 Tasks](../specs/004-ai-query-generation-metadata-judging/tasks.md)
-```
-
-**From Vault to Other Docs:**
-```markdown
-Architecture overview: [Crawler Hybrid Architecture](../docs/architecture-crawler-hybrid.md)
-Domain model: [Domain Model](../docs/domain-model.md)
-Project guide: [CLAUDE.md](../CLAUDE.md)
-```
-
-### Example Session Summary
-
-See `northstar-notes/session-summaries/_template.md` for the full template with examples.
+**However**, no specific features are planned or in progress. The roadmap is undefined.
 
 ## Troubleshooting
 
-### TestContainers Issues
-1. Ensure Docker is running
-2. Check existing test (e.g., `DiscoveryWorkflowIntegrationTest.java`) for correct pattern
-3. Verify `@DynamicPropertySource` configuration
-4. Check `application.yml` has postgres-test profile
+### Compilation Issues
+- Ensure Lombok annotation processing is configured in both domain and persistence POMs
+- Run `mvn clean compile` to regenerate Lombok-generated code
+- Check that Java 25 is active: `java --version`
 
-### Circuit Breaker Issues
-1. Check actuator health: `curl http://localhost:8080/api/actuator/health`
-2. Verify API keys are set in environment
-3. Check circuit breaker state in logs
-4. Wait 30s for circuit to transition from OPEN to HALF_OPEN
+### Test Failures
+- Ensure PostgreSQL is running at 192.168.1.10:5432
+- Run Flyway migrations: `mvn flyway:migrate -pl northstar-persistence`
+- Check test output for specific assertion failures
 
-### Search Engine Connection Issues
-1. Verify Mac Studio infrastructure is accessible @ 192.168.1.10
-2. Check Searxng is running: `curl http://192.168.1.10:8080`
-3. Verify API keys are valid
-4. Review circuit breaker configuration in `application.yml`
+### Flyway Issues
+- Always use `-pl northstar-persistence` with Flyway commands
+- To reset database: `mvn flyway:clean flyway:migrate -pl northstar-persistence`
+- Check migration status: `mvn flyway:info -pl northstar-persistence`
+
+## Common Patterns
+
+### Functional Error Handling (Vavr)
+**Status**: Vavr is in the POM but not currently used. Planned for future application layer.
+
+### BigDecimal for Confidence Scores
+All confidence scores use `BigDecimal` with scale 2 for precision.
+
+**Example**:
+```java
+BigDecimal confidence = new BigDecimal("0.85");
+organization.setOrganizationConfidence(confidence);
+```
+
+## Important Notes
+
+- **NO application layer exists** - only domain model and persistence
+- **NO crawler, search, or judging features implemented**
+- Database schema includes tables for planned features that don't exist yet
+- All tests are unit tests with Mockito - no integration tests yet
+- Service layer follows strict DI pattern (explicit constructors, no Lombok)

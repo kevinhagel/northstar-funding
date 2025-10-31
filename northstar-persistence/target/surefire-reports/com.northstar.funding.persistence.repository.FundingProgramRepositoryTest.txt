@@ -1,0 +1,4 @@
+-------------------------------------------------------------------------------
+Test set: com.northstar.funding.persistence.repository.FundingProgramRepositoryTest
+-------------------------------------------------------------------------------
+Tests run: 14, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 5.826 s -- in com.northstar.funding.persistence.repository.FundingProgramRepositoryTest

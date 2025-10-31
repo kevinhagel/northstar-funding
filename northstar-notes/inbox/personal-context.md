@@ -26,5 +26,4 @@
 #personal #bulgaria #expat #geography #context
 
 ## Related Notes
-- [[Feature 003]] - Search infrastructure with Bulgaria geography tags
 - `CLAUDE.md` - Project guide with context section

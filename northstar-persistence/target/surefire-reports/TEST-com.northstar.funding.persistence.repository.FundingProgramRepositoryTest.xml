@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://maven.apache.org/surefire/maven-surefire-plugin/xsd/surefire-test-report.xsd" version="3.0.2" name="com.northstar.funding.persistence.service.DiscoverySessionServiceTest" time="0.049" tests="26" errors="0" skipped="0" failures="0">
+<testsuite xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://maven.apache.org/surefire/maven-surefire-plugin/xsd/surefire-test-report.xsd" version="3.0.2" name="com.northstar.funding.persistence.repository.FundingProgramRepositoryTest" time="5.826" tests="14" errors="0" skipped="0" failures="0">
   <properties>
     <property name="java.specification.version" value="25"/>
     <property name="sun.jnu.encoding" value="UTF-8"/>
@@ -47,7 +47,7 @@
     <property name="localRepository" value="/Users/kevin/.m2/repository"/>
     <property name="java.vendor.url.bug" value="https://bugreport.java.com/bugreport/"/>
     <property name="java.io.tmpdir" value="/var/folders/h0/fr7kltd50vn8v4dvtkcy0cm40000gn/T/"/>
-    <property name="com.zaxxer.hikari.pool_number" value="4"/>
+    <property name="com.zaxxer.hikari.pool_number" value="1"/>
     <property name="java.version" value="25"/>
     <property name="user.dir" value="/Users/kevin/github/northstar-funding/northstar-persistence"/>
     <property name="os.arch" value="aarch64"/>
@@ -65,30 +65,113 @@
     <property name="socksNonProxyHosts" value="local|*.local|169.254/16|*.169.254/16"/>
     <property name="java.class.version" value="69.0"/>
   </properties>
-  <testcase name="getDailyTrends_ShouldReturnTrends" classname="com.northstar.funding.persistence.service.DiscoverySessionServiceTest" time="0.037"/>
-  <testcase name="failSession_WhenSessionExists_ShouldFailSession" classname="com.northstar.funding.persistence.service.DiscoverySessionServiceTest" time="0.001"/>
-  <testcase name="updateStatistics_WhenSessionExists_ShouldUpdateStatistics" classname="com.northstar.funding.persistence.service.DiscoverySessionServiceTest" time="0.001"/>
-  <testcase name="getAverageDiscoveryMetrics_ShouldReturnAverage" classname="com.northstar.funding.persistence.service.DiscoverySessionServiceTest" time="0.0"/>
-  <testcase name="getSessionsByTypeAndStatus_ShouldReturnFilteredSessions" classname="com.northstar.funding.persistence.service.DiscoverySessionServiceTest" time="0.001"/>
-  <testcase name="getSessionsEligibleForRetry_ShouldReturnRetrySessions" classname="com.northstar.funding.persistence.service.DiscoverySessionServiceTest" time="0.0"/>
-  <testcase name="getFailedSessions_ShouldReturnFailedSessions" classname="com.northstar.funding.persistence.service.DiscoverySessionServiceTest" time="0.001"/>
-  <testcase name="completeSession_WhenSessionExists_ShouldCompleteSession" classname="com.northstar.funding.persistence.service.DiscoverySessionServiceTest" time="0.0"/>
-  <testcase name="getSessionsBySearchEngine_ShouldReturnEngineSessions" classname="com.northstar.funding.persistence.service.DiscoverySessionServiceTest" time="0.001"/>
-  <testcase name="getSessionsByDateRange_ShouldReturnRangeSessions" classname="com.northstar.funding.persistence.service.DiscoverySessionServiceTest" time="0.0"/>
-  <testcase name="getSessionsByLlmModel_ShouldReturnModelSessions" classname="com.northstar.funding.persistence.service.DiscoverySessionServiceTest" time="0.001"/>
-  <testcase name="getTop10RecentSessions_ShouldReturnTop10" classname="com.northstar.funding.persistence.service.DiscoverySessionServiceTest" time="0.0"/>
-  <testcase name="updateStatus_WhenSessionExists_ShouldUpdateStatus" classname="com.northstar.funding.persistence.service.DiscoverySessionServiceTest" time="0.001"/>
-  <testcase name="getSessionsByStatus_ShouldReturnStatusSessions" classname="com.northstar.funding.persistence.service.DiscoverySessionServiceTest" time="0.0"/>
-  <testcase name="getDuplicationStats_ShouldReturnStats" classname="com.northstar.funding.persistence.service.DiscoverySessionServiceTest" time="0.001"/>
-  <testcase name="getSearchEngineStats_ShouldReturnStats" classname="com.northstar.funding.persistence.service.DiscoverySessionServiceTest" time="0.0"/>
-  <testcase name="getSessionsWithSearchEngineFailures_ShouldReturnFailureSessions" classname="com.northstar.funding.persistence.service.DiscoverySessionServiceTest" time="0.001"/>
-  <testcase name="getHighPerformingSessions_ShouldReturnHighPerformers" classname="com.northstar.funding.persistence.service.DiscoverySessionServiceTest" time="0.0"/>
-  <testcase name="getSessionsByType_ShouldReturnTypeSessions" classname="com.northstar.funding.persistence.service.DiscoverySessionServiceTest" time="0.0"/>
-  <testcase name="getRecentSessions_ShouldReturnRecentSessions" classname="com.northstar.funding.persistence.service.DiscoverySessionServiceTest" time="0.001"/>
-  <testcase name="findById_WhenExists_ShouldReturnSession" classname="com.northstar.funding.persistence.service.DiscoverySessionServiceTest" time="0.0"/>
-  <testcase name="getPromptEffectivenessAnalysis_ShouldReturnAnalysis" classname="com.northstar.funding.persistence.service.DiscoverySessionServiceTest" time="0.0"/>
-  <testcase name="getPerformanceMetrics_ShouldReturnMetrics" classname="com.northstar.funding.persistence.service.DiscoverySessionServiceTest" time="0.001"/>
-  <testcase name="getLongRunningSessions_ShouldReturnLongRunningSessions" classname="com.northstar.funding.persistence.service.DiscoverySessionServiceTest" time="0.0"/>
-  <testcase name="createSession_ShouldCreateSession" classname="com.northstar.funding.persistence.service.DiscoverySessionServiceTest" time="0.0"/>
-  <testcase name="updateStatus_WhenSessionNotFound_ShouldThrowException" classname="com.northstar.funding.persistence.service.DiscoverySessionServiceTest" time="0.001"/>
+  <testcase name="testFindByDomain" classname="com.northstar.funding.persistence.repository.FundingProgramRepositoryTest" time="0.474">
+    <system-out><![CDATA[16:47:00.171 [main] INFO org.springframework.test.context.support.AnnotationConfigContextLoaderUtils -- Could not detect default configuration classes for test class [com.northstar.funding.persistence.repository.FundingProgramRepositoryTest]: FundingProgramRepositoryTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+16:47:00.231 [main] INFO org.springframework.boot.test.context.SpringBootTestContextBootstrapper -- Found @SpringBootConfiguration com.northstar.funding.persistence.TestDataJdbcConfiguration for test class com.northstar.funding.persistence.repository.FundingProgramRepositoryTest
+16:47:00.255 [main] INFO org.testcontainers.images.PullPolicy -- Image pull policy will be performed by: DefaultPullPolicy()
+16:47:00.256 [main] INFO org.testcontainers.utility.ImageNameSubstitutor -- Image name substitution will be performed by: DefaultImageNameSubstitutor (composite of 'ConfigurationFileImageNameSubstitutor' and 'PrefixingImageNameSubstitutor')
+16:47:00.266 [main] INFO org.testcontainers.DockerClientFactory -- Testcontainers version: 1.20.4
+16:47:00.372 [main] INFO org.testcontainers.dockerclient.DockerClientProviderStrategy -- Loaded org.testcontainers.dockerclient.UnixSocketClientProviderStrategy from ~/.testcontainers.properties, will try it first
+16:47:00.454 [main] WARN org.testcontainers.dockerclient.DockerClientProviderStrategy -- DOCKER_HOST tcp://192.168.1.10:2375 is not listening
+java.net.ConnectException: Connection refused
+	at java.base/sun.nio.ch.Net.connect0(Native Method)
+	at java.base/sun.nio.ch.Net.connect(Net.java:546)
+	at java.base/sun.nio.ch.Net.connect(Net.java:535)
+	at java.base/sun.nio.ch.NioSocketImpl.connect(NioSocketImpl.java:585)
+	at java.base/java.net.SocksSocketImpl.connect(SocksSocketImpl.java:284)
+	at java.base/java.net.Socket.connect(Socket.java:659)
+	at java.base/java.net.Socket.connect(Socket.java:597)
+	at org.testcontainers.dockerclient.DockerClientProviderStrategy.lambda$test$3(DockerClientProviderStrategy.java:214)
+	at org.testcontainers.shaded.org.awaitility.core.AssertionCondition.lambda$new$0(AssertionCondition.java:53)
+	at org.testcontainers.shaded.org.awaitility.core.ConditionAwaiter$ConditionPoller.call(ConditionAwaiter.java:248)
+	at org.testcontainers.shaded.org.awaitility.core.ConditionAwaiter$ConditionPoller.call(ConditionAwaiter.java:235)
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:328)
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1090)
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:614)
+	at java.base/java.lang.Thread.run(Thread.java:1474)
+16:47:00.545 [main] INFO org.testcontainers.dockerclient.DockerClientProviderStrategy -- Found Docker environment with local Unix socket (unix:///var/run/docker.sock)
+16:47:00.546 [main] INFO org.testcontainers.DockerClientFactory -- Docker host IP address is localhost
+16:47:00.552 [main] INFO org.testcontainers.DockerClientFactory -- Connected to docker: 
+  Server Version: 28.2.2
+  API Version: 1.50
+  Operating System: Docker Desktop
+  Total Memory: 12200 MB
+  Labels: 
+    com.docker.desktop.address=unix:///Users/kevin/Library/Containers/com.docker.docker/Data/docker-cli.sock
+16:47:00.556 [main] INFO org.testcontainers.DockerClientFactory -- Checking the system...
+16:47:00.556 [main] INFO org.testcontainers.DockerClientFactory -- ✔︎ Docker server version should be at least 1.6.0
+16:47:00.565 [main] INFO tc.postgres:16-alpine -- Creating container for image: postgres:16-alpine
+16:47:00.748 [main] INFO tc.testcontainers/ryuk:0.11.0 -- Creating container for image: testcontainers/ryuk:0.11.0
+16:47:02.471 [main] INFO tc.testcontainers/ryuk:0.11.0 -- Container testcontainers/ryuk:0.11.0 is starting: ebc959fab381dc3fead0533181858d056a4646eb827a98845fb44027c00dbaa0
+16:47:02.721 [main] INFO tc.testcontainers/ryuk:0.11.0 -- Container testcontainers/ryuk:0.11.0 started in PT1.973256S
+16:47:02.765 [main] INFO tc.postgres:16-alpine -- Container postgres:16-alpine is starting: 104f3bdf8f4be99ba89580db88f580d0a157ccb4ee00fcbbc3528c5c99e6b03c
+16:47:03.716 [main] INFO tc.postgres:16-alpine -- Container postgres:16-alpine started in PT3.150295S
+16:47:03.716 [main] INFO tc.postgres:16-alpine -- Container is started (JDBC URL: jdbc:postgresql://localhost:64775/test?loggerLevel=OFF)
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::                (v3.5.6)
+
+2025-10-31T16:47:03.873+02:00  INFO 91559 --- [           main] c.n.f.p.r.FundingProgramRepositoryTest   : Starting FundingProgramRepositoryTest using Java 25 with PID 91559 (started by kevin in /Users/kevin/github/northstar-funding/northstar-persistence)
+2025-10-31T16:47:03.874+02:00  INFO 91559 --- [           main] c.n.f.p.r.FundingProgramRepositoryTest   : The following 1 profile is active: "postgres-test"
+2025-10-31T16:47:03.972+02:00  INFO 91559 --- [           main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JDBC repositories in DEFAULT mode.
+2025-10-31T16:47:03.999+02:00  INFO 91559 --- [           main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 24 ms. Found 9 JDBC repository interfaces.
+2025-10-31T16:47:04.235+02:00  INFO 91559 --- [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2025-10-31T16:47:04.333+02:00  INFO 91559 --- [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection org.postgresql.jdbc.PgConnection@79f1e22e
+2025-10-31T16:47:04.333+02:00  INFO 91559 --- [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2025-10-31T16:47:04.347+02:00  INFO 91559 --- [           main] org.flywaydb.core.FlywayExecutor         : Database: jdbc:postgresql://localhost:64775/test?loggerLevel=OFF (PostgreSQL 16.8)
+2025-10-31T16:47:04.376+02:00  INFO 91559 --- [           main] o.f.c.i.s.JdbcTableSchemaHistory         : Schema history table "public"."flyway_schema_history" does not exist yet
+2025-10-31T16:47:04.378+02:00  INFO 91559 --- [           main] o.f.core.internal.command.DbValidate     : Successfully validated 17 migrations (execution time 00:00.014s)
+2025-10-31T16:47:04.391+02:00  INFO 91559 --- [           main] o.f.c.i.s.JdbcTableSchemaHistory         : Creating Schema History table "public"."flyway_schema_history" ...
+2025-10-31T16:47:04.420+02:00  INFO 91559 --- [           main] o.f.core.internal.command.DbMigrate      : Current version of schema "public": << Empty Schema >>
+2025-10-31T16:47:04.430+02:00  INFO 91559 --- [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "1 - create funding source candidate"
+2025-10-31T16:47:04.432+02:00  INFO 91559 --- [           main] o.f.c.i.s.DefaultSqlScriptExecutor       : DB: table "funding_source_candidate" does not exist, skipping
+2025-10-31T16:47:04.460+02:00  INFO 91559 --- [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "2 - create contact intelligence"
+2025-10-31T16:47:04.462+02:00  INFO 91559 --- [           main] o.f.c.i.s.DefaultSqlScriptExecutor       : DB: table "contact_intelligence" does not exist, skipping
+2025-10-31T16:47:04.479+02:00  INFO 91559 --- [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "3 - create admin user"
+2025-10-31T16:47:04.480+02:00  INFO 91559 --- [           main] o.f.c.i.s.DefaultSqlScriptExecutor       : DB: table "admin_user" does not exist, skipping
+2025-10-31T16:47:04.502+02:00  INFO 91559 --- [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "4 - create discovery session"
+2025-10-31T16:47:04.503+02:00  INFO 91559 --- [           main] o.f.c.i.s.DefaultSqlScriptExecutor       : DB: table "discovery_session" does not exist, skipping
+2025-10-31T16:47:04.523+02:00  INFO 91559 --- [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "5 - create enhancement record"
+2025-10-31T16:47:04.525+02:00  INFO 91559 --- [           main] o.f.c.i.s.DefaultSqlScriptExecutor       : DB: table "enhancement_record" does not exist, skipping
+2025-10-31T16:47:04.548+02:00  INFO 91559 --- [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "6 - create indexes"
+2025-10-31T16:47:04.569+02:00  INFO 91559 --- [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "7 - fix enhancement record constraint"
+2025-10-31T16:47:04.576+02:00  INFO 91559 --- [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "8 - create domain"
+2025-10-31T16:47:04.590+02:00  INFO 91559 --- [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "9 - update candidate status two phase"
+2025-10-31T16:47:04.597+02:00  INFO 91559 --- [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "10 - create search queries table"
+2025-10-31T16:47:04.635+02:00  INFO 91559 --- [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "11 - create search session statistics table"
+2025-10-31T16:47:04.664+02:00  INFO 91559 --- [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "12 - extend discovery session for search"
+2025-10-31T16:47:04.676+02:00  INFO 91559 --- [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "13 - create query generation sessions table"
+2025-10-31T16:47:04.691+02:00  INFO 91559 --- [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "14 - create metadata judgments table"
+2025-10-31T16:47:04.707+02:00  INFO 91559 --- [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "15 - create organization"
+2025-10-31T16:47:04.725+02:00  INFO 91559 --- [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "16 - create funding program"
+2025-10-31T16:47:04.741+02:00  INFO 91559 --- [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "17 - create search result"
+2025-10-31T16:47:04.759+02:00  INFO 91559 --- [           main] o.f.core.internal.command.DbMigrate      : Successfully applied 17 migrations to schema "public", now at version v17 (execution time 00:00.204s)
+2025-10-31T16:47:04.993+02:00  INFO 91559 --- [           main] c.n.f.p.r.FundingProgramRepositoryTest   : Started FundingProgramRepositoryTest in 1.25 seconds (process running for 5.176)
+]]></system-out>
+    <system-err><![CDATA[Mockito is currently self-attaching to enable the inline-mock-maker. This will no longer work in future releases of the JDK. Please add Mockito as an agent to your build as described in Mockito's documentation: https://javadoc.io/doc/org.mockito/mockito-core/latest/org.mockito/org/mockito/Mockito.html#0.3
+WARNING: A Java agent has been loaded dynamically (/Users/kevin/.m2/repository/net/bytebuddy/byte-buddy-agent/1.17.7/byte-buddy-agent-1.17.7.jar)
+WARNING: If a serviceability tool is in use, please run with -XX:+EnableDynamicAgentLoading to hide this warning
+WARNING: If a serviceability tool is not in use, please run with -Djdk.instrument.traceUsage for more information
+WARNING: Dynamic loading of agents will be disallowed by default in a future release
+]]></system-err>
+  </testcase>
+  <testcase name="testCountByStatus" classname="com.northstar.funding.persistence.repository.FundingProgramRepositoryTest" time="0.027"/>
+  <testcase name="testFindByStatus" classname="com.northstar.funding.persistence.repository.FundingProgramRepositoryTest" time="0.02"/>
+  <testcase name="testCountActiveByOrganization" classname="com.northstar.funding.persistence.repository.FundingProgramRepositoryTest" time="0.018"/>
+  <testcase name="testSearchByProgramName" classname="com.northstar.funding.persistence.repository.FundingProgramRepositoryTest" time="0.021"/>
+  <testcase name="testFindByIsValidFundingOpportunity" classname="com.northstar.funding.persistence.repository.FundingProgramRepositoryTest" time="0.02"/>
+  <testcase name="testFindProgramsWithUpcomingDeadlines" classname="com.northstar.funding.persistence.repository.FundingProgramRepositoryTest" time="0.016"/>
+  <testcase name="testFindByIsActive" classname="com.northstar.funding.persistence.repository.FundingProgramRepositoryTest" time="0.02"/>
+  <testcase name="testFindExpiredPrograms" classname="com.northstar.funding.persistence.repository.FundingProgramRepositoryTest" time="0.014"/>
+  <testcase name="testFindByIsRecurring" classname="com.northstar.funding.persistence.repository.FundingProgramRepositoryTest" time="0.015"/>
+  <testcase name="testExistsByProgramUrl" classname="com.northstar.funding.persistence.repository.FundingProgramRepositoryTest" time="0.012"/>
+  <testcase name="testFindHighConfidencePrograms" classname="com.northstar.funding.persistence.repository.FundingProgramRepositoryTest" time="0.015"/>
+  <testcase name="testSaveAndFindByProgramUrl" classname="com.northstar.funding.persistence.repository.FundingProgramRepositoryTest" time="0.016"/>
+  <testcase name="testFindByOrganizationId" classname="com.northstar.funding.persistence.repository.FundingProgramRepositoryTest" time="0.022"/>
 </testsuite>
