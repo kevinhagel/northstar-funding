@@ -1,0 +1,14 @@
+-- Test data setup for FundingSourceCandidate repository tests
+-- This script runs before each test method to ensure clean test state
+
+-- Clean existing test data
+DELETE FROM enhancement_record WHERE candidate_id IN (
+    SELECT candidate_id FROM funding_source_candidate WHERE organization_name LIKE '%Test%'
+);
+DELETE FROM contact_intelligence WHERE candidate_id IN (
+    SELECT candidate_id FROM funding_source_candidate WHERE organization_name LIKE '%Test%'
+);
+DELETE FROM funding_source_candidate WHERE organization_name LIKE '%Test%';
+
+-- Insert some base test data for reference tests
+-- Note: Individual tests will create their own specific data as needed

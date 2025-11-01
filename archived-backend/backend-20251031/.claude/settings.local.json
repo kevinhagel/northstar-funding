@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//Users/kevin/github/northstar-funding/**)",
+      "Read(//Users/kevin/github/northstar-funding/.specify/**)",
+      "Read(//Users/kevin/github/northstar-funding/specs/**)",
+      "Bash(mvn test:*)",
+      "Bash(git add:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

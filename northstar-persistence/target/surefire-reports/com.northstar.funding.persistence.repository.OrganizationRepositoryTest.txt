@@ -1,0 +1,4 @@
+-------------------------------------------------------------------------------
+Test set: com.northstar.funding.persistence.repository.OrganizationRepositoryTest
+-------------------------------------------------------------------------------
+Tests run: 11, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.520 s -- in com.northstar.funding.persistence.repository.OrganizationRepositoryTest

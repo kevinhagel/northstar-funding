@@ -1,0 +1,16 @@
+spring:
+  datasource:
+    # TestContainers will override these via @DynamicPropertySource
+    url: jdbc:postgresql://localhost:5432/testdb
+    username: test
+    password: test
+  flyway:
+    enabled: true
+    clean-disabled: false
+    locations: classpath:db/migration
+
+logging:
+  level:
+    org.flywaydb: INFO
+    org.springframework.jdbc: DEBUG
+    org.testcontainers: INFO
