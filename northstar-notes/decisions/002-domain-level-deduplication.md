@@ -1,21 +1,26 @@
 # ADR 002: Domain-Level Deduplication Strategy
 
-**Status**: Accepted
+**Status**: Implemented (Domain model exists, application code pending)
 **Date**: 2025-10-25
-**Context Tags**: #architecture #deduplication #domain-model #simplicity
+**Updated**: 2025-11-01
+**Context Tags**: #architecture #deduplication #domain-model #persistence
 
 ## Context
 
-When implementing automated funding discovery across multiple search engines (Searxng, Tavily, Perplexity), we faced the problem of **duplicate results** pointing to the same funding organization.
+**CURRENT PROJECT STATE**: Domain model and persistence layer exist. The `Domain` entity and `DomainService` are implemented with full unit test coverage (18 tests passing). Application layer (crawler, search) does not exist yet.
+
+This ADR documents the domain-level deduplication strategy for when automated funding discovery is implemented.
 
 ### The Problem
 
-**Search engines return overlapping results:**
+When implementing automated funding discovery across multiple search engines (Searxng, Tavily, Perplexity, etc.), we will face the problem of **duplicate results** pointing to the same funding organization.
+
+**Search engines will return overlapping results:**
 - Searxng finds: `https://us-bulgaria.org/programs/education-grant`
 - Tavily finds: `https://us-bulgaria.org/about/mission`
 - Perplexity finds: `https://www.us-bulgaria.org/contact`
 
-All three URLs point to the **same funding organization** (America for Bulgaria Foundation). Creating separate `FundingSourceCandidate` records for each wastes:
+All three URLs point to the **same funding organization** (America for Bulgaria Foundation). Creating separate `FundingSourceCandidate` records for each would waste:
 - Database storage (3 records instead of 1)
 - Human review time (reviewing same organization 3 times)
 - Processing resources (crawling same domain 3 times)
@@ -23,51 +28,151 @@ All three URLs point to the **same funding organization** (America for Bulgaria 
 ### Requirements
 
 - Prevent reprocessing the same funding organization multiple times
-- Track which domains have been discovered and judged
+- Track which domains have been discovered and processed
 - Support blacklisting (e.g., "not a funding source", "no programs this year")
 - Enable domain quality tracking over time
 - Simple enough for v1 implementation
 - Future-proof for more sophisticated deduplication
 
-### Constraints
-
-- Using **Spring Data JDBC** (not JPA/Hibernate)
-- **PostgreSQL 16** database
-- Project philosophy: **"Keep it simple in v1, can enhance later"**
-- Java 25 with `java.net.URI` for URL parsing
-- Multiple search engines produce 20-75 results per query
-- Typical deduplication rate: 40-60% of results are duplicates
-
 ## Decision
 
-**Use domain-level deduplication based on `java.net.URI.getHost()` extraction, with a separate `Domain` entity tracking domain metadata.**
+**Use domain-level deduplication with a separate `Domain` entity tracking domain metadata and quality metrics.**
 
 **Strategy:**
 1. Extract domain from each search result URL using `java.net.URI.getHost()`
-2. Check if domain already exists in `domains` table
+2. Check if domain already exists in `domain` table
 3. If domain is blacklisted, skip immediately
-4. If domain already processed, skip creating new candidate
+4. If domain already processed (high or low quality), skip creating new candidate
 5. If domain is new, create both `Domain` record and `FundingSourceCandidate` record
+6. Track domain quality metrics (best confidence score, candidate counts)
 
-**Database schema:**
+## Current Implementation
+
+### Database Schema (IMPLEMENTED)
+
+**Migration**: `northstar-persistence/src/main/resources/db/migration/V8__create_domain.sql`
+
 ```sql
-CREATE TABLE domains (
-    id BIGSERIAL PRIMARY KEY,
+CREATE TABLE domain (
+    domain_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     domain_name VARCHAR(255) NOT NULL UNIQUE,
-    is_blacklisted BOOLEAN DEFAULT FALSE,
+    status VARCHAR(50) NOT NULL DEFAULT 'DISCOVERED',
+    discovery_session_id UUID REFERENCES discovery_session(session_id),
+
+    -- Metrics
+    high_quality_candidate_count INTEGER DEFAULT 0,
+    low_quality_candidate_count INTEGER DEFAULT 0,
+    best_confidence_score DECIMAL(3,2) CHECK (best_confidence_score >= 0.00 AND best_confidence_score <= 1.00),
+
+    -- Blacklist tracking
+    blacklisted_at TIMESTAMP,
+    blacklisted_by UUID REFERENCES admin_user(user_id),
     blacklist_reason TEXT,
-    first_discovered_at TIMESTAMP NOT NULL DEFAULT NOW(),
-    last_seen_at TIMESTAMP NOT NULL DEFAULT NOW(),
-    times_seen INTEGER DEFAULT 1,
-    quality_score NUMERIC(3,2),
-    revisit_after DATE
+
+    -- Timestamps
+    discovered_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    last_processed_at TIMESTAMP,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX idx_domains_blacklisted ON domains(is_blacklisted);
-CREATE INDEX idx_domains_revisit ON domains(revisit_after) WHERE revisit_after IS NOT NULL;
+CREATE UNIQUE INDEX idx_domain_name ON domain(domain_name);
+CREATE INDEX idx_domain_status ON domain(status);
+CREATE INDEX idx_domain_discovery_session ON domain(discovery_session_id);
+CREATE INDEX idx_domain_best_confidence ON domain(best_confidence_score DESC);
 ```
 
-**Java domain extraction:**
+### Domain Entity (IMPLEMENTED)
+
+**Location**: `northstar-domain/src/main/java/com/northstar/funding/domain/Domain.java`
+
+```java
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+@Table("domain")
+public class Domain {
+    @Id
+    @Column("domain_id")
+    private UUID domainId;
+
+    @Column("domain_name")
+    private String domainName;  // e.g., "us-bulgaria.org"
+
+    @Column("status")
+    private DomainStatus status;  // DISCOVERED, PROCESSED_HIGH_QUALITY, PROCESSED_LOW_QUALITY, BLACKLISTED
+
+    @Column("discovery_session_id")
+    private UUID discoverySessionId;
+
+    @Column("high_quality_candidate_count")
+    @Builder.Default
+    private Integer highQualityCandidateCount = 0;
+
+    @Column("low_quality_candidate_count")
+    @Builder.Default
+    private Integer lowQualityCandidateCount = 0;
+
+    @Column("best_confidence_score")
+    private BigDecimal bestConfidenceScore;  // 0.00-1.00
+
+    @Column("blacklisted_at")
+    private LocalDateTime blacklistedAt;
+
+    @Column("blacklisted_by")
+    private UUID blacklistedBy;
+
+    @Column("blacklist_reason")
+    private String blacklistReason;
+
+    @Column("discovered_at")
+    private LocalDateTime discoveredAt;
+
+    @Column("last_processed_at")
+    private LocalDateTime lastProcessedAt;
+
+    @Column("created_at")
+    private LocalDateTime createdAt;
+
+    @Column("updated_at")
+    private LocalDateTime updatedAt;
+}
+```
+
+### DomainStatus Enum (IMPLEMENTED)
+
+**Location**: `northstar-domain/src/main/java/com/northstar/funding/domain/DomainStatus.java`
+
+```java
+public enum DomainStatus {
+    DISCOVERED,               // Domain discovered but not yet processed
+    PROCESSED_HIGH_QUALITY,   // Domain processed, has high-quality candidates (>= 0.6 confidence)
+    PROCESSED_LOW_QUALITY,    // Domain processed, only low-quality candidates
+    BLACKLISTED              // Domain blacklisted (not a funding source)
+}
+```
+
+### DomainService (IMPLEMENTED)
+
+**Location**: `northstar-persistence/src/main/java/com/northstar/funding/persistence/service/DomainService.java`
+
+**Key Methods**:
+- `registerDomain(String domainName, UUID sessionId)` - Register new domain or return existing
+- `domainExists(String domainName)` - Check if domain already registered
+- `updateStatus(UUID domainId, DomainStatus status)` - Update domain status
+- `blacklistDomain(String domainName, UUID adminId, String reason)` - Blacklist a domain
+- `updateCandidateCounts(String domainName, int high, int low, BigDecimal confidence)` - Update metrics
+- `getBlacklistedDomains()` - Get all blacklisted domains
+- `getHighQualityDomains(int minCandidates)` - Get domains with quality candidates
+- `findByDomainName(String domainName)` - Find domain by name
+
+**Tests**: `northstar-persistence/src/test/java/.../service/DomainServiceTest.java` (18 tests passing)
+
+## Domain Extraction Strategy
+
+**Planned Pattern** (for when application layer is implemented):
+
 ```java
 public static String extractDomain(String url) {
     try {
@@ -81,25 +186,33 @@ public static String extractDomain(String url) {
 }
 ```
 
+**Simple approach**:
+- Uses standard Java `java.net.URI.getHost()`
+- Converts to lowercase for consistency
+- Returns `null` for invalid URLs
+- NO normalization (www vs non-www treated as different domains)
+- NO subdomain handling (grants.example.org vs example.org are separate)
+
 ## Consequences
 
 ### Positive
 
-1. **Simple and fast** - `java.net.URI.getHost()` is a standard Java library method
-2. **Good enough for v1** - Catches majority of duplicates (40-60% deduplication rate)
-3. **No external dependencies** - Uses built-in Java URI parsing
-4. **Unique constraint enforcement** - PostgreSQL UNIQUE constraint prevents duplicate domain inserts
-5. **Blacklist support** - Can mark entire domains as "not a funding source"
-6. **Quality tracking** - Can track domain quality metrics over time
-7. **Revisit logic** - Can mark domains as "no funds this year, check again in 2026"
-8. **Performance** - Simple string comparison, very fast (<1ms per check)
+1. **Domain model exists** - `Domain` entity, repository, and service fully implemented
+2. **Database schema ready** - V8 migration creates complete domain tracking table
+3. **Unique constraint enforcement** - PostgreSQL UNIQUE constraint prevents duplicate domain inserts
+4. **Blacklist support** - Can mark entire domains as "not a funding source"
+5. **Quality tracking** - Tracks best confidence score and candidate counts
+6. **Status tracking** - DomainStatus enum tracks processing lifecycle
+7. **Simple and fast** - `java.net.URI.getHost()` is a standard Java library method
+8. **No external dependencies** - Uses built-in Java URI parsing
+9. **Full test coverage** - 18 unit tests verify all service methods
 
 ### Negative
 
-1. **Doesn't normalize www vs non-www** - `www.us-bulgaria.org` and `us-bulgaria.org` treated as different domains
-2. **Doesn't handle subdomains** - `grants.example.org` and `programs.example.org` treated as separate
-3. **No URL path analysis** - Can't detect if two URLs on same domain point to different programs
-4. **Protocol-agnostic** - Doesn't care about http vs https (good for our use case)
+1. **Application code pending** - No crawler or search integration exists yet
+2. **Doesn't normalize www vs non-www** - `www.us-bulgaria.org` and `us-bulgaria.org` treated as different
+3. **Doesn't handle subdomains** - `grants.example.org` and `programs.example.org` treated as separate
+4. **No URL path analysis** - Can't detect if two URLs on same domain point to different programs
 
 ### Neutral
 
@@ -107,309 +220,63 @@ public static String extractDomain(String url) {
 2. **Subdomain handling** - Could add "parent domain" tracking in future
 3. **Path-based deduplication** - Could move to URL-level deduplication in Phase 2 (deep crawling)
 
+## Current vs Future State
+
+### Currently Implemented (Domain Model + Persistence)
+- ✅ `Domain` entity with complete field set
+- ✅ `DomainStatus` enum (4 states)
+- ✅ `DomainService` with 10+ business methods
+- ✅ `DomainRepository` with custom finder methods
+- ✅ Database schema with indexes and constraints
+- ✅ Unit tests (18 tests passing)
+
+### Not Yet Implemented (Application Layer)
+- ❌ Crawler infrastructure
+- ❌ Search engine integration
+- ❌ Domain extraction utility
+- ❌ Deduplication workflow
+- ❌ Integration tests
+- ❌ Blacklist management UI/admin tools
+
 ## Alternatives Considered
 
 ### Alternative 1: URL-Level Deduplication (Full URL Hashing)
-**Description**: Store full URL hash and deduplicate on exact URL match
-```sql
-CREATE TABLE discovered_urls (
-    url_hash VARCHAR(64) PRIMARY KEY,  -- SHA-256 hash of full URL
-    full_url TEXT NOT NULL,
-    discovered_at TIMESTAMP NOT NULL DEFAULT NOW()
-);
-```
-
-**Pros**:
-- Most precise deduplication (exact URL matching)
-- Can track which specific pages were discovered
-- Useful for deep crawling phase (Phase 2)
-
-**Cons**:
-- **Doesn't solve the organization-level problem** - `us-bulgaria.org/page1` and `us-bulgaria.org/page2` are same org
-- More storage required (one row per URL vs one row per domain)
-- Still need domain-level tracking for blacklisting
-- Overkill for Phase 1 (metadata judging, no deep crawling yet)
-
-**Why we didn't choose it**: Too granular for Phase 1. We want to deduplicate at organization level, not page level. Can add URL-level tracking later for Phase 2 (deep crawling).
+**Why rejected**: Too granular for organization-level deduplication. Domain-level is the right abstraction for funding organizations.
 
 ### Alternative 2: Fuzzy Domain Matching (Normalization)
-**Description**: Normalize domains before storing
-```java
-public static String normalizeDomain(String url) {
-    String domain = extractDomain(url);
-    // Remove www prefix
-    if (domain.startsWith("www.")) {
-        domain = domain.substring(4);
-    }
-    // Extract root domain (e.g., grants.example.org -> example.org)
-    // (requires TLD list or library like Google's Guava InternetDomainName)
-    return domain;
-}
-```
+**Why rejected**: Added complexity for v1. Simple domain matching catches most duplicates. Can enhance later if needed.
 
-**Pros**:
-- Catches `www` vs non-`www` duplicates
-- Could catch subdomain duplicates with additional logic
-- Better deduplication rate (possibly 60-70% instead of 40-60%)
-
-**Cons**:
-- **More complex** - Requires TLD list maintenance (`.co.uk` vs `.com`)
-- **Edge cases abound** - What about `grants.universitybulgaria.bg` vs `universitybulgaria.bg`?
-- **Risky in v1** - Could incorrectly merge unrelated subdomains
-- **User directive**: "Keep it simple in v1"
-
-**Why we didn't choose it**: Complexity vs benefit trade-off. The simple approach catches most duplicates. Can add normalization later if duplication rate is problematic.
-
-### Alternative 3: No Deduplication (Process Everything)
-**Description**: Don't deduplicate at all, let humans filter duplicates during review
-
-**Pros**:
-- Simplest possible implementation
-- No deduplication logic needed
-- Humans can spot duplicates easily
-
-**Cons**:
-- **Wastes human review time** - Reviewing same organization multiple times
-- **Wastes storage** - 3x database records for same organization
-- **Wastes processing** - Crawling same domain 3 times in Phase 2
-- **Poor user experience** - "Why am I seeing this again?"
-
-**Why we didn't choose it**: Domain-level deduplication is simple enough to implement and provides significant value. No good reason to skip it.
+### Alternative 3: No Deduplication
+**Why rejected**: Wastes human review time and processing resources. Domain-level deduplication is simple enough to implement upfront.
 
 ### Alternative 4: Content-Based Deduplication (Embeddings)
-**Description**: Use vector embeddings to detect similar content
-```sql
-CREATE TABLE candidates (
-    id BIGSERIAL PRIMARY KEY,
-    url TEXT NOT NULL,
-    title_embedding VECTOR(384),  -- pgvector extension
-    snippet_embedding VECTOR(384)
-);
+**Why rejected**: Massive overkill for simple duplicate detection. Save embeddings for RAG system (future feature).
 
--- Find duplicates by cosine similarity
-SELECT * FROM candidates
-WHERE 1 - (title_embedding <=> query_embedding) > 0.95;
-```
+## Implementation Status
 
-**Pros**:
-- Catches duplicates even with different domains (e.g., redirects)
-- Can detect similar content across different organizations
-- Machine learning-powered approach
+**Phase 1: Domain Model** ✅ COMPLETE
+- Domain entity created
+- DomainService implemented
+- Unit tests passing
+- Database schema created
 
-**Cons**:
-- **Way too complex for v1** - Requires pgvector extension, embedding model
-- **Computationally expensive** - Embedding generation and similarity search
-- **False positives** - Similar content doesn't mean same organization
-- **Over-engineering** - Domain-level deduplication solves 90% of the problem
+**Phase 2: Application Integration** ⏳ PENDING
+- Implement domain extraction utility
+- Integrate with search result processing
+- Add deduplication workflow
+- Create integration tests
 
-**Why we didn't choose it**: Massive overkill for simple duplicate detection. Save this for Phase 5 (RAG search system) where embeddings are already being used.
+**Phase 3: Admin Tools** ⏳ PENDING
+- Blacklist management UI
+- Domain quality dashboard
+- Bulk operations (blacklist multiple domains)
 
-## Implementation Notes
-
-### Files Created/Modified
-
-**Database migration:**
-```sql
--- V8__create_domain_table.sql
-CREATE TABLE domains (
-    id BIGSERIAL PRIMARY KEY,
-    domain_name VARCHAR(255) NOT NULL UNIQUE,
-    is_blacklisted BOOLEAN DEFAULT FALSE,
-    blacklist_reason TEXT,
-    first_discovered_at TIMESTAMP NOT NULL DEFAULT NOW(),
-    last_seen_at TIMESTAMP NOT NULL DEFAULT NOW(),
-    times_seen INTEGER DEFAULT 1,
-    quality_score NUMERIC(3,2),
-    revisit_after DATE,
-    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMP NOT NULL DEFAULT NOW()
-);
-
-CREATE INDEX idx_domains_name ON domains(domain_name);
-CREATE INDEX idx_domains_blacklisted ON domains(is_blacklisted);
-CREATE INDEX idx_domains_revisit ON domains(revisit_after) WHERE revisit_after IS NOT NULL;
-
-COMMENT ON TABLE domains IS 'Domain registry for deduplication and blacklist tracking';
-COMMENT ON COLUMN domains.quality_score IS 'Quality score 0.00-1.00 based on funding relevance';
-COMMENT ON COLUMN domains.revisit_after IS 'Date to revisit domain (e.g., no funds this year, check 2026)';
-```
-
-**Java entity:**
-```java
-// backend/src/main/java/com/northstar/funding/discovery/domain/Domain.java
-@Data
-@Builder
-@Table("domains")
-public class Domain {
-    @Id
-    private Long id;
-
-    @Column("domain_name")
-    private String domainName;  // e.g., "us-bulgaria.org"
-
-    @Column("is_blacklisted")
-    @Builder.Default
-    private Boolean isBlacklisted = false;
-
-    @Column("blacklist_reason")
-    private String blacklistReason;
-
-    @Column("first_discovered_at")
-    private LocalDateTime firstDiscoveredAt;
-
-    @Column("last_seen_at")
-    private LocalDateTime lastSeenAt;
-
-    @Column("times_seen")
-    @Builder.Default
-    private Integer timesSeen = 1;
-
-    @Column("quality_score")
-    private BigDecimal qualityScore;  // 0.00-1.00
-
-    @Column("revisit_after")
-    private LocalDate revisitAfter;
-
-    @Column("created_at")
-    private LocalDateTime createdAt;
-
-    @Column("updated_at")
-    private LocalDateTime updatedAt;
-}
-```
-
-**Domain extraction utility:**
-```java
-// backend/src/main/java/com/northstar/funding/discovery/service/DomainExtractionService.java
-@Service
-@Slf4j
-public class DomainExtractionService {
-
-    public String extractDomain(String url) {
-        if (url == null || url.isBlank()) {
-            return null;
-        }
-
-        try {
-            URI uri = new URI(url.trim());
-            String host = uri.getHost();
-
-            if (host == null) {
-                log.warn("Could not extract host from URL: {}", url);
-                return null;
-            }
-
-            // Lowercase for consistency
-            return host.toLowerCase();
-
-        } catch (URISyntaxException e) {
-            log.warn("Invalid URL syntax: {}", url, e);
-            return null;
-        }
-    }
-
-    public boolean isDomainBlacklisted(String domainName) {
-        // Implemented by DomainRepository query
-        return domainRepository.findByDomainName(domainName)
-            .map(Domain::getIsBlacklisted)
-            .orElse(false);
-    }
-}
-```
-
-**Deduplication workflow:**
-```java
-// backend/src/main/java/com/northstar/funding/discovery/application/SearchExecutionService.java
-@Service
-@Slf4j
-public class SearchExecutionService {
-
-    private final DomainExtractionService domainService;
-    private final DomainRepository domainRepository;
-    private final FundingSourceCandidateRepository candidateRepository;
-
-    public void processSearchResults(List<SearchResult> results) {
-        for (SearchResult result : results) {
-            String domainName = domainService.extractDomain(result.url());
-
-            if (domainName == null) {
-                log.warn("Skipping result with no extractable domain: {}", result.url());
-                continue;
-            }
-
-            // Check if domain is blacklisted
-            Optional<Domain> existingDomain = domainRepository.findByDomainName(domainName);
-
-            if (existingDomain.isPresent()) {
-                Domain domain = existingDomain.get();
-
-                if (domain.getIsBlacklisted()) {
-                    log.info("Skipping blacklisted domain: {}", domainName);
-                    continue;
-                }
-
-                // Update last_seen and times_seen
-                domain.setLastSeenAt(LocalDateTime.now());
-                domain.setTimesSeen(domain.getTimesSeen() + 1);
-                domainRepository.save(domain);
-
-                log.info("Domain already processed, skipping: {}", domainName);
-                continue;
-            }
-
-            // New domain - create domain record and candidate
-            Domain newDomain = Domain.builder()
-                .domainName(domainName)
-                .firstDiscoveredAt(LocalDateTime.now())
-                .lastSeenAt(LocalDateTime.now())
-                .timesSeen(1)
-                .isBlacklisted(false)
-                .build();
-
-            domainRepository.save(newDomain);
-
-            FundingSourceCandidate candidate = FundingSourceCandidate.builder()
-                .url(result.url())
-                .title(result.title())
-                .snippet(result.snippet())
-                .domain(domainName)
-                .discoveryMethod("SEARCH_ENGINE")
-                .status(CandidateStatus.NEW)
-                .build();
-
-            candidateRepository.save(candidate);
-
-            log.info("Created new candidate for domain: {}", domainName);
-        }
-    }
-}
-```
-
-### Deduplication Performance
-
-**Typical Results** (Feature 003 integration tests):
-- Monday queries: 7 queries across 3 engines = 21 total searches
-- Raw results: ~420-525 search results (20-25 per search)
-- After deduplication: ~210-315 unique domains (40-60% reduction)
-- Processing time: <2 seconds for deduplication logic
-
-**Query Performance**:
-```sql
--- Check if domain exists (uses unique index)
-SELECT id, is_blacklisted FROM domains WHERE domain_name = 'us-bulgaria.org';
--- Execution time: <1ms
-
--- Get all blacklisted domains
-SELECT domain_name, blacklist_reason FROM domains WHERE is_blacklisted = TRUE;
--- Execution time: <10ms (typical result: 50-100 blacklisted domains)
-```
-
-### Future Enhancements
+## Future Enhancements
 
 **When to consider normalization:**
 - If `www` vs non-`www` duplicates exceed 10% of results
 - If manual review reveals significant subdomain duplication
-- After Phase 1 complete, review deduplication metrics
+- After Phase 1 crawler complete, review deduplication metrics
 
 **Possible normalization approach:**
 ```java
@@ -418,35 +285,22 @@ public String normalizeDomain(String domain) {
     if (domain.startsWith("www.")) {
         domain = domain.substring(4);
     }
-
-    // Future: Add parent domain extraction
-    // (requires TLD list or library)
-
+    // Future: Add parent domain extraction (requires TLD list)
     return domain;
 }
 ```
 
-**Migration path:**
-```sql
--- Add normalized_domain column
-ALTER TABLE domains ADD COLUMN normalized_domain VARCHAR(255);
-
--- Populate with normalization logic
-UPDATE domains SET normalized_domain = regexp_replace(domain_name, '^www\.', '');
-
--- Add unique constraint on normalized domain
-CREATE UNIQUE INDEX idx_domains_normalized ON domains(normalized_domain);
-
--- Use normalized_domain for deduplication queries
-```
-
 ## References
 
-- **Feature Spec**: [[../specs/003-search-execution-infrastructure/spec.md|Feature 003 Specification]]
-- **Integration Test**: `backend/src/test/java/com/northstar/funding/integration/DomainDeduplicationTest.java`
-- **Code Files**:
-  - Domain entity: `backend/src/main/java/com/northstar/funding/discovery/domain/Domain.java`
-  - Repository: `backend/src/main/java/com/northstar/funding/discovery/domain/DomainRepository.java`
-  - Service: `backend/src/main/java/com/northstar/funding/discovery/service/DomainExtractionService.java`
-- **Database Migration**: `backend/src/main/resources/db/migration/V8__create_domain_table.sql`
+- **Domain Entity**: `northstar-domain/src/main/java/com/northstar/funding/domain/Domain.java`
+- **DomainStatus Enum**: `northstar-domain/src/main/java/com/northstar/funding/domain/DomainStatus.java`
+- **DomainService**: `northstar-persistence/src/main/java/.../service/DomainService.java`
+- **DomainRepository**: `northstar-persistence/src/main/java/.../repository/DomainRepository.java`
+- **Database Migration**: `northstar-persistence/src/main/resources/db/migration/V8__create_domain.sql`
+- **Unit Tests**: `northstar-persistence/src/test/java/.../service/DomainServiceTest.java`
 - **Java URI Documentation**: https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/net/URI.html
+
+## Related ADRs
+
+- [[003-testcontainers-integration-test-pattern]] - Integration testing pattern (planned)
+- [[archived/001-text-array-over-jsonb]] - Database design patterns (archived - not yet relevant)

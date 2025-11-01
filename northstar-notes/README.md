@@ -107,7 +107,12 @@ Feature-specific documentation linking to formal specs with implementation notes
 ### 🔍 decisions/
 Architecture Decision Records (ADRs) and important technical decisions.
 
-**Usage**: Document "why" behind major choices (e.g., "Why we chose TEXT[] over JSONB")
+**Current ADRs**:
+- `002-domain-level-deduplication.md` - Domain-level deduplication strategy (IMPLEMENTED)
+- `003-testcontainers-integration-test-pattern.md` - Integration testing pattern (PLANNED)
+- `archived/001-text-array-over-jsonb.md` - TEXT[] usage (archived - not yet relevant)
+
+**Usage**: Document "why" behind major choices. Mark status as Implemented/Proposed/Archived.
 
 ### 🗂️ project/
 High-level project documentation, vision, mission, roadmap.
@@ -130,28 +135,27 @@ Quick capture for random thoughts, TODOs, links, and ideas that need processing 
 - [[tech-stack]] - Technology stack and infrastructure
 
 ### Architecture & Design
-- [[domain-model]] - Core entities and relationships
-- [[search-infrastructure]] - Search engine integration and parallel execution
-- [[rag-system]] - RAG architecture with Qdrant and LM Studio
-- [[data-flow]] - Complete data pipeline from discovery to vectorization
+**NOTE**: Architecture documentation not yet created. See:
+- `CLAUDE.md` - Current project state (domain model + persistence layer only)
+- `specs/` - Feature specifications with design details
 
 ### Features
-- [[feature-003-search-infrastructure]] - Search execution with Virtual Threads ✅
-- [[feature-004-metadata-judging]] - AI query generation and metadata judging 🚧
+**NOTE**: Feature documentation not yet created. Current features tracked in `/specs` directory:
+- `specs/002-bigdecimal-confidence-scores/` - BigDecimal verification (COMPLETE)
 
 ### Decisions
-- [[001-text-array-over-jsonb]] - Why TEXT[] instead of JSONB
-- [[002-domain-level-deduplication]] - Simple domain extraction strategy
-- [[003-circuit-breaker-per-engine]] - Independent circuit breakers per engine
-- [[004-virtual-threads-parallel-search]] - Java 25 Virtual Threads for I/O
+- [[002-domain-level-deduplication]] - Domain-level deduplication (IMPLEMENTED)
+- [[003-testcontainers-integration-test-pattern]] - TestContainers pattern (PLANNED)
+- [[archived/001-text-array-over-jsonb]] - TEXT[] vs JSONB (ARCHIVED - not yet relevant)
 
 ### Technology Deep Dives
-- [[java-25-virtual-threads]] - Virtual Threads for parallel I/O operations
-- [[spring-boot]] - Spring Boot 3.5.6 configuration and patterns
-- [[postgresql]] - PostgreSQL schema, migrations, Spring Data JDBC
-- [[lm-studio]] - LM Studio setup for local AI (Mac Studio)
-- [[qdrant]] - Vector database for RAG
-- [[resilience4j]] - Circuit breakers and retry logic
+**NOTE**: Technology documentation not yet created. Current tech stack documented in `CLAUDE.md`:
+- Java 25 with Virtual Threads
+- Spring Boot 3.5.6 + Spring Data JDBC
+- PostgreSQL 16 @ Mac Studio (192.168.1.10:5432)
+- Flyway for migrations
+- Lombok for domain entities
+- JUnit 5 + Mockito for testing
 
 ---
 
@@ -311,6 +315,6 @@ Feature spec: [Feature 004](../specs/004-ai-query-generation-metadata-judging/sp
 
 ---
 
-**Last Updated**: 2025-10-31
+**Last Updated**: 2025-11-01
 **Vault Owner**: Kevin (American expat in Burgas, Bulgaria)
-**Project Status**: Active Development - Feature 003 Complete, Feature 004 Planning
+**Project Status**: Active Development - Domain Model + Persistence Layer Complete (163 tests passing)

@@ -1,17 +1,20 @@
-# ADR 002: TestContainers Integration Test Pattern
+# ADR 003: TestContainers Integration Test Pattern
 
-**Status**: Accepted
+**Status**: Proposed (Pattern defined but not yet implemented)
 **Date**: 2025-10-31
-**Context Tags**: #architecture #testing #testcontainers #spring-boot
+**Updated**: 2025-11-01
+**Context Tags**: #architecture #testing #testcontainers #spring-boot #planned
 
 ## Context
+
+**CURRENT PROJECT STATE**: Only domain model and persistence layer exist. Unit tests use Mockito. TestContainers integration tests have NOT been implemented yet.
+
+This ADR documents the **planned pattern** for when we implement TestContainers integration tests in the future.
 
 When writing integration tests for Spring Data JDBC repositories with TestContainers, there is a critical choice between two approaches:
 
 1. **@DataJdbcTest** - Sliced test that only loads JDBC components
 2. **@SpringBootTest** - Full application context test
-
-During the extraction of the persistence module, I initially attempted to create a single monolithic integration test using `@DataJdbcTest` which led to confusion about the correct testing approach.
 
 ## Decision
 
@@ -164,15 +167,17 @@ public class PersistenceIntegrationTest {
 
 ## Reference Implementations
 
-### Repository Test Examples (Use @DataJdbcTest):
-- `backend/src/test/java/com/northstar/funding/discovery/search/infrastructure/SearchQueryRepositoryTest.java`
-- `backend/src/test/java/com/northstar/funding/discovery/search/infrastructure/SearchSessionStatisticsRepositoryTest.java`
+**NOTE**: These reference implementations do not exist yet. This section describes the planned file structure.
 
-### Integration Test Examples (Use @SpringBootTest):
-- `backend/src/test/java/com/northstar/funding/integration/DiscoveryWorkflowIntegrationTest.java`
-- `backend/src/test/java/com/northstar/funding/integration/DuplicateDetectionIntegrationTest.java`
+### Repository Test Examples (Use @DataJdbcTest) - PLANNED:
+- `northstar-persistence/src/test/java/.../repository/DomainRepositoryIntegrationTest.java`
+- `northstar-persistence/src/test/java/.../repository/OrganizationRepositoryIntegrationTest.java`
 
-**Copy the exact pattern from these files for your test type.**
+### Integration Test Examples (Use @SpringBootTest) - PLANNED:
+- `northstar-application/src/test/java/.../integration/DiscoveryWorkflowIntegrationTest.java`
+- `northstar-application/src/test/java/.../integration/DomainDeduplicationIntegrationTest.java`
+
+**Current Testing**: Unit tests with Mockito in `northstar-persistence/src/test/java/.../service/` (163 tests passing)
 
 ## Enforcement
 
@@ -193,14 +198,12 @@ public class PersistenceIntegrationTest {
 
 **Never create monolithic tests that test multiple repositories in one class.**
 
-## User Feedback (Verbatim)
+## Implementation Status
 
-> "Is that an abstract ancestor? What about all the repository interfaces are they being tested? don't they get their own tests"
-
-This decision was made after user clarified that each repository should have its own dedicated test class, not a single monolithic integration test.
+**Current**: Unit tests only (Mockito-based, 163 tests passing)
+**Next**: When implementing application layer, follow this pattern for integration tests
 
 ## Related Documentation
 
-- [[001-text-array-over-jsonb]] - Database design patterns
-- `CLAUDE.md` - TestContainers Best Practices section
-- `backend/src/test/java/com/northstar/funding/integration/` - Reference implementations
+- [[002-domain-level-deduplication]] - Domain model design
+- `CLAUDE.md` - TestContainers Best Practices section (to be added when implementing)
