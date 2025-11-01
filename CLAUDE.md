@@ -524,13 +524,36 @@ The current implementation provides a solid foundation of domain entities and pe
 ### Functional Error Handling (Vavr)
 **Status**: Vavr is in the POM but not currently used. Planned for future application layer.
 
-### BigDecimal for Confidence Scores
-All confidence scores use `BigDecimal` with scale 2 for precision.
+### BigDecimal for Confidence Scores (CRITICAL RULE)
+
+**MANDATORY**: All confidence scores MUST use `BigDecimal` with scale 2 (two decimal places) for precision.
+
+**Why**: Floating-point arithmetic causes precision errors. A confidence of 0.6 stored as `double` might become 0.5999999999999999, causing it to incorrectly fail our ≥ 0.6 threshold filter.
+
+**Rules**:
+1. **Always use `BigDecimal`** for confidence scores, never `double` or `float`
+2. **Always set scale to 2**: `new BigDecimal("0.85").setScale(2, RoundingMode.HALF_UP)`
+3. **Use String constructor**: `new BigDecimal("0.85")` not `new BigDecimal(0.85)`
+4. **Database column**: `NUMERIC(3,2)` in PostgreSQL (values 0.00 to 1.00)
+5. **Comparisons**: Use `.compareTo()` not `==` or `>=`
 
 **Example**:
 ```java
-BigDecimal confidence = new BigDecimal("0.85");
+// Creating confidence scores
+BigDecimal confidence = new BigDecimal("0.85").setScale(2, RoundingMode.HALF_UP);
 organization.setOrganizationConfidence(confidence);
+
+// Comparing confidence scores (threshold filter)
+BigDecimal threshold = new BigDecimal("0.60");
+if (confidence.compareTo(threshold) >= 0) {
+    // Pass: confidence >= 0.60
+}
+```
+
+**Database Migration Pattern**:
+```sql
+ALTER TABLE funding_source_candidate
+  ALTER COLUMN confidence_score TYPE NUMERIC(3,2);
 ```
 
 ## Important Notes
