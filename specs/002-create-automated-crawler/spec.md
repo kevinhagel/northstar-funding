@@ -3,37 +3,37 @@
 **Feature Branch**: `002-create-automated-crawler`
 **Created**: 2025-10-19
 **Status**: Draft
-**Input**: User description: "Create automated crawler infrastructure for Phase 1 metadata judging: system generates AI-powered search queries to discover funding sources across multiple search engines (Searxng, Tavily, Browserbase, Perplexity), performs domain-level deduplication to prevent reprocessing same domains, judges candidates based on search engine metadata only (no web crawling) using confidence scoring with funding keywords, domain credibility, geographic relevance, and organization type detection, registers domains with blacklist management and quality tracking, creates high-confidence candidates (>= 0.6) as PENDING_CRAWL status for Phase 2 deep crawling, skips low-confidence results to save processing resources, tracks domain quality metrics for continuous improvement, and uses Java 25 Virtual Threads for parallel processing of 20-25 search results per query with simple orchestrator pattern (no Kafka, no Spring Integration)"
+**Input**: User description: "Create automated crawler infrastructure for Phase 1 metadata judging: system generates AI-powered search queries to discover funding sources across multiple search engines (BraveSearch, Searxng, Tavily, Serper), performs domain-level deduplication to prevent reprocessing same domains, judges candidates based on search engine metadata only (no web crawling) using confidence scoring with funding keywords, domain credibility, geographic relevance, and organization type detection, registers domains with blacklist management and quality tracking, creates high-confidence candidates (>= 0.6) as PENDING_CRAWL status for Phase 2 deep crawling, skips low-confidence results to save processing resources, tracks domain quality metrics for continuous improvement, and uses Java 25 Virtual Threads for parallel processing of 20-25 search results per query. CRITICAL REQUIREMENTS: All confidence scores must use BigDecimal with scale 2 (two decimal places) for precision to avoid floating-point errors (0.5999999999999999 failing >= 0.6 threshold), database columns must be NUMERIC(3,2) in PostgreSQL, confidence comparisons must use .compareTo() method, and existing Flyway migration files should be edited directly rather than creating new migrations since database is empty and can be cleanly rebuilt with mvn flyway:clean flyway:migrate."
 
 ## Execution Flow (main)
 ```
 1. Parse user description from Input 
-   ’ Feature description comprehensive and detailed
+   ï¿½ Feature description comprehensive and detailed
 2. Extract key concepts from description 
-   ’ Actors: System (automated discovery), admin users (blacklist management)
-   ’ Actions: generate queries, search, deduplicate, judge, score, create candidates, skip, track
-   ’ Data: domains, search results, candidates, quality scores, blacklists
-   ’ Constraints: metadata-only judging (no web crawling), confidence threshold 0.6, multiple search engines
+   ï¿½ Actors: System (automated discovery), admin users (blacklist management)
+   ï¿½ Actions: generate queries, search, deduplicate, judge, score, create candidates, skip, track
+   ï¿½ Data: domains, search results, candidates, quality scores, blacklists
+   ï¿½ Constraints: metadata-only judging (no web crawling), confidence threshold 0.6, multiple search engines
 3. For each unclear aspect: 
-   ’ Query generation strategy specified as AI-powered
-   ’ Confidence threshold clearly defined (0.6)
-   ’ Search engines enumerated (Searxng, Tavily, Browserbase, Perplexity)
+   ï¿½ Query generation strategy specified as AI-powered
+   ï¿½ Confidence threshold clearly defined (0.6)
+   ï¿½ Search engines enumerated (BraveSearch, Searxng, Tavily, Serper)
 4. Fill User Scenarios & Testing section 
-   ’ Automated discovery workflow clear
-   ’ Quality-based filtering workflow defined
+   ï¿½ Automated discovery workflow clear
+   ï¿½ Quality-based filtering workflow defined
 5. Generate Functional Requirements 
-   ’ Each requirement testable and specific
+   ï¿½ Each requirement testable and specific
 6. Identify Key Entities 
-   ’ Domains, SearchResults, Candidates, QualityMetrics
+   ï¿½ Domains, SearchResults, Candidates, QualityMetrics
 7. Run Review Checklist 
-   ’ No implementation details in business spec
-   ’ Focused on discovery automation and quality management
+   ï¿½ No implementation details in business spec
+   ï¿½ Focused on discovery automation and quality management
 8. Return: SUCCESS (spec ready for planning)
 ```
 
 ---
 
-## ¡ Quick Guidelines
+## ï¿½ Quick Guidelines
 -  Focus on WHAT users need and WHY
 - L Avoid HOW to implement (no tech stack, APIs, code structure)
 - =e Written for business stakeholders, not developers
@@ -58,7 +58,8 @@ The system needs to automatically discover potential funding sources across the 
 - How does the system handle a previously high-quality domain that stops offering funding? (Quality tracking must degrade domain scores over time)
 - What occurs when a legitimate funding organization shares a domain with spam content? (Blacklist management must be reversible)
 - How does the system behave when search engines return no results or error? (Graceful handling without blocking the discovery workflow)
-- What happens when confidence scoring produces many results exactly at the 0.6 threshold? (Clear boundary rules needed)
+- What happens when confidence scoring produces many results exactly at the 0.6 threshold? (Clear boundary rules: >= 0.6 passes using BigDecimal.compareTo())
+- What happens when floating-point calculation produces 0.5999999999999999? (BigDecimal with scale 2 prevents this - value stored as 0.60 or 0.59, never floating-point approximation)
 
 ## Requirements *(mandatory)*
 
@@ -81,6 +82,13 @@ The system needs to automatically discover potential funding sources across the 
 - **FR-016**: System MUST associate each created candidate with its originating domain for quality tracking
 - **FR-017**: System MUST handle processing failures gracefully with exponential backoff retry logic for transient errors
 - **FR-018**: System MUST distinguish between temporary processing failures and permanent blacklist status
+
+### Data Precision Requirements
+- **FR-019**: All confidence scores MUST be calculated, stored, and compared using BigDecimal data type with scale 2 (exactly two decimal places)
+- **FR-020**: System MUST use BigDecimal.compareTo() method for all confidence score comparisons to avoid floating-point precision errors (e.g., 0.5999999999999999 incorrectly failing >= 0.6 threshold)
+- **FR-021**: Database columns storing confidence scores MUST use NUMERIC(3,2) type in PostgreSQL to support values 0.00 to 1.00
+- **FR-022**: Existing Flyway migration files MUST be edited directly to correct confidence score column types rather than creating new migration files
+- **FR-023**: System MUST verify database schema supports BigDecimal precision before first crawler execution
 
 ### Key Entities *(include if feature involves data)*
 - **Domain**: Represents a unique website domain discovered through search results; tracks processing history, quality metrics (best confidence, candidate counts), blacklist status and reason, "no funds this year" marking, processing failure count, and retry scheduling
