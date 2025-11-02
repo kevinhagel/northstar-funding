@@ -1,4 +1,0 @@
--------------------------------------------------------------------------------
-Test set: com.northstar.funding.persistence.repository.DomainRepositoryTest
--------------------------------------------------------------------------------
-Tests run: 15, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.418 s -- in com.northstar.funding.persistence.repository.DomainRepositoryTest
