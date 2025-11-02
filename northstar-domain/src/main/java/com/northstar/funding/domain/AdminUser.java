@@ -5,6 +5,9 @@ import java.time.LocalDateTime;
 import java.util.Set;
 import java.util.UUID;
 
+import org.springframework.data.annotation.Id;
+import org.springframework.data.relational.core.mapping.Column;
+import org.springframework.data.relational.core.mapping.Table;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -24,6 +27,7 @@ import lombok.NoArgsConstructor;
  * - Spring Data JDBC entity (no ORM complexity)
  */
 
+@Table("admin_user")
 @Data
 @Builder
 @NoArgsConstructor
@@ -31,8 +35,8 @@ import lombok.NoArgsConstructor;
 public class AdminUser {
 
     // Primary Identity
-    
-    
+    @Id
+    @Column("user_id")
     private UUID userId;
     
     private String username;

@@ -1,3 +1,5 @@
+# Maven build directories
+target/
 
 # Obsidian vault
 northstar-notes/.obsidian/

@@ -81,7 +81,7 @@ Bulgaria ranks among EU countries with highest rates of poverty and social exclu
 - **Talent Scout Network**: Identify disadvantaged families
 - **Scholarships**: Ensure access regardless of financial circumstances
 - **Community Hub**: Exhibitions, musical events, sports, theatrical performances
-- **Proven Foundation**: Part of 27-year established private language school, British Council partner, voted best English language school in Bulgaria for 14 consecutive years
+- **Proven Foundation**: Part of 28-year established private language school, British Council partner, voted best English language school in Bulgaria for 14 consecutive years
 
 ---
 
