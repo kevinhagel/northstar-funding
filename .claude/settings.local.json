@@ -24,7 +24,13 @@
       "Bash(\"northstar-domain/src/main/java/com/northstar/funding/domain/$enum.java\")",
       "Bash(echo:*)",
       "Bash(done)",
-      "Bash(mvn clean install:*)"
+      "Bash(mvn clean install:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git checkout:*)",
+      "Bash(git merge:*)",
+      "Bash(mvn clean test:*)",
+      "Bash(javap:*)"
     ],
     "deny": [],
     "ask": []
