@@ -1,0 +1,50 @@
+# Test configuration for northstar-query-generation
+# Used by @ActiveProfiles("test") in integration tests
+
+spring:
+  application:
+    name: northstar-query-generation-test
+
+  datasource:
+    url: jdbc:postgresql://192.168.1.10:5432/northstar_funding
+    username: northstar_user
+    password: northstar_password
+    driver-class-name: org.postgresql.Driver
+
+  data:
+    jdbc:
+      repositories:
+        enabled: true
+
+# Query Generation configuration
+query-generation:
+  # LM Studio Configuration
+  lm-studio:
+    base-url: http://192.168.1.10:1234/v1
+    api-key: not-needed
+    timeout-seconds: 30
+    model-name: llama-3.1-8b-instruct
+
+  # Cache configuration
+  cache:
+    enabled: true
+    max-size: 1000
+    ttl-hours: 24
+    record-stats: true
+
+  # Query limits
+  max-queries-limit: 50
+  min-queries-limit: 1
+  default-queries: 10
+
+  # Persistence
+  persistence:
+    async: true
+    enabled: true
+
+# Logging
+logging:
+  level:
+    com.northstar.funding.querygeneration: DEBUG
+    dev.langchain4j: INFO
+    com.github.benmanes.caffeine: DEBUG

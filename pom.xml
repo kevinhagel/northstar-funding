@@ -16,6 +16,7 @@
     <modules>
         <module>northstar-domain</module>
         <module>northstar-persistence</module>
+        <module>northstar-query-generation</module>
         <module>northstar-crawler</module>
         <module>northstar-judging</module>
         <module>northstar-application</module>
@@ -74,6 +75,11 @@
             <dependency>
                 <groupId>com.northstar.funding</groupId>
                 <artifactId>northstar-crawler</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.northstar.funding</groupId>
+                <artifactId>northstar-query-generation</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>

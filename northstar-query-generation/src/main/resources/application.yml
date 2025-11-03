@@ -1,0 +1,30 @@
+spring:
+  cache:
+    caffeine:
+      spec: maximumSize=1000,expireAfterWrite=24h
+
+# Query Generation Configuration
+query-generation:
+  # Query limits
+  max-queries-limit: 50
+  min-queries-limit: 1
+  default-queries: 10
+
+  # LM Studio Configuration
+  lm-studio:
+    base-url: http://192.168.1.10:1234/v1
+    api-key: not-needed  # LM Studio doesn't require API key
+    timeout-seconds: 30
+    model-name: local-model  # Will use whatever model is loaded in LM Studio
+
+  # Cache Configuration
+  cache:
+    enabled: true
+    max-size: 1000
+    ttl-hours: 24
+    record-stats: true
+
+  # Persistence Configuration
+  persistence:
+    async: true
+    enabled: true
