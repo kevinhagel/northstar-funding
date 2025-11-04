@@ -3,154 +3,195 @@ package com.northstar.funding.querygeneration.strategy;
 import com.northstar.funding.domain.FundingSearchCategory;
 import com.northstar.funding.domain.GeographicScope;
 import com.northstar.funding.domain.SearchEngineType;
+import com.northstar.funding.querygeneration.template.CategoryMapper;
+import com.northstar.funding.querygeneration.template.GeographicMapper;
+import dev.langchain4j.model.chat.ChatLanguageModel;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.when;
 
 /**
  * Contract test for QueryGenerationStrategy interface.
  *
- * <p>This test MUST FAIL before implementations exist (TDD approach).
- * It defines the contract that all strategy implementations must satisfy.
+ * <p>Unit tests for strategy implementations with mocked dependencies.
  */
 class QueryGenerationStrategyContractTest {
 
-    /**
-     * NOTE: This test will fail until KeywordQueryStrategy is implemented.
-     * This is EXPECTED and CORRECT for TDD.
-     */
+    @Mock
+    private ChatLanguageModel chatModel;
+
+    @Mock
+    private CategoryMapper categoryMapper;
+
+    @Mock
+    private GeographicMapper geographicMapper;
+
+    @BeforeEach
+    void setUp() {
+        MockitoAnnotations.openMocks(this);
+
+        // Mock mappers to return simple strings
+        when(categoryMapper.toKeywords(FundingSearchCategory.INDIVIDUAL_SCHOLARSHIPS))
+                .thenReturn("scholarships");
+        when(categoryMapper.toConceptualDescription(FundingSearchCategory.INDIVIDUAL_SCHOLARSHIPS))
+                .thenReturn("individual scholarship programs");
+        when(categoryMapper.toConceptualDescription(FundingSearchCategory.STEM_EDUCATION))
+                .thenReturn("STEM education initiatives");
+
+        when(geographicMapper.toKeywords(GeographicScope.BULGARIA))
+                .thenReturn("Bulgaria");
+        when(geographicMapper.toConceptualDescription(GeographicScope.BULGARIA))
+                .thenReturn("Bulgaria and Bulgarian regions");
+        when(geographicMapper.toConceptualDescription(GeographicScope.EASTERN_EUROPE))
+                .thenReturn("Eastern European countries");
+
+        // Mock LLM to return formatted query list
+        when(chatModel.generate(anyString())).thenReturn(
+                "1. scholarship Bulgaria students\n" +
+                "2. Bulgarian education funding\n" +
+                "3. student grants Bulgaria\n" +
+                "4. Bulgaria university scholarships\n" +
+                "5. Bulgarian student financial aid"
+        );
+    }
+
     @Test
-    void keywordStrategy_shouldReturnCompletableFuture() {
-        // This will fail until KeywordQueryStrategy exists
-        fail("KeywordQueryStrategy not yet implemented - expected for TDD");
+    void keywordStrategy_shouldReturnCompletableFuture() throws Exception {
+        // Arrange
+        QueryGenerationStrategy strategy = new KeywordQueryStrategy(
+                chatModel,
+                categoryMapper,
+                geographicMapper
+        );
 
-        // Future implementation test (uncomment after implementation):
-        /*
-        QueryGenerationStrategy strategy = new KeywordQueryStrategy(...);
-
+        // Act
         CompletableFuture<List<String>> future = strategy.generateQueries(
                 Set.of(FundingSearchCategory.INDIVIDUAL_SCHOLARSHIPS),
                 GeographicScope.BULGARIA,
                 5
         );
 
+        // Assert
         assertThat(future).isNotNull();
         assertThat(future).isInstanceOf(CompletableFuture.class);
-        */
+
+        List<String> queries = future.get(5, TimeUnit.SECONDS);
+        assertThat(queries).isNotEmpty();
     }
 
-    /**
-     * NOTE: This test will fail until KeywordQueryStrategy is implemented.
-     */
     @Test
     void keywordStrategy_shouldReturnCorrectSearchEngine() {
-        fail("KeywordQueryStrategy not yet implemented - expected for TDD");
+        // Arrange
+        QueryGenerationStrategy strategy = new KeywordQueryStrategy(
+                chatModel,
+                categoryMapper,
+                geographicMapper
+        );
 
-        // Future implementation test (uncomment after implementation):
-        /*
-        QueryGenerationStrategy strategy = new KeywordQueryStrategy(...);
-
+        // Act
         SearchEngineType engine = strategy.getSearchEngine();
 
+        // Assert
         assertThat(engine).isIn(
                 SearchEngineType.BRAVE,
                 SearchEngineType.SERPER,
                 SearchEngineType.SEARXNG
         );
-        */
     }
 
-    /**
-     * NOTE: This test will fail until KeywordQueryStrategy is implemented.
-     */
     @Test
     void keywordStrategy_shouldReturnKeywordQueryType() {
-        fail("KeywordQueryStrategy not yet implemented - expected for TDD");
+        // Arrange
+        QueryGenerationStrategy strategy = new KeywordQueryStrategy(
+                chatModel,
+                categoryMapper,
+                geographicMapper
+        );
 
-        // Future implementation test (uncomment after implementation):
-        /*
-        QueryGenerationStrategy strategy = new KeywordQueryStrategy(...);
-
+        // Act
         String queryType = strategy.getQueryType();
 
+        // Assert
         assertThat(queryType).isEqualTo("keyword");
-        */
     }
 
-    /**
-     * NOTE: This test will fail until TavilyQueryStrategy is implemented.
-     */
     @Test
-    void tavilyStrategy_shouldReturnCompletableFuture() {
-        fail("TavilyQueryStrategy not yet implemented - expected for TDD");
+    void tavilyStrategy_shouldReturnCompletableFuture() throws Exception {
+        // Arrange
+        QueryGenerationStrategy strategy = new TavilyQueryStrategy(
+                chatModel,
+                categoryMapper,
+                geographicMapper
+        );
 
-        // Future implementation test (uncomment after implementation):
-        /*
-        QueryGenerationStrategy strategy = new TavilyQueryStrategy(...);
-
+        // Act
         CompletableFuture<List<String>> future = strategy.generateQueries(
                 Set.of(FundingSearchCategory.STEM_EDUCATION),
                 GeographicScope.EASTERN_EUROPE,
                 3
         );
 
+        // Assert
         assertThat(future).isNotNull();
         assertThat(future).isInstanceOf(CompletableFuture.class);
-        */
+
+        List<String> queries = future.get(5, TimeUnit.SECONDS);
+        assertThat(queries).isNotEmpty();
     }
 
-    /**
-     * NOTE: This test will fail until TavilyQueryStrategy is implemented.
-     */
     @Test
     void tavilyStrategy_shouldReturnTavilySearchEngine() {
-        fail("TavilyQueryStrategy not yet implemented - expected for TDD");
+        // Arrange
+        QueryGenerationStrategy strategy = new TavilyQueryStrategy(
+                chatModel,
+                categoryMapper,
+                geographicMapper
+        );
 
-        // Future implementation test (uncomment after implementation):
-        /*
-        QueryGenerationStrategy strategy = new TavilyQueryStrategy(...);
-
+        // Act
         SearchEngineType engine = strategy.getSearchEngine();
 
+        // Assert
         assertThat(engine).isEqualTo(SearchEngineType.TAVILY);
-        */
     }
 
-    /**
-     * NOTE: This test will fail until TavilyQueryStrategy is implemented.
-     */
     @Test
     void tavilyStrategy_shouldReturnAiOptimizedQueryType() {
-        fail("TavilyQueryStrategy not yet implemented - expected for TDD");
+        // Arrange
+        QueryGenerationStrategy strategy = new TavilyQueryStrategy(
+                chatModel,
+                categoryMapper,
+                geographicMapper
+        );
 
-        // Future implementation test (uncomment after implementation):
-        /*
-        QueryGenerationStrategy strategy = new TavilyQueryStrategy(...);
-
+        // Act
         String queryType = strategy.getQueryType();
 
+        // Assert
         assertThat(queryType).isEqualTo("ai-optimized");
-        */
     }
 
-    /**
-     * NOTE: This test will fail until strategy implementations exist.
-     */
     @Test
-    void strategy_shouldBeThreadSafe() {
-        fail("Strategy implementations not yet created - expected for TDD");
+    void strategy_shouldBeThreadSafe() throws Exception {
+        // Arrange
+        QueryGenerationStrategy strategy = new KeywordQueryStrategy(
+                chatModel,
+                categoryMapper,
+                geographicMapper
+        );
 
-        // Future implementation test (uncomment after implementation):
-        /*
-        QueryGenerationStrategy strategy = new KeywordQueryStrategy(...);
-
-        // Execute same strategy from multiple threads
+        // Act - Execute same strategy from multiple threads
         List<CompletableFuture<List<String>>> futures = new ArrayList<>();
         for (int i = 0; i < 10; i++) {
             futures.add(strategy.generateQueries(
@@ -160,13 +201,12 @@ class QueryGenerationStrategyContractTest {
             ));
         }
 
-        // All should complete successfully
+        // Assert - All should complete successfully
         CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]))
                 .get(60, TimeUnit.SECONDS);
 
         for (CompletableFuture<List<String>> future : futures) {
             assertThat(future.get()).isNotEmpty();
         }
-        */
     }
 }
