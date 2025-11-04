@@ -3,3 +3,6 @@ target/
 
 # Obsidian vault
 northstar-notes/.obsidian/
+
+# Git worktrees
+.worktrees/
