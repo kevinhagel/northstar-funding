@@ -118,4 +118,35 @@ class CategoryMapperTest {
         assertThat(mapper.toConceptualDescription(FundingSearchCategory.STEM_EDUCATION))
                 .containsAnyOf("science", "technology", "engineering", "mathematics", "STEM");
     }
+
+    // Feature 005: New categories
+    @Test
+    void toKeywords_forEarlyChildhood_shouldReturnExpectedValues() {
+        assertThat(mapper.toKeywords(FundingSearchCategory.EARLY_CHILDHOOD_EDUCATION))
+                .containsAnyOf("early childhood", "preschool", "kindergarten");
+    }
+
+    @Test
+    void toKeywords_forAdultEducation_shouldReturnExpectedValues() {
+        assertThat(mapper.toKeywords(FundingSearchCategory.ADULT_EDUCATION))
+                .containsAnyOf("adult education", "lifelong learning", "continuing education");
+    }
+
+    @Test
+    void toKeywords_forVocationalTraining_shouldReturnExpectedValues() {
+        assertThat(mapper.toKeywords(FundingSearchCategory.VOCATIONAL_TRAINING))
+                .containsAnyOf("vocational", "technical training", "skills development");
+    }
+
+    @Test
+    void toKeywords_forEducationalTechnology_shouldReturnExpectedValues() {
+        assertThat(mapper.toKeywords(FundingSearchCategory.EDUCATIONAL_TECHNOLOGY))
+                .containsAnyOf("edtech", "educational technology", "digital learning");
+    }
+
+    @Test
+    void toKeywords_forArtsCulture_shouldReturnExpectedValues() {
+        assertThat(mapper.toKeywords(FundingSearchCategory.ARTS_CULTURE))
+                .containsAnyOf("arts", "culture", "creative education");
+    }
 }

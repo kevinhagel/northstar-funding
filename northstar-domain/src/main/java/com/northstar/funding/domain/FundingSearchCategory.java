@@ -3,7 +3,7 @@ package com.northstar.funding.domain;
 /**
  * Enumeration of funding category types for search targeting.
  *
- * <p>25 distinct funding categories covering educational funding opportunities.
+ * <p>30 distinct funding categories covering educational funding opportunities.
  */
 public enum FundingSearchCategory {
     // Individual Support (4 categories)
@@ -43,5 +43,21 @@ public enum FundingSearchCategory {
     // Research & Innovation (3 categories)
     EDUCATION_RESEARCH,
     PILOT_PROGRAMS,
-    INNOVATION_GRANTS
+    INNOVATION_GRANTS,
+
+    // Feature 005: Age-specific & Modern Education (5 categories)
+    /** Early childhood education (ages 0-5) funding */
+    EARLY_CHILDHOOD_EDUCATION,
+
+    /** Adult education and lifelong learning funding */
+    ADULT_EDUCATION,
+
+    /** Vocational and technical training funding */
+    VOCATIONAL_TRAINING,
+
+    /** Educational technology and digital learning funding */
+    EDUCATIONAL_TECHNOLOGY,
+
+    /** Arts and cultural education funding */
+    ARTS_CULTURE
 }

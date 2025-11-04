@@ -61,6 +61,13 @@ public class CategoryMapper {
             case EDUCATION_RESEARCH -> "education research, academic studies, research grants";
             case PILOT_PROGRAMS -> "pilot programs, innovative education, experimental projects";
             case INNOVATION_GRANTS -> "innovation grants, educational innovation, new approaches";
+
+            // Feature 005: Age-specific & Modern Education
+            case EARLY_CHILDHOOD_EDUCATION -> "early childhood education, preschool, kindergarten, pre-K, nursery, childcare, ages 0-5";
+            case ADULT_EDUCATION -> "adult education, lifelong learning, continuing education, adult learning, mature students, non-traditional students";
+            case VOCATIONAL_TRAINING -> "vocational training, technical training, skills development, vocational education, career training, trade skills";
+            case EDUCATIONAL_TECHNOLOGY -> "educational technology, edtech, digital learning, e-learning, online education, learning technology";
+            case ARTS_CULTURE -> "arts education, cultural education, creative arts, performing arts, visual arts, arts integration";
         };
     }
 
@@ -135,6 +142,18 @@ public class CategoryMapper {
                 "experimental pilot programs testing innovative educational approaches and methodologies";
             case INNOVATION_GRANTS ->
                 "funding for innovative educational projects that explore new teaching and learning methods";
+
+            // Feature 005: Age-specific & Modern Education
+            case EARLY_CHILDHOOD_EDUCATION ->
+                "early childhood education programs for ages 0-5 including preschool, kindergarten, and early learning initiatives";
+            case ADULT_EDUCATION ->
+                "adult education and lifelong learning programs supporting mature learners, continuing education, and career development";
+            case VOCATIONAL_TRAINING ->
+                "vocational and technical training programs developing practical skills, career readiness, and trade competencies for workforce development";
+            case EDUCATIONAL_TECHNOLOGY ->
+                "educational technology initiatives integrating digital tools, online learning platforms, and innovative edtech solutions";
+            case ARTS_CULTURE ->
+                "arts and cultural education programs promoting creative expression, performing arts, visual arts, and cultural learning";
         };
     }
 }
