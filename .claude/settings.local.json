@@ -30,7 +30,16 @@
       "Bash(git checkout:*)",
       "Bash(git merge:*)",
       "Bash(mvn clean test:*)",
-      "Bash(javap:*)"
+      "Bash(javap:*)",
+      "mcp__ref-tools__ref_read_url",
+      "mcp__ref-tools__ref_search_documentation",
+      "Bash(.specify/scripts/bash/setup-plan.sh:*)",
+      "Bash(.specify/scripts/bash/update-agent-context.sh:*)",
+      "SlashCommand(/implement)",
+      "Bash(.specify/scripts/bash/check-prerequisites.sh:*)",
+      "WebSearch",
+      "WebFetch(domain:www.britishcentreburgas.com)",
+      "Skill(superpowers:brainstorming)"
     ],
     "deny": [],
     "ask": []
