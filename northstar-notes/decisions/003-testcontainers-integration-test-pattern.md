@@ -1,15 +1,15 @@
 # ADR 003: TestContainers Integration Test Pattern
 
-**Status**: Proposed (Pattern defined but not yet implemented)
+**Status**: ✅ IMPLEMENTED (Feature 003 - 125 integration tests)
 **Date**: 2025-10-31
-**Updated**: 2025-11-01
-**Context Tags**: #architecture #testing #testcontainers #spring-boot #planned
+**Updated**: 2025-11-02
+**Context Tags**: #architecture #testing #testcontainers #spring-boot #implemented
 
 ## Context
 
-**CURRENT PROJECT STATE**: Only domain model and persistence layer exist. Unit tests use Mockito. TestContainers integration tests have NOT been implemented yet.
+**CURRENT PROJECT STATE** (Updated 2025-11-02): Domain model, persistence layer, and crawler infrastructure complete. Unit tests use Mockito (300 tests). TestContainers integration tests IMPLEMENTED with 125 tests across 2 modules.
 
-This ADR documents the **planned pattern** for when we implement TestContainers integration tests in the future.
+This ADR documents the **implemented pattern** for TestContainers integration tests, validated through Feature 003 implementation.
 
 When writing integration tests for Spring Data JDBC repositories with TestContainers, there is a critical choice between two approaches:
 
@@ -167,17 +167,32 @@ public class PersistenceIntegrationTest {
 
 ## Reference Implementations
 
-**NOTE**: These reference implementations do not exist yet. This section describes the planned file structure.
+**Status**: ✅ IMPLEMENTED (2025-11-02)
 
-### Repository Test Examples (Use @DataJdbcTest) - PLANNED:
-- `northstar-persistence/src/test/java/.../repository/DomainRepositoryIntegrationTest.java`
-- `northstar-persistence/src/test/java/.../repository/OrganizationRepositoryIntegrationTest.java`
+### Repository Test Examples (Use @DataJdbcTest) - IMPLEMENTED:
+- `northstar-persistence/src/test/java/.../repository/AdminUserRepositoryTest.java` (14 tests)
+- `northstar-persistence/src/test/java/.../repository/DomainRepositoryTest.java` (15 tests)
+- `northstar-persistence/src/test/java/.../repository/OrganizationRepositoryTest.java` (11 tests)
+- `northstar-persistence/src/test/java/.../repository/FundingProgramRepositoryTest.java` (14 tests)
+- `northstar-persistence/src/test/java/.../repository/SearchResultRepositoryTest.java` (13 tests)
 
-### Integration Test Examples (Use @SpringBootTest) - PLANNED:
-- `northstar-application/src/test/java/.../integration/DiscoveryWorkflowIntegrationTest.java`
-- `northstar-application/src/test/java/.../integration/DomainDeduplicationIntegrationTest.java`
+**Total**: 67 repository integration tests using @DataJdbcTest
 
-**Current Testing**: Unit tests with Mockito in `northstar-persistence/src/test/java/.../service/` (163 tests passing)
+### Integration Test Examples (Use @SpringBootTest) - IMPLEMENTED:
+- `northstar-crawler/src/test/java/.../integration/DomainDeduplicationTest.java` (6 tests)
+- `northstar-crawler/src/test/java/.../integration/AntiSpamIntegrationTest.java` (7 tests)
+- `northstar-crawler/src/test/java/.../integration/MultiProviderSearchTest.java` (6 tests)
+- `northstar-crawler/src/test/java/.../integration/SingleProviderSearchTest.java` (6 tests)
+- `northstar-crawler/src/test/java/.../integration/RateLimitingTest.java` (7 tests)
+- `northstar-crawler/src/test/java/.../integration/TimeoutHandlingTest.java` (7 tests)
+- `northstar-crawler/src/test/java/.../integration/PartialFailureHandlingTest.java` (3 tests)
+- `northstar-crawler/src/test/java/.../integration/WeeklySimulationTest.java` (6 tests)
+- `northstar-crawler/src/test/java/.../integration/ManualValidationTest.java` (11 tests)
+
+**Total**: 58 crawler integration tests using @SpringBootTest
+
+**Summary**: 125 total integration tests (67 repository + 58 crawler workflow)
+**Current Testing**: 460 total tests = 300 unit tests + 35 contract tests + 125 integration tests
 
 ## Enforcement
 
@@ -200,8 +215,23 @@ public class PersistenceIntegrationTest {
 
 ## Implementation Status
 
-**Current**: Unit tests only (Mockito-based, 163 tests passing)
-**Next**: When implementing application layer, follow this pattern for integration tests
+**Status**: ✅ FULLY IMPLEMENTED (2025-11-02)
+
+**Persistence Layer** (northstar-persistence):
+- 67 repository integration tests using @DataJdbcTest + TestContainers
+- 135 service unit tests using Mockito
+- Pattern validated and working
+
+**Crawler Layer** (northstar-crawler):
+- 58 integration tests using @SpringBootTest + TestContainers
+- 165 unit tests using Mockito + WireMock
+- 35 contract tests for interface compliance
+- Pattern validated across complex multi-provider orchestration
+
+**Total Test Coverage**: 460 tests (all passing)
+- Unit: 300 tests
+- Contract: 35 tests
+- Integration: 125 tests
 
 ## Related Documentation
 

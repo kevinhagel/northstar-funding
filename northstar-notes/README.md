@@ -129,10 +129,12 @@ Quick capture for random thoughts, TODOs, links, and ideas that need processing 
 ## 🗺️ Navigation - Key Documents
 
 ### Start Here
-- [[project-overview]] - Complete project overview and motivation
+- [[current-system-status]] - **UPDATED TODAY** - What's built, what's missing, what's next
+- [[user-stories]] - **NEW TODAY** - User stories, epics, and roadmap
+- [[project-overview]] - Complete project overview and motivation (needs update)
 - [[vision-and-mission]] - The NorthStar Foundation Bulgaria vision
-- [[architecture-overview]] - System architecture and design
-- [[tech-stack]] - Technology stack and infrastructure
+- [[architecture-overview]] - System architecture and design (needs creation)
+- [[tech-stack]] - Technology stack and infrastructure (see CLAUDE.md)
 
 ### Architecture & Design
 **NOTE**: Architecture documentation not yet created. See:
@@ -140,8 +142,12 @@ Quick capture for random thoughts, TODOs, links, and ideas that need processing 
 - `specs/` - Feature specifications with design details
 
 ### Features
-**NOTE**: Feature documentation not yet created. Current features tracked in `/specs` directory:
-- `specs/002-bigdecimal-confidence-scores/` - BigDecimal verification (COMPLETE)
+**Completed Features** (see session-summaries for details):
+- Feature 001: Foundation (Domain model, 19 entities, 16 enums)
+- Feature 002: Persistence (9 repositories, 5 services, 202 tests)
+- Feature 003: Search Infrastructure (4 engines, circuit breakers, 258 tests)
+- Feature 004: Query Generation (AI-powered, cached, parallel, 57 tests)
+- Feature 005: Enhanced Taxonomy (66 new enum values, 30 categories) **COMPLETED TODAY**
 
 ### Decisions
 - [[002-domain-level-deduplication]] - Domain-level deduplication (IMPLEMENTED)
@@ -315,6 +321,6 @@ Feature spec: [Feature 004](../specs/004-ai-query-generation-metadata-judging/sp
 
 ---
 
-**Last Updated**: 2025-11-01
+**Last Updated**: 2025-11-04
 **Vault Owner**: Kevin (American expat in Burgas, Bulgaria)
-**Project Status**: Active Development - Domain Model + Persistence Layer Complete (163 tests passing)
+**Project Status**: Active Development - Features 001-005 Complete (559 tests passing)
