@@ -1,8 +1,6 @@
 package com.northstar.funding.querygeneration.model;
 
-import com.northstar.funding.domain.FundingSearchCategory;
-import com.northstar.funding.domain.GeographicScope;
-import com.northstar.funding.domain.SearchEngineType;
+import com.northstar.funding.domain.*;
 import lombok.Builder;
 import lombok.Value;
 
@@ -47,6 +45,55 @@ public class QueryGenerationRequest {
      * Must not be null.
      */
     UUID sessionId;
+
+    // ========================================
+    // OPTIONAL FIELDS (Feature 005 - NEW)
+    // ========================================
+
+    /**
+     * WHO provides funding (optional).
+     * Adds source-specific keywords to queries.
+     */
+    FundingSourceType sourceType;
+
+    /**
+     * HOW funding is distributed (optional).
+     * Adds mechanism-specific keywords to queries.
+     */
+    FundingMechanism mechanism;
+
+    /**
+     * Funding amount range (optional).
+     * Adds scale-specific keywords to queries.
+     */
+    ProjectScale projectScale;
+
+    /**
+     * WHO benefits from funding (optional).
+     * Can specify multiple beneficiary populations.
+     * Adds beneficiary-specific keywords to queries.
+     */
+    Set<BeneficiaryPopulation> beneficiaries;
+
+    /**
+     * WHAT TYPE of organization receives funding (optional).
+     * Adds recipient-specific keywords to queries.
+     */
+    RecipientOrganizationType recipientType;
+
+    /**
+     * User's preferred language (optional).
+     * For future translation service integration.
+     * NOTE: Translation NOT implemented yet.
+     */
+    QueryLanguage userLanguage;
+
+    /**
+     * Languages to search in (optional).
+     * For future multi-language query generation.
+     * NOTE: Translation NOT implemented yet.
+     */
+    Set<QueryLanguage> searchLanguages;
 
     /**
      * Validates this request.
