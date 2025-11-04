@@ -131,12 +131,22 @@ northstar-funding/
 8. `EnhancementRecord` - Tracking of data enrichment operations
 9. `AdminUser` - System administrators
 
-**Enums** (10 total):
+**Enums** (16 total):
+
+**Core Workflow Enums (10):**
 - `CandidateStatus` - NEW, PENDING_CRAWL, CRAWLED, ENHANCED, JUDGED, etc.
 - `DomainStatus` - DISCOVERED, PROCESSED_HIGH_QUALITY, PROCESSED_LOW_QUALITY, BLACKLISTED, etc.
 - `ProgramStatus` - ACTIVE, EXPIRED, SUSPENDED, etc.
 - `SessionStatus`, `SessionType`, `ContactType`, `EnhancementType`
 - `AdminRole`, `AuthorityLevel`, `SearchEngineType`
+
+**Feature 005: Enhanced Taxonomy (6 new enums):**
+- `FundingSourceType` - WHO provides funding (12 values: EU, Govt, NGO, Private, etc.)
+- `FundingMechanism` - HOW funding distributed (8 values: Grant, Loan, Scholarship, etc.)
+- `ProjectScale` - Amount ranges with BigDecimal (5 values: MICRO to MEGA)
+- `BeneficiaryPopulation` - WHO benefits (18 values: age, demographics, needs)
+- `RecipientOrganizationType` - WHAT TYPE receives (14 values: K12, University, NGO, etc.)
+- `QueryLanguage` - ISO 639-1 codes (9 languages: BG, EN, DE, RO, FR, RU, EL, TR, SR)
 
 **Location**: `northstar-domain/src/main/java/com/northstar/funding/domain/`
 
