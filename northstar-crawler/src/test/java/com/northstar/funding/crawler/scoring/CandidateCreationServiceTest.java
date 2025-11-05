@@ -53,4 +53,31 @@ class CandidateCreationServiceTest {
         assertThat(candidate.getDiscoverySessionId()).isEqualTo(sessionId);
         assertThat(candidate.getConfidenceScore()).isEqualByComparingTo(confidence);
     }
+
+    @Test
+    @DisplayName("Low confidence (< 0.60) creates SKIPPED_LOW_CONFIDENCE candidate")
+    void testLowConfidenceCreatesSkipped() {
+        // Given: Low confidence score < 0.60
+        String title = "Some website";
+        String description = "Generic description";
+        String url = "https://example.com";
+        UUID domainId = UUID.randomUUID();
+        UUID sessionId = UUID.randomUUID();
+        BigDecimal confidence = new BigDecimal("0.35");
+
+        // When
+        FundingSourceCandidate candidate = candidateCreationService.createCandidate(
+            title, description, url, domainId, sessionId, confidence
+        );
+
+        // Then
+        assertThat(candidate).isNotNull();
+        assertThat(candidate.getStatus()).isEqualTo(CandidateStatus.SKIPPED_LOW_CONFIDENCE);
+        assertThat(candidate.getOrganizationName()).isEqualTo(title);
+        assertThat(candidate.getDescription()).isEqualTo(description);
+        assertThat(candidate.getSourceUrl()).isEqualTo(url);
+        assertThat(candidate.getDomainId()).isEqualTo(domainId);
+        assertThat(candidate.getDiscoverySessionId()).isEqualTo(sessionId);
+        assertThat(candidate.getConfidenceScore()).isEqualByComparingTo(confidence);
+    }
 }
