@@ -39,7 +39,8 @@
       "Bash(.specify/scripts/bash/check-prerequisites.sh:*)",
       "WebSearch",
       "WebFetch(domain:www.britishcentreburgas.com)",
-      "Skill(superpowers:brainstorming)"
+      "Skill(superpowers:brainstorming)",
+      "mcp__code-index__set_project_path"
     ],
     "deny": [],
     "ask": []
