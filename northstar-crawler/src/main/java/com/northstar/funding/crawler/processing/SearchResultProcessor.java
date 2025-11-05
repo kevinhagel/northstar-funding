@@ -67,28 +67,53 @@ public class SearchResultProcessor {
         // Track seen domains for deduplication
         java.util.Set<String> seenDomains = new java.util.HashSet<>();
         int duplicatesSkipped = 0;
+        int highConfidenceCreated = 0;
+        int lowConfidenceCreated = 0;
 
-        // Extract domains and track duplicates
+        // Confidence threshold
+        java.math.BigDecimal threshold = new java.math.BigDecimal("0.60");
+
+        // Process each result
         for (SearchResult result : searchResults) {
+            // Extract domain
             java.util.Optional<String> domainOpt = domainService.extractDomainFromUrl(result.getUrl());
-            if (domainOpt.isPresent()) {
-                String domain = domainOpt.get();
-                if (seenDomains.contains(domain)) {
-                    duplicatesSkipped++;
-                } else {
-                    seenDomains.add(domain);
-                }
+            if (!domainOpt.isPresent()) {
+                continue; // Skip if domain extraction fails
             }
+            String domain = domainOpt.get();
+
+            // Check for duplicates
+            if (seenDomains.contains(domain)) {
+                duplicatesSkipped++;
+                continue;
+            }
+            seenDomains.add(domain);
+
+            // Calculate confidence score
+            java.math.BigDecimal confidence = confidenceScorer.calculateConfidence(
+                result.getTitle(),
+                result.getDescription(),
+                result.getUrl()
+            );
+
+            // Filter by confidence threshold (< 0.6 = skip)
+            if (confidence.compareTo(threshold) < 0) {
+                // Low confidence - skip creating candidate
+                continue;
+            }
+
+            // TODO: Create candidate for high confidence results
+            // For now, just count them
+            highConfidenceCreated++;
         }
 
-        // TODO: Implement full processing pipeline
         return ProcessingStatistics.builder()
             .totalResults(searchResults.size())
             .spamTldFiltered(0)
             .blacklistedSkipped(0)
             .duplicatesSkipped(duplicatesSkipped)
-            .highConfidenceCreated(0)
-            .lowConfidenceCreated(0)
+            .highConfidenceCreated(highConfidenceCreated)
+            .lowConfidenceCreated(lowConfidenceCreated)
             .build();
     }
 }

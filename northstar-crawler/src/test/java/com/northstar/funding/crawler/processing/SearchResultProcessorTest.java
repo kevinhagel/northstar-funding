@@ -106,6 +106,12 @@ class SearchResultProcessorTest {
         when(domainService.extractDomainFromUrl("https://different.com/grants"))
             .thenReturn(java.util.Optional.of("different.com"));
 
+        // Mock confidence scoring (high confidence for non-duplicates)
+        when(confidenceScorer.calculateConfidence("Example Funding Program", "Grants available", "https://example.org/funding"))
+            .thenReturn(new java.math.BigDecimal("0.85"));
+        when(confidenceScorer.calculateConfidence("Different Organization", "Other funding", "https://different.com/grants"))
+            .thenReturn(new java.math.BigDecimal("0.80"));
+
         // When
         ProcessingStatistics stats = searchResultProcessor.processSearchResults(
             results, testSessionId
@@ -114,5 +120,47 @@ class SearchResultProcessorTest {
         // Then: Should process 3 results, skip 1 duplicate
         assertThat(stats.getTotalResults()).isEqualTo(3);
         assertThat(stats.getDuplicatesSkipped()).isEqualTo(1);
+    }
+
+    @Test
+    @DisplayName("Low confidence results do not create candidates")
+    void testLowConfidenceFiltered() {
+        // Given: 2 search results with low confidence scores
+        SearchResult result1 = SearchResult.builder()
+            .url("https://lowconf1.com/maybe")
+            .title("Maybe Funding")
+            .description("Unclear if this is funding")
+            .build();
+
+        SearchResult result2 = SearchResult.builder()
+            .url("https://lowconf2.org/perhaps")
+            .title("Perhaps Grants")
+            .description("Not sure about this")
+            .build();
+
+        List<SearchResult> results = List.of(result1, result2);
+
+        // Mock domain extraction
+        when(domainService.extractDomainFromUrl("https://lowconf1.com/maybe"))
+            .thenReturn(java.util.Optional.of("lowconf1.com"));
+        when(domainService.extractDomainFromUrl("https://lowconf2.org/perhaps"))
+            .thenReturn(java.util.Optional.of("lowconf2.org"));
+
+        // Mock confidence scoring - both below 0.6 threshold
+        when(confidenceScorer.calculateConfidence("Maybe Funding", "Unclear if this is funding", "https://lowconf1.com/maybe"))
+            .thenReturn(new java.math.BigDecimal("0.45"));
+        when(confidenceScorer.calculateConfidence("Perhaps Grants", "Not sure about this", "https://lowconf2.org/perhaps"))
+            .thenReturn(new java.math.BigDecimal("0.55"));
+
+        // When
+        ProcessingStatistics stats = searchResultProcessor.processSearchResults(
+            results, testSessionId
+        );
+
+        // Then: Should process 2 results, create 0 candidates (both low confidence)
+        assertThat(stats.getTotalResults()).isEqualTo(2);
+        assertThat(stats.getHighConfidenceCreated()).isZero();
+        assertThat(stats.getLowConfidenceCreated()).isZero();
+        assertThat(stats.getTotalCandidatesCreated()).isZero();
     }
 }
