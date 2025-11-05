@@ -67,6 +67,7 @@ public class SearchResultProcessor {
         // Track seen domains for deduplication
         java.util.Set<String> seenDomains = new java.util.HashSet<>();
         int duplicatesSkipped = 0;
+        int blacklistedSkipped = 0;
         int highConfidenceCreated = 0;
         int lowConfidenceCreated = 0;
 
@@ -88,6 +89,12 @@ public class SearchResultProcessor {
                 continue;
             }
             seenDomains.add(domain);
+
+            // Check blacklist
+            if (domainService.isBlacklisted(domain)) {
+                blacklistedSkipped++;
+                continue;
+            }
 
             // Calculate confidence score
             java.math.BigDecimal confidence = confidenceScorer.calculateConfidence(
@@ -120,7 +127,7 @@ public class SearchResultProcessor {
         return ProcessingStatistics.builder()
             .totalResults(searchResults.size())
             .spamTldFiltered(0)
-            .blacklistedSkipped(0)
+            .blacklistedSkipped(blacklistedSkipped)
             .duplicatesSkipped(duplicatesSkipped)
             .highConfidenceCreated(highConfidenceCreated)
             .lowConfidenceCreated(lowConfidenceCreated)

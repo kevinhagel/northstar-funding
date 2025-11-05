@@ -229,4 +229,68 @@ class SearchResultProcessorTest {
             eq(highConfidence)
         );
     }
+
+    @Test
+    @DisplayName("Blacklisted domains are skipped")
+    void testBlacklistedDomainsSkipped() {
+        // Given: 2 search results, 1 blacklisted domain
+        SearchResult result1 = SearchResult.builder()
+            .url("https://spam.com/fake-grants")
+            .title("Free Money Grants")
+            .description("Click here for free money")
+            .build();
+
+        SearchResult result2 = SearchResult.builder()
+            .url("https://legitimate.org/real-grants")
+            .title("Research Funding")
+            .description("Apply for research grants")
+            .build();
+
+        List<SearchResult> results = List.of(result1, result2);
+
+        // Mock domain extraction
+        when(domainService.extractDomainFromUrl("https://spam.com/fake-grants"))
+            .thenReturn(java.util.Optional.of("spam.com"));
+        when(domainService.extractDomainFromUrl("https://legitimate.org/real-grants"))
+            .thenReturn(java.util.Optional.of("legitimate.org"));
+
+        // Mock blacklist check
+        when(domainService.isBlacklisted("spam.com"))
+            .thenReturn(true);
+        when(domainService.isBlacklisted("legitimate.org"))
+            .thenReturn(false);
+
+        // Mock confidence scoring for non-blacklisted domain
+        when(confidenceScorer.calculateConfidence("Research Funding", "Apply for research grants", "https://legitimate.org/real-grants"))
+            .thenReturn(new java.math.BigDecimal("0.80"));
+
+        // Mock domain registration for non-blacklisted
+        UUID domainId = UUID.randomUUID();
+        com.northstar.funding.domain.Domain mockDomain = com.northstar.funding.domain.Domain.builder()
+            .domainId(domainId)
+            .domainName("legitimate.org")
+            .build();
+        when(domainService.registerOrGetDomain("legitimate.org", testSessionId))
+            .thenReturn(mockDomain);
+
+        // When
+        ProcessingStatistics stats = searchResultProcessor.processSearchResults(
+            results, testSessionId
+        );
+
+        // Then: Should skip blacklisted domain, create 1 candidate
+        assertThat(stats.getTotalResults()).isEqualTo(2);
+        assertThat(stats.getBlacklistedSkipped()).isEqualTo(1);
+        assertThat(stats.getHighConfidenceCreated()).isEqualTo(1);
+
+        // Verify only legitimate domain created candidate
+        verify(candidateCreationService, times(1)).createCandidate(
+            eq("Research Funding"),
+            eq("Apply for research grants"),
+            eq("https://legitimate.org/real-grants"),
+            eq(domainId),
+            eq(testSessionId),
+            eq(new java.math.BigDecimal("0.80"))
+        );
+    }
 }
