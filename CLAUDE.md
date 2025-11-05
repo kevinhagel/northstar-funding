@@ -11,14 +11,15 @@ NorthStar Funding Discovery is a **planned** automated funding discovery platfor
 ✅ **Domain Model**: 19 entities representing funding sources, organizations, programs, domains, sessions, etc.
 ✅ **Persistence Layer**: 9 Spring Data JDBC repositories + 5 service classes providing business logic
 ✅ **Database Schema**: 17 Flyway migrations creating complete database structure
-✅ **Unit Tests**: 110 Mockito-based tests (all passing)
+✅ **Unit Tests**: 327 Mockito-based tests (all passing)
 ✅ **Multi-Module Maven Project**: 5 modules with clean separation of concerns
+✅ **Search Result Processing**: SearchResultProcessor with confidence scoring, domain deduplication, and blacklist filtering
 
-❌ **NO Crawler** - northstar-crawler module is empty
+⚠️ **Partial Crawler Implementation**: Search result processing pipeline (no web crawling yet)
 ❌ **NO Search Integration** - No search engine adapters
 ❌ **NO AI Integration** - No LM Studio or AI-powered features
 ❌ **NO Application Layer** - No REST API, no orchestration, no scheduler
-❌ **NO Judging** - northstar-judging module is empty
+❌ **NO Judging Module** - northstar-judging module is empty
 
 ### Project Context
 
@@ -109,7 +110,7 @@ northstar-funding/
 ├── pom.xml (parent POM)
 ├── northstar-domain/          # Domain entities
 ├── northstar-persistence/     # Repositories + Services + Flyway
-├── northstar-crawler/         # (EMPTY - not implemented)
+├── northstar-crawler/         # Search result processing (partial implementation)
 ├── northstar-judging/         # (EMPTY - not implemented)
 └── northstar-application/     # (EMPTY - not implemented)
 ```
@@ -192,6 +193,79 @@ public class DomainService {
 ```
 
 **Location**: `northstar-persistence/src/main/java/com/northstar/funding/persistence/`
+
+### Crawler Module (`northstar-crawler`)
+
+**Status**: Partial implementation - search result processing pipeline only
+
+**Implemented Components:**
+
+**1. Processing Pipeline:**
+- `SearchResultProcessor` - Main orchestrator for two-phase judging workflow
+  - Domain extraction and deduplication (using HashSet)
+  - Blacklist filtering (checks DomainService)
+  - Confidence scoring (0.00 to 1.00 scale)
+  - Threshold filtering (≥ 0.60 creates candidates)
+  - Statistics tracking (ProcessingStatistics model)
+
+**2. Scoring Services:**
+- `ConfidenceScorer` - Multi-signal confidence calculation
+  - TLD credibility scoring (via DomainCredibilityService)
+  - Funding keyword detection (grants, scholarships, etc.)
+  - Geographic relevance (Bulgaria, EU, Eastern Europe)
+  - Organization type detection (Ministry, Commission, Foundation, University)
+  - Compound boost for multiple signals (≥ 3 signals)
+- `DomainCredibilityService` - TLD-based credibility scoring
+  - Government TLDs: +0.20 (.gov, .mil, country codes)
+  - Education TLDs: +0.15 (.edu, .ac.*)
+  - Organization TLDs: +0.10 (.org, .int, .eu)
+  - Commercial TLDs: +0.00 (.com, .net, .biz)
+  - Spam TLDs: -0.30 (.xyz, .info, .top, etc.)
+- `CandidateCreationService` - Creates FundingSourceCandidate entities
+  - High confidence (≥ 0.60) → PENDING_CRAWL status
+  - Low confidence (< 0.60) → SKIPPED_LOW_CONFIDENCE status
+
+**3. Models:**
+- `ProcessingStatistics` - Tracks processing metrics
+  - Total results processed
+  - Duplicates skipped (domain-level deduplication)
+  - Blacklisted domains skipped
+  - High confidence candidates created
+  - Low confidence results (not created as candidates)
+- `SearchResult` - Represents search engine result
+  - URL, title, description (metadata only)
+  - No web crawling performed at this stage
+
+**Processing Pipeline Order (Critical):**
+```
+SearchResult → Extract Domain → Check Duplicate → Check Blacklist
+→ Calculate Confidence → Filter by Threshold (≥ 0.60)
+→ Register Domain → Create Candidate
+```
+
+**Key Design Decisions:**
+- **Two-Phase Workflow**: Phase 1 (metadata judging) creates PENDING_CRAWL candidates for Phase 2 (deep crawling - not yet implemented)
+- **Confidence Threshold**: 0.60 minimum to create candidates (saves processing resources)
+- **BigDecimal Precision**: All confidence scores use BigDecimal (scale 2) to avoid floating-point precision errors
+- **Domain Deduplication**: In-memory HashSet prevents duplicate domain processing within a session
+- **Blacklist Before Scoring**: Check blacklist before calculating confidence to avoid unnecessary processing
+
+**Unit Tests**: 7 comprehensive tests in SearchResultProcessorTest
+- Empty results handling
+- Duplicate domain detection
+- Low confidence filtering
+- High confidence candidate creation
+- Blacklist enforcement
+- Statistics tracking verification
+- End-to-end realistic scenario (Horizon Europe, Fulbright, etc.)
+
+**Location**: `northstar-crawler/src/main/java/com/northstar/funding/crawler/`
+
+**Not Yet Implemented:**
+- Search engine adapters (Searxng, Tavily, Browserbase, Perplexity)
+- Web crawling infrastructure
+- Deep content extraction
+- Parallel processing with Virtual Threads
 
 ### Database Schema (17 Flyway Migrations)
 
@@ -298,7 +372,7 @@ Both `northstar-domain/pom.xml` and `northstar-persistence/pom.xml` include:
 
 ### Unit Tests (Mockito)
 
-**Current Status**: 110 unit tests implemented for all 5 service classes, all passing.
+**Current Status**: 327 unit tests implemented across persistence layer (5 service classes) and crawler module, all passing.
 
 **Pattern**:
 ```java
@@ -329,8 +403,11 @@ class DomainServiceTest {
 ```
 
 **Test Organization**:
-- Unit tests: `northstar-persistence/src/test/java/com/northstar/funding/persistence/service/`
-- 5 test classes: `DomainServiceTest`, `OrganizationServiceTest`, `FundingProgramServiceTest`, `SearchResultServiceTest`, `DiscoverySessionServiceTest`
+- Persistence tests: `northstar-persistence/src/test/java/com/northstar/funding/persistence/service/`
+  - 5 test classes: `DomainServiceTest`, `OrganizationServiceTest`, `FundingProgramServiceTest`, `SearchResultServiceTest`, `DiscoverySessionServiceTest`
+- Crawler tests: `northstar-crawler/src/test/java/com/northstar/funding/crawler/`
+  - `SearchResultProcessorTest` - 7 comprehensive tests covering all pipeline scenarios
+  - `ConfidenceScorer`, `DomainCredibilityService`, `CandidateCreationService` tests
 
 ### Integration Tests (TestContainers)
 
@@ -370,6 +447,12 @@ mvn test -Dtest=DomainServiceTest
 
 # All service tests
 mvn test -Dtest='*ServiceTest'
+
+# Crawler module tests only
+mvn test -pl northstar-crawler
+
+# SearchResultProcessor tests
+mvn test -Dtest=SearchResultProcessorTest
 ```
 
 ## Development Workflow
@@ -568,8 +651,11 @@ ALTER TABLE funding_source_candidate
 
 ## Important Notes
 
-- **NO application layer exists** - only domain model and persistence
-- **NO crawler, search, or judging features implemented**
+- **NO application layer exists** - only domain model, persistence, and search result processing
+- **Partial crawler implementation** - search result processing pipeline only (no web crawling yet)
+- **NO search engine adapters** - SearchResultProcessor exists but no search engines connected
+- **NO judging module** - northstar-judging module is empty
 - Database schema includes tables for planned features that don't exist yet
 - All tests are unit tests with Mockito - no integration tests yet
 - Service layer follows strict DI pattern (explicit constructors, no Lombok)
+- All 327 tests passing (as of Story 1.3 completion)
