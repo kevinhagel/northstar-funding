@@ -146,4 +146,28 @@ class CandidateCreationServiceTest {
         assertThat(candidate.getSourceUrl()).isEqualTo("https://example.org");
         assertThat(candidate.getConfidenceScore()).isEqualByComparingTo(confidence);
     }
+
+    @Test
+    @DisplayName("Confidence score preserved with BigDecimal precision")
+    void testBigDecimalPrecision() {
+        // Given: Confidence score with scale 2
+        UUID domainId = UUID.randomUUID();
+        UUID sessionId = UUID.randomUUID();
+        BigDecimal confidence = new BigDecimal("0.73").setScale(2);
+
+        // When
+        FundingSourceCandidate candidate = candidateCreationService.createCandidate(
+            "Test", "Description", "https://example.org", domainId, sessionId, confidence
+        );
+
+        // Then: Confidence score preserved exactly (not degraded to float/double)
+        assertThat(candidate).isNotNull();
+        assertThat(candidate.getConfidenceScore()).isEqualByComparingTo(confidence);
+        assertThat(candidate.getConfidenceScore().scale()).isEqualTo(2);
+
+        // Verify no floating-point precision loss
+        BigDecimal retrieved = candidate.getConfidenceScore();
+        assertThat(retrieved).isExactlyInstanceOf(BigDecimal.class);
+        assertThat(retrieved.toString()).isEqualTo("0.73");
+    }
 }
