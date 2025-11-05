@@ -16,7 +16,8 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
+import static org.mockito.ArgumentMatchers.any;
 
 /**
  * Unit tests for SearchResultProcessor
@@ -112,6 +113,20 @@ class SearchResultProcessorTest {
         when(confidenceScorer.calculateConfidence("Different Organization", "Other funding", "https://different.com/grants"))
             .thenReturn(new java.math.BigDecimal("0.80"));
 
+        // Mock domain registration
+        com.northstar.funding.domain.Domain mockDomain1 = com.northstar.funding.domain.Domain.builder()
+            .domainId(UUID.randomUUID())
+            .domainName("example.org")
+            .build();
+        com.northstar.funding.domain.Domain mockDomain2 = com.northstar.funding.domain.Domain.builder()
+            .domainId(UUID.randomUUID())
+            .domainName("different.com")
+            .build();
+        when(domainService.registerOrGetDomain("example.org", testSessionId))
+            .thenReturn(mockDomain1);
+        when(domainService.registerOrGetDomain("different.com", testSessionId))
+            .thenReturn(mockDomain2);
+
         // When
         ProcessingStatistics stats = searchResultProcessor.processSearchResults(
             results, testSessionId
@@ -162,5 +177,56 @@ class SearchResultProcessorTest {
         assertThat(stats.getHighConfidenceCreated()).isZero();
         assertThat(stats.getLowConfidenceCreated()).isZero();
         assertThat(stats.getTotalCandidatesCreated()).isZero();
+    }
+
+    @Test
+    @DisplayName("High confidence results create PENDING_CRAWL candidates")
+    void testHighConfidenceCreatesCandidates() {
+        // Given: 1 search result with high confidence score
+        SearchResult result = SearchResult.builder()
+            .url("https://highconf.org/grants")
+            .title("European Union Research Grants")
+            .description("Apply for Horizon Europe funding")
+            .build();
+
+        List<SearchResult> results = List.of(result);
+
+        // Mock domain extraction
+        when(domainService.extractDomainFromUrl("https://highconf.org/grants"))
+            .thenReturn(java.util.Optional.of("highconf.org"));
+
+        // Mock confidence scoring - above 0.6 threshold
+        java.math.BigDecimal highConfidence = new java.math.BigDecimal("0.85");
+        when(confidenceScorer.calculateConfidence("European Union Research Grants", "Apply for Horizon Europe funding", "https://highconf.org/grants"))
+            .thenReturn(highConfidence);
+
+        // Mock domain registration (registerOrGetDomain returns Domain with domainId)
+        UUID domainId = UUID.randomUUID();
+        com.northstar.funding.domain.Domain mockDomain = com.northstar.funding.domain.Domain.builder()
+            .domainId(domainId)
+            .domainName("highconf.org")
+            .build();
+        when(domainService.registerOrGetDomain("highconf.org", testSessionId))
+            .thenReturn(mockDomain);
+
+        // When
+        ProcessingStatistics stats = searchResultProcessor.processSearchResults(
+            results, testSessionId
+        );
+
+        // Then: Should create 1 PENDING_CRAWL candidate
+        assertThat(stats.getTotalResults()).isEqualTo(1);
+        assertThat(stats.getHighConfidenceCreated()).isEqualTo(1);
+        assertThat(stats.getTotalCandidatesCreated()).isEqualTo(1);
+
+        // Verify candidate creation service was called with correct parameters
+        verify(candidateCreationService).createCandidate(
+            eq("European Union Research Grants"),
+            eq("Apply for Horizon Europe funding"),
+            eq("https://highconf.org/grants"),
+            eq(domainId),
+            eq(testSessionId),
+            eq(highConfidence)
+        );
     }
 }

@@ -102,8 +102,18 @@ public class SearchResultProcessor {
                 continue;
             }
 
-            // TODO: Create candidate for high confidence results
-            // For now, just count them
+            // Register domain (or get existing)
+            com.northstar.funding.domain.Domain domainEntity = domainService.registerOrGetDomain(domain, sessionId);
+
+            // Create candidate for high confidence result
+            candidateCreationService.createCandidate(
+                result.getTitle(),
+                result.getDescription(),
+                result.getUrl(),
+                domainEntity.getDomainId(),
+                sessionId,
+                confidence
+            );
             highConfidenceCreated++;
         }
 
