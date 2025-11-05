@@ -80,4 +80,26 @@ class CandidateCreationServiceTest {
         assertThat(candidate.getDiscoverySessionId()).isEqualTo(sessionId);
         assertThat(candidate.getConfidenceScore()).isEqualByComparingTo(confidence);
     }
+
+    @Test
+    @DisplayName("Exact threshold (0.60) creates PENDING_CRAWL candidate")
+    void testExactThresholdCreatesPendingCrawl() {
+        // Given: Exact confidence score = 0.60 (boundary case)
+        String title = "Foundation Portal";
+        String description = "Funding information";
+        String url = "https://example.org";
+        UUID domainId = UUID.randomUUID();
+        UUID sessionId = UUID.randomUUID();
+        BigDecimal confidence = new BigDecimal("0.60");
+
+        // When
+        FundingSourceCandidate candidate = candidateCreationService.createCandidate(
+            title, description, url, domainId, sessionId, confidence
+        );
+
+        // Then: Threshold is inclusive (>=), so 0.60 should create PENDING_CRAWL
+        assertThat(candidate).isNotNull();
+        assertThat(candidate.getStatus()).isEqualTo(CandidateStatus.PENDING_CRAWL);
+        assertThat(candidate.getConfidenceScore()).isEqualByComparingTo(new BigDecimal("0.60"));
+    }
 }
