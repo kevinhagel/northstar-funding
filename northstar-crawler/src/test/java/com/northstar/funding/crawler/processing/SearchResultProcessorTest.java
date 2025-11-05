@@ -393,4 +393,131 @@ class SearchResultProcessorTest {
             any(), any(), any(), any(), any(), any()
         );
     }
+
+    @Test
+    @DisplayName("End-to-end processing with realistic mixed scenario")
+    void testEndToEndProcessing() {
+        // Given: Realistic search results from multiple search engines
+        SearchResult horizonEurope = SearchResult.builder()
+            .url("https://ec.europa.eu/research/participants/portal")
+            .title("Horizon Europe - European Commission")
+            .description("Research and Innovation funding programme")
+            .build();
+
+        SearchResult usBulgaria = SearchResult.builder()
+            .url("https://us-bulgaria.org/grants")
+            .title("US-Bulgaria Fulbright Commission")
+            .description("Educational grants and scholarships")
+            .build();
+
+        SearchResult spamSite = SearchResult.builder()
+            .url("https://free-money-now.scam/grants")
+            .title("GET FREE MONEY NOW!!!")
+            .description("Click here for instant cash grants")
+            .build();
+
+        SearchResult lowQuality = SearchResult.builder()
+            .url("https://random-blog.net/funding")
+            .title("Blog Post About Funding")
+            .description("Random person's opinion on grants")
+            .build();
+
+        SearchResult duplicateHorizon = SearchResult.builder()
+            .url("https://ec.europa.eu/programmes/horizon")  // Same domain
+            .title("Horizon Europe Programmes")
+            .description("Different page, same organization")
+            .build();
+
+        List<SearchResult> results = List.of(
+            horizonEurope, usBulgaria, spamSite, lowQuality, duplicateHorizon
+        );
+
+        // Mock domain extraction
+        when(domainService.extractDomainFromUrl("https://ec.europa.eu/research/participants/portal"))
+            .thenReturn(java.util.Optional.of("ec.europa.eu"));
+        when(domainService.extractDomainFromUrl("https://us-bulgaria.org/grants"))
+            .thenReturn(java.util.Optional.of("us-bulgaria.org"));
+        when(domainService.extractDomainFromUrl("https://free-money-now.scam/grants"))
+            .thenReturn(java.util.Optional.of("free-money-now.scam"));
+        when(domainService.extractDomainFromUrl("https://random-blog.net/funding"))
+            .thenReturn(java.util.Optional.of("random-blog.net"));
+        when(domainService.extractDomainFromUrl("https://ec.europa.eu/programmes/horizon"))
+            .thenReturn(java.util.Optional.of("ec.europa.eu"));
+
+        // Mock blacklist (spam site is blacklisted)
+        when(domainService.isBlacklisted("ec.europa.eu")).thenReturn(false);
+        when(domainService.isBlacklisted("us-bulgaria.org")).thenReturn(false);
+        when(domainService.isBlacklisted("free-money-now.scam")).thenReturn(true);
+        when(domainService.isBlacklisted("random-blog.net")).thenReturn(false);
+
+        // Mock confidence scores
+        when(confidenceScorer.calculateConfidence(
+            "Horizon Europe - European Commission",
+            "Research and Innovation funding programme",
+            "https://ec.europa.eu/research/participants/portal"
+        )).thenReturn(new java.math.BigDecimal("0.95"));  // Very high
+
+        when(confidenceScorer.calculateConfidence(
+            "US-Bulgaria Fulbright Commission",
+            "Educational grants and scholarships",
+            "https://us-bulgaria.org/grants"
+        )).thenReturn(new java.math.BigDecimal("0.88"));  // High
+
+        when(confidenceScorer.calculateConfidence(
+            "Blog Post About Funding",
+            "Random person's opinion on grants",
+            "https://random-blog.net/funding"
+        )).thenReturn(new java.math.BigDecimal("0.42"));  // Low
+
+        // Mock domain registration
+        UUID euDomainId = UUID.randomUUID();
+        UUID usBulgariaDomainId = UUID.randomUUID();
+        when(domainService.registerOrGetDomain("ec.europa.eu", testSessionId))
+            .thenReturn(com.northstar.funding.domain.Domain.builder()
+                .domainId(euDomainId)
+                .domainName("ec.europa.eu")
+                .build());
+        when(domainService.registerOrGetDomain("us-bulgaria.org", testSessionId))
+            .thenReturn(com.northstar.funding.domain.Domain.builder()
+                .domainId(usBulgariaDomainId)
+                .domainName("us-bulgaria.org")
+                .build());
+
+        // When: Process all results
+        ProcessingStatistics stats = searchResultProcessor.processSearchResults(
+            results, testSessionId
+        );
+
+        // Then: Verify end-to-end statistics
+        assertThat(stats.getTotalResults()).isEqualTo(5);
+        assertThat(stats.getDuplicatesSkipped()).isEqualTo(1);  // duplicateHorizon
+        assertThat(stats.getBlacklistedSkipped()).isEqualTo(1);  // spamSite
+        assertThat(stats.getHighConfidenceCreated()).isEqualTo(2);  // horizonEurope, usBulgaria
+        assertThat(stats.getLowConfidenceCreated()).isZero();
+        assertThat(stats.getTotalCandidatesCreated()).isEqualTo(2);
+
+        // Verify specific candidates created with correct data
+        verify(candidateCreationService).createCandidate(
+            eq("Horizon Europe - European Commission"),
+            eq("Research and Innovation funding programme"),
+            eq("https://ec.europa.eu/research/participants/portal"),
+            eq(euDomainId),
+            eq(testSessionId),
+            eq(new java.math.BigDecimal("0.95"))
+        );
+
+        verify(candidateCreationService).createCandidate(
+            eq("US-Bulgaria Fulbright Commission"),
+            eq("Educational grants and scholarships"),
+            eq("https://us-bulgaria.org/grants"),
+            eq(usBulgariaDomainId),
+            eq(testSessionId),
+            eq(new java.math.BigDecimal("0.88"))
+        );
+
+        // Verify only 2 candidates created (not 3, not 4)
+        verify(candidateCreationService, times(2)).createCandidate(
+            any(), any(), any(), any(), any(), any()
+        );
+    }
 }
