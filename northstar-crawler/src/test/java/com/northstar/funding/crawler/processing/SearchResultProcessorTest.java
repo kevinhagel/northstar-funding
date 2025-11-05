@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.when;
 
 /**
  * Unit tests for SearchResultProcessor
@@ -71,5 +72,47 @@ class SearchResultProcessorTest {
         assertThat(stats.getHighConfidenceCreated()).isZero();
         assertThat(stats.getLowConfidenceCreated()).isZero();
         assertThat(stats.getTotalCandidatesCreated()).isZero();
+    }
+
+    @Test
+    @DisplayName("Duplicate domains are tracked and skipped")
+    void testDuplicateDomainsHandled() {
+        // Given: 3 search results, 2 pointing to same domain
+        SearchResult result1 = SearchResult.builder()
+            .url("https://example.org/funding")
+            .title("Example Funding Program")
+            .description("Grants available")
+            .build();
+
+        SearchResult result2 = SearchResult.builder()
+            .url("https://example.org/about")  // Same domain as result1
+            .title("About Example Org")
+            .description("Different page")
+            .build();
+
+        SearchResult result3 = SearchResult.builder()
+            .url("https://different.com/grants")
+            .title("Different Organization")
+            .description("Other funding")
+            .build();
+
+        List<SearchResult> results = List.of(result1, result2, result3);
+
+        // Mock domain extraction
+        when(domainService.extractDomainFromUrl("https://example.org/funding"))
+            .thenReturn(java.util.Optional.of("example.org"));
+        when(domainService.extractDomainFromUrl("https://example.org/about"))
+            .thenReturn(java.util.Optional.of("example.org"));
+        when(domainService.extractDomainFromUrl("https://different.com/grants"))
+            .thenReturn(java.util.Optional.of("different.com"));
+
+        // When
+        ProcessingStatistics stats = searchResultProcessor.processSearchResults(
+            results, testSessionId
+        );
+
+        // Then: Should process 3 results, skip 1 duplicate
+        assertThat(stats.getTotalResults()).isEqualTo(3);
+        assertThat(stats.getDuplicatesSkipped()).isEqualTo(1);
     }
 }

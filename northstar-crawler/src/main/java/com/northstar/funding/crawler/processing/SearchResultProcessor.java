@@ -64,12 +64,29 @@ public class SearchResultProcessor {
                 .build();
         }
 
+        // Track seen domains for deduplication
+        java.util.Set<String> seenDomains = new java.util.HashSet<>();
+        int duplicatesSkipped = 0;
+
+        // Extract domains and track duplicates
+        for (SearchResult result : searchResults) {
+            java.util.Optional<String> domainOpt = domainService.extractDomainFromUrl(result.getUrl());
+            if (domainOpt.isPresent()) {
+                String domain = domainOpt.get();
+                if (seenDomains.contains(domain)) {
+                    duplicatesSkipped++;
+                } else {
+                    seenDomains.add(domain);
+                }
+            }
+        }
+
         // TODO: Implement full processing pipeline
         return ProcessingStatistics.builder()
             .totalResults(searchResults.size())
             .spamTldFiltered(0)
             .blacklistedSkipped(0)
-            .duplicatesSkipped(0)
+            .duplicatesSkipped(duplicatesSkipped)
             .highConfidenceCreated(0)
             .lowConfidenceCreated(0)
             .build();
