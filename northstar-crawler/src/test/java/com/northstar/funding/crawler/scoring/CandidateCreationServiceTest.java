@@ -102,4 +102,26 @@ class CandidateCreationServiceTest {
         assertThat(candidate.getStatus()).isEqualTo(CandidateStatus.PENDING_CRAWL);
         assertThat(candidate.getConfidenceScore()).isEqualByComparingTo(new BigDecimal("0.60"));
     }
+
+    @Test
+    @DisplayName("Null title and description handled gracefully")
+    void testNullInputsHandled() {
+        // Given: Null title and description
+        UUID domainId = UUID.randomUUID();
+        UUID sessionId = UUID.randomUUID();
+        BigDecimal confidence = new BigDecimal("0.75");
+
+        // When
+        FundingSourceCandidate candidate = candidateCreationService.createCandidate(
+            null, null, "https://example.org", domainId, sessionId, confidence
+        );
+
+        // Then: Candidate created with null values
+        assertThat(candidate).isNotNull();
+        assertThat(candidate.getStatus()).isEqualTo(CandidateStatus.PENDING_CRAWL);
+        assertThat(candidate.getOrganizationName()).isNull();
+        assertThat(candidate.getDescription()).isNull();
+        assertThat(candidate.getSourceUrl()).isEqualTo("https://example.org");
+        assertThat(candidate.getConfidenceScore()).isEqualByComparingTo(confidence);
+    }
 }
