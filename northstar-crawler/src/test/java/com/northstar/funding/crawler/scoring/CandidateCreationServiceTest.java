@@ -124,4 +124,26 @@ class CandidateCreationServiceTest {
         assertThat(candidate.getSourceUrl()).isEqualTo("https://example.org");
         assertThat(candidate.getConfidenceScore()).isEqualByComparingTo(confidence);
     }
+
+    @Test
+    @DisplayName("Empty strings handled like any other value")
+    void testEmptyStringsHandled() {
+        // Given: Empty strings for title and description
+        UUID domainId = UUID.randomUUID();
+        UUID sessionId = UUID.randomUUID();
+        BigDecimal confidence = new BigDecimal("0.65");
+
+        // When
+        FundingSourceCandidate candidate = candidateCreationService.createCandidate(
+            "", "", "https://example.org", domainId, sessionId, confidence
+        );
+
+        // Then: Candidate created with empty strings preserved
+        assertThat(candidate).isNotNull();
+        assertThat(candidate.getStatus()).isEqualTo(CandidateStatus.PENDING_CRAWL);
+        assertThat(candidate.getOrganizationName()).isEmpty();
+        assertThat(candidate.getDescription()).isEmpty();
+        assertThat(candidate.getSourceUrl()).isEqualTo("https://example.org");
+        assertThat(candidate.getConfidenceScore()).isEqualByComparingTo(confidence);
+    }
 }
