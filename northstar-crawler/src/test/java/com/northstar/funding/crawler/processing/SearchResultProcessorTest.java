@@ -293,4 +293,104 @@ class SearchResultProcessorTest {
             eq(new java.math.BigDecimal("0.80"))
         );
     }
+
+    @Test
+    @DisplayName("Statistics are tracked correctly across all scenarios")
+    void testStatisticsTracking() {
+        // Given: 6 search results covering all scenarios
+        SearchResult result1 = SearchResult.builder()
+            .url("https://example.org/page1")
+            .title("First Result")
+            .description("High confidence")
+            .build();
+
+        SearchResult result2 = SearchResult.builder()
+            .url("https://example.org/page2")  // Duplicate domain
+            .title("Second Result")
+            .description("Same domain")
+            .build();
+
+        SearchResult result3 = SearchResult.builder()
+            .url("https://blacklist.com/page")  // Blacklisted
+            .title("Blacklisted")
+            .description("Should be skipped")
+            .build();
+
+        SearchResult result4 = SearchResult.builder()
+            .url("https://lowconf.org/page")  // Low confidence
+            .title("Low Quality")
+            .description("Not relevant")
+            .build();
+
+        SearchResult result5 = SearchResult.builder()
+            .url("https://highconf1.org/page")  // High confidence
+            .title("Great Funding")
+            .description("Excellent opportunity")
+            .build();
+
+        SearchResult result6 = SearchResult.builder()
+            .url("https://highconf2.org/page")  // High confidence
+            .title("More Funding")
+            .description("Another opportunity")
+            .build();
+
+        List<SearchResult> results = List.of(result1, result2, result3, result4, result5, result6);
+
+        // Mock domain extraction
+        when(domainService.extractDomainFromUrl("https://example.org/page1"))
+            .thenReturn(java.util.Optional.of("example.org"));
+        when(domainService.extractDomainFromUrl("https://example.org/page2"))
+            .thenReturn(java.util.Optional.of("example.org"));
+        when(domainService.extractDomainFromUrl("https://blacklist.com/page"))
+            .thenReturn(java.util.Optional.of("blacklist.com"));
+        when(domainService.extractDomainFromUrl("https://lowconf.org/page"))
+            .thenReturn(java.util.Optional.of("lowconf.org"));
+        when(domainService.extractDomainFromUrl("https://highconf1.org/page"))
+            .thenReturn(java.util.Optional.of("highconf1.org"));
+        when(domainService.extractDomainFromUrl("https://highconf2.org/page"))
+            .thenReturn(java.util.Optional.of("highconf2.org"));
+
+        // Mock blacklist check
+        when(domainService.isBlacklisted("example.org")).thenReturn(false);
+        when(domainService.isBlacklisted("blacklist.com")).thenReturn(true);
+        when(domainService.isBlacklisted("lowconf.org")).thenReturn(false);
+        when(domainService.isBlacklisted("highconf1.org")).thenReturn(false);
+        when(domainService.isBlacklisted("highconf2.org")).thenReturn(false);
+
+        // Mock confidence scoring
+        when(confidenceScorer.calculateConfidence("First Result", "High confidence", "https://example.org/page1"))
+            .thenReturn(new java.math.BigDecimal("0.75"));
+        when(confidenceScorer.calculateConfidence("Low Quality", "Not relevant", "https://lowconf.org/page"))
+            .thenReturn(new java.math.BigDecimal("0.35"));
+        when(confidenceScorer.calculateConfidence("Great Funding", "Excellent opportunity", "https://highconf1.org/page"))
+            .thenReturn(new java.math.BigDecimal("0.85"));
+        when(confidenceScorer.calculateConfidence("More Funding", "Another opportunity", "https://highconf2.org/page"))
+            .thenReturn(new java.math.BigDecimal("0.90"));
+
+        // Mock domain registration for high confidence domains
+        when(domainService.registerOrGetDomain(eq("example.org"), eq(testSessionId)))
+            .thenReturn(com.northstar.funding.domain.Domain.builder().domainId(UUID.randomUUID()).build());
+        when(domainService.registerOrGetDomain(eq("highconf1.org"), eq(testSessionId)))
+            .thenReturn(com.northstar.funding.domain.Domain.builder().domainId(UUID.randomUUID()).build());
+        when(domainService.registerOrGetDomain(eq("highconf2.org"), eq(testSessionId)))
+            .thenReturn(com.northstar.funding.domain.Domain.builder().domainId(UUID.randomUUID()).build());
+
+        // When
+        ProcessingStatistics stats = searchResultProcessor.processSearchResults(
+            results, testSessionId
+        );
+
+        // Then: Verify all statistics
+        assertThat(stats.getTotalResults()).isEqualTo(6);
+        assertThat(stats.getDuplicatesSkipped()).isEqualTo(1);  // result2 (example.org duplicate)
+        assertThat(stats.getBlacklistedSkipped()).isEqualTo(1); // result3 (blacklist.com)
+        assertThat(stats.getHighConfidenceCreated()).isEqualTo(3);  // result1, result5, result6
+        assertThat(stats.getLowConfidenceCreated()).isZero();  // No low confidence candidates created
+        assertThat(stats.getTotalCandidatesCreated()).isEqualTo(3);
+
+        // Verify 3 candidates created
+        verify(candidateCreationService, times(3)).createCandidate(
+            any(), any(), any(), any(), any(), any()
+        );
+    }
 }
