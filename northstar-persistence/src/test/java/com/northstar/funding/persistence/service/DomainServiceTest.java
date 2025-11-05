@@ -344,4 +344,33 @@ class DomainServiceTest {
         assertThat(result).hasSize(1);
         assertThat(result).containsExactly(testDomain);
     }
+
+    // ============================================================================
+    // Helper Methods for Search Result Processing (Story 1.3)
+    // ============================================================================
+
+    @Test
+    void extractDomainFromUrl_ShouldExtractHostFromFullUrl() {
+        // Given
+        String url = "https://example.org/path?query=value";
+
+        // When
+        Optional<String> domain = domainService.extractDomainFromUrl(url);
+
+        // Then
+        assertThat(domain).isPresent();
+        assertThat(domain.get()).isEqualTo("example.org");
+    }
+
+    @Test
+    void extractDomainFromUrl_ShouldReturnEmptyForInvalidUrl() {
+        // Given
+        String invalidUrl = "not a valid url";
+
+        // When
+        Optional<String> domain = domainService.extractDomainFromUrl(invalidUrl);
+
+        // Then
+        assertThat(domain).isEmpty();
+    }
 }
