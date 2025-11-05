@@ -3,6 +3,7 @@ package com.northstar.funding.crawler.processing;
 import com.northstar.funding.crawler.scoring.CandidateCreationService;
 import com.northstar.funding.crawler.scoring.ConfidenceScorer;
 import com.northstar.funding.crawler.scoring.DomainCredibilityService;
+import com.northstar.funding.persistence.repository.FundingSourceCandidateRepository;
 import com.northstar.funding.persistence.service.DomainService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -38,6 +39,9 @@ class SearchResultProcessorTest {
     @Mock
     private DomainService domainService;
 
+    @Mock
+    private FundingSourceCandidateRepository candidateRepository;
+
     private SearchResultProcessor searchResultProcessor;
 
     private UUID testSessionId;
@@ -49,7 +53,8 @@ class SearchResultProcessorTest {
             domainCredibilityService,
             confidenceScorer,
             candidateCreationService,
-            domainService
+            domainService,
+            candidateRepository
         );
     }
 

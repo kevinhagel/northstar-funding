@@ -5,6 +5,7 @@ import com.northstar.funding.domain.FundingSourceCandidate;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 /**
@@ -45,14 +46,19 @@ public class CandidateCreationService {
             ? CandidateStatus.PENDING_CRAWL
             : CandidateStatus.SKIPPED_LOW_CONFIDENCE;
 
+        LocalDateTime now = LocalDateTime.now();
         return FundingSourceCandidate.builder()
             .status(status)
             .organizationName(title)
+            .programName("") // Empty for Phase 1 - will be extracted in Phase 2 (deep crawling)
             .description(description)
             .sourceUrl(url)
             .domainId(domainId)
             .discoverySessionId(sessionId)
             .confidenceScore(confidence)
+            .discoveredAt(now)
+            .lastUpdatedAt(now)
+            .extractedData("{}") // Empty JSON for Phase 1 - will be populated in Phase 2
             .build();
     }
 }

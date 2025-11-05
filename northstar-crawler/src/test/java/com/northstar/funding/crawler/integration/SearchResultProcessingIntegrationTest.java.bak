@@ -151,7 +151,6 @@ class SearchResultProcessingIntegrationTest {
             .allMatch(c -> c.getStatus() == CandidateStatus.PENDING_CRAWL);
     }
 
-    @Transactional
     @Test
     @DisplayName("Test 2/7: Spam TLD filtering - .xyz and .tk domains filtered")
     void testSpamTldFiltering() {
@@ -210,7 +209,6 @@ class SearchResultProcessingIntegrationTest {
             .noneMatch(c -> c.getSourceUrl().contains(".top"));
     }
 
-    @Transactional
     @Test
     @DisplayName("Test 3/7: Blacklist filtering - blacklisted domains skipped")
     void testBlacklistFiltering() {
@@ -261,7 +259,6 @@ class SearchResultProcessingIntegrationTest {
             .noneMatch(c -> c.getSourceUrl().contains("scam-grants.org"));
     }
 
-    @Transactional
     @Test
     @DisplayName("Test 4/7: Domain deduplication - registerOrGetDomain is idempotent")
     void testDomainDeduplication_IdempotentRegistration() {
@@ -304,7 +301,6 @@ class SearchResultProcessingIntegrationTest {
             .allMatch(c -> c.getDomainId().equals(domainId));
     }
 
-    @Transactional
     @Test
     @DisplayName("Test 5/7: Confidence threshold split - PENDING_CRAWL vs LOW_CONFIDENCE")
     void testConfidenceThresholdSplit() {
@@ -360,7 +356,6 @@ class SearchResultProcessingIntegrationTest {
             .allMatch(c -> c.getConfidenceScore().compareTo(new BigDecimal("0.60")) >= 0);
     }
 
-    @Transactional
     @Test
     @DisplayName("Test 6/7: Session statistics - accurate counts with real aggregation")
     void testSessionStatisticsAccuracy() {
@@ -427,7 +422,6 @@ class SearchResultProcessingIntegrationTest {
         assertThat(domains.size()).isGreaterThanOrEqualTo(3);
     }
 
-    @Transactional
     @Test
     @DisplayName("Test 7/7: TLD tier validation - .ngo gets higher confidence than .com")
     void testTldTierValidation() {

@@ -3,6 +3,8 @@ package com.northstar.funding.crawler.processing;
 import com.northstar.funding.crawler.scoring.CandidateCreationService;
 import com.northstar.funding.crawler.scoring.ConfidenceScorer;
 import com.northstar.funding.crawler.scoring.DomainCredibilityService;
+import com.northstar.funding.domain.FundingSourceCandidate;
+import com.northstar.funding.persistence.repository.FundingSourceCandidateRepository;
 import com.northstar.funding.persistence.service.DomainService;
 import org.springframework.stereotype.Service;
 
@@ -31,17 +33,20 @@ public class SearchResultProcessor {
     private final ConfidenceScorer confidenceScorer;
     private final CandidateCreationService candidateCreationService;
     private final DomainService domainService;
+    private final FundingSourceCandidateRepository candidateRepository;
 
     public SearchResultProcessor(
         DomainCredibilityService domainCredibilityService,
         ConfidenceScorer confidenceScorer,
         CandidateCreationService candidateCreationService,
-        DomainService domainService
+        DomainService domainService,
+        FundingSourceCandidateRepository candidateRepository
     ) {
         this.domainCredibilityService = domainCredibilityService;
         this.confidenceScorer = confidenceScorer;
         this.candidateCreationService = candidateCreationService;
         this.domainService = domainService;
+        this.candidateRepository = candidateRepository;
     }
 
     /**
@@ -112,8 +117,8 @@ public class SearchResultProcessor {
             // Register domain (or get existing)
             com.northstar.funding.domain.Domain domainEntity = domainService.registerOrGetDomain(domain, sessionId);
 
-            // Create candidate for high confidence result
-            candidateCreationService.createCandidate(
+            // Create and save candidate for high confidence result
+            FundingSourceCandidate candidate = candidateCreationService.createCandidate(
                 result.getTitle(),
                 result.getDescription(),
                 result.getUrl(),
@@ -121,6 +126,7 @@ public class SearchResultProcessor {
                 sessionId,
                 confidence
             );
+            candidateRepository.save(candidate);
             highConfidenceCreated++;
         }
 

@@ -7,6 +7,9 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
+import org.springframework.data.annotation.Id;
+import org.springframework.data.relational.core.mapping.Table;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -24,6 +27,7 @@ import lombok.NoArgsConstructor;
  * - Human-AI Collaboration workflow support
  * - Aggregate root for funding discovery bounded context
  */
+@Table("funding_source_candidate")
 @Data
 @Builder
 @NoArgsConstructor
@@ -31,6 +35,7 @@ import lombok.NoArgsConstructor;
 public class FundingSourceCandidate {
 
     // Primary Identity
+    @Id
     private UUID candidateId;
     private CandidateStatus status;
 
