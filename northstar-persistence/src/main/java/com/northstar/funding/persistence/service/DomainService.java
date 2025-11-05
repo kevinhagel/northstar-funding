@@ -268,4 +268,44 @@ public class DomainService {
             .onFailure(e -> log.warn("Failed to extract domain from URL: {}", url, e))
             .toJavaOptional();
     }
+
+    /**
+     * Update last seen timestamp for a domain.
+     * Used when processing search results to track when domain was last encountered.
+     *
+     * @param domainId the domain ID
+     */
+    public void updateLastSeen(UUID domainId) {
+        Domain domain = domainRepository.findById(domainId)
+            .orElseThrow(() -> new IllegalArgumentException("Domain not found: " + domainId));
+
+        domain.setLastProcessedAt(LocalDateTime.now());
+        domainRepository.save(domain);
+    }
+
+    /**
+     * Check if a domain is blacklisted.
+     *
+     * @param domainName the domain name
+     * @return true if domain is blacklisted, false otherwise (including if domain doesn't exist)
+     */
+    @Transactional(readOnly = true)
+    public boolean isBlacklisted(String domainName) {
+        return domainRepository.findByDomainName(domainName)
+            .map(domain -> domain.getStatus() == DomainStatus.BLACKLISTED)
+            .orElse(false);
+    }
+
+    /**
+     * Register domain or get existing one (idempotent operation).
+     * Used for domain deduplication during search result processing.
+     *
+     * @param domainName the domain name
+     * @param sessionId the discovery session ID
+     * @return existing or newly created Domain
+     */
+    public Domain registerOrGetDomain(String domainName, UUID sessionId) {
+        return domainRepository.findByDomainName(domainName)
+            .orElseGet(() -> registerDomain(domainName, sessionId));
+    }
 }

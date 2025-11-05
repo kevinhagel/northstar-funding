@@ -373,4 +373,99 @@ class DomainServiceTest {
         // Then
         assertThat(domain).isEmpty();
     }
+
+    @Test
+    void updateLastSeen_ShouldUpdateLastProcessedAt() {
+        // Given
+        UUID domainId = testDomain.getDomainId();
+        when(domainRepository.findById(domainId))
+            .thenReturn(Optional.of(testDomain));
+        when(domainRepository.save(any(Domain.class)))
+            .thenReturn(testDomain);
+
+        // When
+        domainService.updateLastSeen(domainId);
+
+        // Then
+        verify(domainRepository).save(testDomain);
+        assertThat(testDomain.getLastProcessedAt()).isNotNull();
+    }
+
+    @Test
+    void isBlacklisted_ShouldReturnTrueForBlacklistedDomain() {
+        // Given
+        String domainName = "spam.xyz";
+        Domain blacklistedDomain = Domain.builder()
+            .domainName(domainName)
+            .status(DomainStatus.BLACKLISTED)
+            .build();
+        when(domainRepository.findByDomainName(domainName))
+            .thenReturn(Optional.of(blacklistedDomain));
+
+        // When
+        boolean result = domainService.isBlacklisted(domainName);
+
+        // Then
+        assertThat(result).isTrue();
+    }
+
+    @Test
+    void isBlacklisted_ShouldReturnFalseForNonBlacklistedDomain() {
+        // Given
+        String domainName = "example.org";
+        when(domainRepository.findByDomainName(domainName))
+            .thenReturn(Optional.of(testDomain));
+
+        // When
+        boolean result = domainService.isBlacklisted(domainName);
+
+        // Then
+        assertThat(result).isFalse();
+    }
+
+    @Test
+    void isBlacklisted_ShouldReturnFalseForUnknownDomain() {
+        // Given
+        String domainName = "unknown.org";
+        when(domainRepository.findByDomainName(domainName))
+            .thenReturn(Optional.empty());
+
+        // When
+        boolean result = domainService.isBlacklisted(domainName);
+
+        // Then
+        assertThat(result).isFalse();
+    }
+
+    @Test
+    void registerOrGetDomain_ShouldReturnExistingDomain() {
+        // Given
+        String domainName = "test.org";
+        when(domainRepository.findByDomainName(domainName))
+            .thenReturn(Optional.of(testDomain));
+
+        // When
+        Domain result = domainService.registerOrGetDomain(domainName, testSessionId);
+
+        // Then
+        assertThat(result).isEqualTo(testDomain);
+        verify(domainRepository, never()).save(any(Domain.class));
+    }
+
+    @Test
+    void registerOrGetDomain_ShouldCreateNewDomainIfNotExists() {
+        // Given
+        String domainName = "new.org";
+        when(domainRepository.findByDomainName(domainName))
+            .thenReturn(Optional.empty());
+        when(domainRepository.save(any(Domain.class)))
+            .thenReturn(testDomain);
+
+        // When
+        Domain result = domainService.registerOrGetDomain(domainName, testSessionId);
+
+        // Then
+        assertThat(result).isNotNull();
+        verify(domainRepository).save(any(Domain.class));
+    }
 }
