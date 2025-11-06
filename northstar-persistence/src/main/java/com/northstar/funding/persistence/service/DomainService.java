@@ -5,12 +5,16 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.northstar.funding.domain.Domain;
 import com.northstar.funding.domain.DomainStatus;
 import com.northstar.funding.persistence.repository.DomainRepository;
+
+import io.vavr.control.Try;
 
 
 /**
@@ -24,6 +28,8 @@ import com.northstar.funding.persistence.repository.DomainRepository;
 @Service
 @Transactional
 public class DomainService {
+
+    private static final Logger log = LoggerFactory.getLogger(DomainService.class);
 
     private final DomainRepository domainRepository;
 
@@ -242,5 +248,64 @@ public class DomainService {
     @Transactional(readOnly = true)
     public List<Domain> searchDomains(String pattern) {
         return domainRepository.searchByDomainNamePattern(pattern);
+    }
+
+    // ============================================================================
+    // Helper Methods for Search Result Processing (Story 1.3)
+    // ============================================================================
+
+    /**
+     * Extract domain name from URL using Vavr Try for safe execution.
+     *
+     * @param url full URL (e.g., "https://example.org/path?query=value")
+     * @return Optional containing domain name (e.g., "example.org"), or empty if URL is invalid
+     */
+    public Optional<String> extractDomainFromUrl(String url) {
+        return Try.of(() -> {
+                java.net.URI uri = new java.net.URI(url);
+                return uri.getHost();
+            })
+            .onFailure(e -> log.warn("Failed to extract domain from URL: {}", url, e))
+            .toJavaOptional();
+    }
+
+    /**
+     * Update last seen timestamp for a domain.
+     * Used when processing search results to track when domain was last encountered.
+     *
+     * @param domainId the domain ID
+     */
+    public void updateLastSeen(UUID domainId) {
+        Domain domain = domainRepository.findById(domainId)
+            .orElseThrow(() -> new IllegalArgumentException("Domain not found: " + domainId));
+
+        domain.setLastProcessedAt(LocalDateTime.now());
+        domainRepository.save(domain);
+    }
+
+    /**
+     * Check if a domain is blacklisted.
+     *
+     * @param domainName the domain name
+     * @return true if domain is blacklisted, false otherwise (including if domain doesn't exist)
+     */
+    @Transactional(readOnly = true)
+    public boolean isBlacklisted(String domainName) {
+        return domainRepository.findByDomainName(domainName)
+            .map(domain -> domain.getStatus() == DomainStatus.BLACKLISTED)
+            .orElse(false);
+    }
+
+    /**
+     * Register domain or get existing one (idempotent operation).
+     * Used for domain deduplication during search result processing.
+     *
+     * @param domainName the domain name
+     * @param sessionId the discovery session ID
+     * @return existing or newly created Domain
+     */
+    public Domain registerOrGetDomain(String domainName, UUID sessionId) {
+        return domainRepository.findByDomainName(domainName)
+            .orElseGet(() -> registerDomain(domainName, sessionId));
     }
 }

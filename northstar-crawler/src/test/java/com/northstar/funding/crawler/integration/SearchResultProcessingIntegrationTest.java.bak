@@ -1,0 +1,491 @@
+package com.northstar.funding.crawler.integration;
+
+import com.northstar.funding.crawler.processing.ProcessingStatistics;
+import com.northstar.funding.crawler.processing.SearchResult;
+import com.northstar.funding.crawler.processing.SearchResultProcessor;
+import com.northstar.funding.domain.CandidateStatus;
+import com.northstar.funding.domain.DiscoverySession;
+import com.northstar.funding.domain.Domain;
+import com.northstar.funding.domain.FundingSourceCandidate;
+import com.northstar.funding.domain.SessionStatus;
+import com.northstar.funding.domain.SessionType;
+import com.northstar.funding.persistence.repository.DiscoverySessionRepository;
+import com.northstar.funding.persistence.repository.DomainRepository;
+import com.northstar.funding.persistence.repository.FundingSourceCandidateRepository;
+import com.northstar.funding.persistence.service.DomainService;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.transaction.annotation.Transactional;
+import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
+
+import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+/**
+ * Integration tests for SearchResultProcessor with real PostgreSQL database.
+ *
+ * Tests the complete search result processing pipeline end-to-end:
+ * - Domain extraction and deduplication
+ * - Blacklist filtering
+ * - Confidence scoring
+ * - Candidate creation with database persistence
+ * - Session statistics tracking
+ *
+ * Uses TestContainers to spin up PostgreSQL 16-alpine for isolated testing.
+ */
+@SpringBootTest
+@Testcontainers
+@ActiveProfiles("test")
+class SearchResultProcessingIntegrationTest {
+
+    @Container
+    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:16-alpine")
+        .withDatabaseName("northstar_test")
+        .withUsername("test")
+        .withPassword("test");
+
+    @DynamicPropertySource
+    static void configureProperties(DynamicPropertyRegistry registry) {
+        registry.add("spring.datasource.url", postgres::getJdbcUrl);
+        registry.add("spring.datasource.username", postgres::getUsername);
+        registry.add("spring.datasource.password", postgres::getPassword);
+        registry.add("spring.flyway.enabled", () -> "true");
+    }
+
+    @Autowired
+    private SearchResultProcessor searchResultProcessor;
+
+    @Autowired
+    private DomainService domainService;
+
+    @Autowired
+    private DomainRepository domainRepository;
+
+    @Autowired
+    private FundingSourceCandidateRepository candidateRepository;
+
+    @Autowired
+    private DiscoverySessionRepository sessionRepository;
+
+    private UUID testSessionId;
+
+    @BeforeEach
+    void setUp() {
+        // Create test session (let Spring Data JDBC generate the ID)
+        DiscoverySession session = DiscoverySession.builder()
+            .sessionType(SessionType.MANUAL)
+            .status(SessionStatus.RUNNING)
+            .build();
+        DiscoverySession savedSession = sessionRepository.save(session);
+        testSessionId = savedSession.getSessionId();
+    }
+
+    @AfterEach
+    void tearDown() {
+        // Clean up test data after each test (without @Transactional, data persists)
+        candidateRepository.deleteAll();
+        domainRepository.deleteAll();
+        sessionRepository.deleteAll();
+    }
+
+    @Test
+    @Transactional
+    @DisplayName("Test 1/7: Happy path - process 20 results into 15 candidates (domain deduplication)")
+    void testHappyPath_DeduplicationWorks() {
+        // Given: 20 search results from 15 unique domains (5 duplicates)
+        List<SearchResult> searchResults = new ArrayList<>();
+
+        // 15 unique high-quality domains
+        for (int i = 1; i <= 15; i++) {
+            searchResults.add(SearchResult.builder()
+                .url("https://funding" + i + ".org/grants")
+                .title("Funding Program " + i)
+                .description("Grant funding available for research")
+                .build());
+        }
+
+        // 5 duplicate domains (same as first 5, different URLs)
+        for (int i = 1; i <= 5; i++) {
+            searchResults.add(SearchResult.builder()
+                .url("https://funding" + i + ".org/about")  // Different path, same domain
+                .title("About Funding Program " + i)
+                .description("More information about grants")
+                .build());
+        }
+
+        // When: Process search results
+        ProcessingStatistics stats = searchResultProcessor.processSearchResults(searchResults, testSessionId);
+
+        // Debug: Print stats to understand what happened
+        System.out.println("Processing Stats: " + stats);
+
+        // Then: Verify statistics
+        assertThat(stats.getTotalResults()).isEqualTo(20);
+        assertThat(stats.getDuplicatesSkipped()).isEqualTo(5);
+        assertThat(stats.getHighConfidenceCreated()).isEqualTo(15);
+        assertThat(stats.getTotalCandidatesCreated()).isEqualTo(15);
+
+        // Verify database: 15 domains created
+        List<Domain> domains = (List<Domain>) domainRepository.findAll();
+        assertThat(domains).hasSize(15);
+
+        // Verify database: 15 candidates created
+        List<FundingSourceCandidate> candidates = (List<FundingSourceCandidate>) candidateRepository.findAll();
+        assertThat(candidates).hasSize(15);
+
+        // Verify all candidates have PENDING_CRAWL status (high confidence)
+        assertThat(candidates)
+            .allMatch(c -> c.getStatus() == CandidateStatus.PENDING_CRAWL);
+    }
+
+    @Test
+    @DisplayName("Test 2/7: Spam TLD filtering - .xyz and .tk domains filtered")
+    void testSpamTldFiltering() {
+        // Given: 5 results with spam TLDs and 3 with legitimate TLDs
+        List<SearchResult> searchResults = List.of(
+            // Spam TLDs (Tier 5 - should get low/negative scores)
+            SearchResult.builder()
+                .url("https://free-grants.xyz/money")
+                .title("FREE MONEY GRANTS")
+                .description("Get free grant money now")
+                .build(),
+            SearchResult.builder()
+                .url("https://instant-funding.tk/apply")
+                .title("Instant Funding")
+                .description("Apply now for instant grants")
+                .build(),
+            SearchResult.builder()
+                .url("https://easy-money.top/grants")
+                .title("Easy Money Grants")
+                .description("Easy application process")
+                .build(),
+
+            // Legitimate TLDs
+            SearchResult.builder()
+                .url("https://research-council.org/funding")
+                .title("Research Council Grants")
+                .description("Apply for research funding")
+                .build(),
+            SearchResult.builder()
+                .url("https://education.gov/scholarships")
+                .title("Government Scholarships")
+                .description("Scholarship opportunities for students")
+                .build(),
+            SearchResult.builder()
+                .url("https://eu-grants.eu/programmes")
+                .title("EU Grant Programmes")
+                .description("European Union funding opportunities")
+                .build()
+        );
+
+        // When: Process search results
+        ProcessingStatistics stats = searchResultProcessor.processSearchResults(searchResults, testSessionId);
+
+        // Then: Verify spam TLDs get low confidence scores (below 0.60 threshold)
+        // Note: Spam TLDs have negative base scores, even with keywords they won't reach 0.60
+        assertThat(stats.getTotalResults()).isEqualTo(6);
+
+        // Only legitimate TLDs should create candidates
+        List<FundingSourceCandidate> candidates = (List<FundingSourceCandidate>) candidateRepository.findAll();
+        assertThat(candidates.size()).isLessThanOrEqualTo(3);  // At most the 3 legitimate ones
+
+        // Verify no spam TLD domains created candidates
+        assertThat(candidates)
+            .noneMatch(c -> c.getSourceUrl().contains(".xyz"))
+            .noneMatch(c -> c.getSourceUrl().contains(".tk"))
+            .noneMatch(c -> c.getSourceUrl().contains(".top"));
+    }
+
+    @Test
+    @DisplayName("Test 3/7: Blacklist filtering - blacklisted domains skipped")
+    void testBlacklistFiltering() {
+        // Given: Create 2 blacklisted domains in database
+        domainService.registerDomain("spam-site.com", testSessionId);
+        domainService.blacklistDomain("spam-site.com", UUID.randomUUID(), "Known spam site");
+
+        domainService.registerDomain("scam-grants.org", testSessionId);
+        domainService.blacklistDomain("scam-grants.org", UUID.randomUUID(), "Fraudulent grant site");
+
+        // Search results with 2 blacklisted and 2 legitimate domains
+        List<SearchResult> searchResults = List.of(
+            SearchResult.builder()
+                .url("https://spam-site.com/fake-grants")
+                .title("Free Money Grants")
+                .description("Get free money")
+                .build(),
+            SearchResult.builder()
+                .url("https://scam-grants.org/apply")
+                .title("Easy Grants")
+                .description("Apply for grants")
+                .build(),
+            SearchResult.builder()
+                .url("https://legitimate-foundation.org/funding")
+                .title("Foundation Grants")
+                .description("Research grant funding")
+                .build(),
+            SearchResult.builder()
+                .url("https://research-council.gov/programmes")
+                .title("Research Council")
+                .description("Government research funding")
+                .build()
+        );
+
+        // When: Process search results
+        ProcessingStatistics stats = searchResultProcessor.processSearchResults(searchResults, testSessionId);
+
+        // Then: Verify blacklisted domains skipped
+        assertThat(stats.getTotalResults()).isEqualTo(4);
+        assertThat(stats.getBlacklistedSkipped()).isEqualTo(2);
+        assertThat(stats.getHighConfidenceCreated()).isEqualTo(2);
+
+        // Verify no candidates created for blacklisted domains
+        List<FundingSourceCandidate> candidates = (List<FundingSourceCandidate>) candidateRepository.findAll();
+        assertThat(candidates).hasSize(2);
+        assertThat(candidates)
+            .noneMatch(c -> c.getSourceUrl().contains("spam-site.com"))
+            .noneMatch(c -> c.getSourceUrl().contains("scam-grants.org"));
+    }
+
+    @Test
+    @DisplayName("Test 4/7: Domain deduplication - registerOrGetDomain is idempotent")
+    void testDomainDeduplication_IdempotentRegistration() {
+        // Given: Process same domain multiple times across different batches
+        UUID session1 = UUID.randomUUID();
+        UUID session2 = UUID.randomUUID();
+
+        // Batch 1
+        List<SearchResult> batch1 = List.of(
+            SearchResult.builder()
+                .url("https://horizon-europe.eu/grants")
+                .title("Horizon Europe Grants")
+                .description("Research funding")
+                .build()
+        );
+        searchResultProcessor.processSearchResults(batch1, session1);
+
+        // Batch 2 (same domain, different session)
+        List<SearchResult> batch2 = List.of(
+            SearchResult.builder()
+                .url("https://horizon-europe.eu/programmes")  // Same domain, different URL
+                .title("Horizon Europe Programmes")
+                .description("Different programme page")
+                .build()
+        );
+        searchResultProcessor.processSearchResults(batch2, session2);
+
+        // Then: Verify only ONE domain entity created
+        List<Domain> domains = (List<Domain>) domainRepository.findAll();
+        assertThat(domains).hasSize(1);
+        assertThat(domains.get(0).getDomainName()).isEqualTo("horizon-europe.eu");
+
+        // Verify TWO candidates created (one per batch)
+        List<FundingSourceCandidate> candidates = (List<FundingSourceCandidate>) candidateRepository.findAll();
+        assertThat(candidates).hasSize(2);
+
+        // Both candidates reference same domain
+        UUID domainId = domains.get(0).getDomainId();
+        assertThat(candidates)
+            .allMatch(c -> c.getDomainId().equals(domainId));
+    }
+
+    @Test
+    @DisplayName("Test 5/7: Confidence threshold split - PENDING_CRAWL vs LOW_CONFIDENCE")
+    void testConfidenceThresholdSplit() {
+        // Given: Results with varying confidence levels
+        List<SearchResult> searchResults = List.of(
+            // High confidence: .gov + funding keywords + government type
+            SearchResult.builder()
+                .url("https://grants.gov/opportunities")
+                .title("Government Grant Opportunities")
+                .description("Federal funding for research and education")
+                .build(),
+
+            // High confidence: .org + multiple funding keywords
+            SearchResult.builder()
+                .url("https://research-foundation.org/grants")
+                .title("Research Foundation Grants and Scholarships")
+                .description("Apply for research funding and fellowships")
+                .build(),
+
+            // Low confidence: .com + weak/no funding keywords
+            SearchResult.builder()
+                .url("https://random-blog.com/post")
+                .title("Blog Post About Funding")
+                .description("Someone's opinion about grants")
+                .build(),
+
+            // Low confidence: .net + no clear funding keywords
+            SearchResult.builder()
+                .url("https://generic-site.net/page")
+                .title("Generic Website")
+                .description("Some content here")
+                .build()
+        );
+
+        // When: Process search results
+        ProcessingStatistics stats = searchResultProcessor.processSearchResults(searchResults, testSessionId);
+
+        // Then: Verify split based on 0.60 threshold
+        assertThat(stats.getTotalResults()).isEqualTo(4);
+        assertThat(stats.getHighConfidenceCreated()).isGreaterThanOrEqualTo(2);  // At least the .gov and .org
+
+        // Verify candidates in database have correct status
+        List<FundingSourceCandidate> candidates = (List<FundingSourceCandidate>) candidateRepository.findAll();
+
+        // All created candidates should be PENDING_CRAWL (only high confidence created)
+        assertThat(candidates)
+            .allMatch(c -> c.getStatus() == CandidateStatus.PENDING_CRAWL);
+
+        // Verify confidence scores stored correctly (scale 2)
+        assertThat(candidates)
+            .allMatch(c -> c.getConfidenceScore() != null)
+            .allMatch(c -> c.getConfidenceScore().scale() == 2)
+            .allMatch(c -> c.getConfidenceScore().compareTo(new BigDecimal("0.60")) >= 0);
+    }
+
+    @Test
+    @DisplayName("Test 6/7: Session statistics - accurate counts with real aggregation")
+    void testSessionStatisticsAccuracy() {
+        // Given: Complex scenario with all types of results
+        // First create a blacklisted domain
+        domainService.registerDomain("blacklisted.com", testSessionId);
+        domainService.blacklistDomain("blacklisted.com", UUID.randomUUID(), "Test blacklist");
+
+        List<SearchResult> searchResults = List.of(
+            // 1. High confidence candidate
+            SearchResult.builder()
+                .url("https://research-council.org/grants")
+                .title("Research Council Grants")
+                .description("Funding for research projects")
+                .build(),
+
+            // 2. Duplicate of #1 (different URL, same domain)
+            SearchResult.builder()
+                .url("https://research-council.org/about")
+                .title("About Research Council")
+                .description("More information")
+                .build(),
+
+            // 3. Blacklisted domain
+            SearchResult.builder()
+                .url("https://blacklisted.com/page")
+                .title("Some Content")
+                .description("Content here")
+                .build(),
+
+            // 4. Low confidence (below 0.60 threshold)
+            SearchResult.builder()
+                .url("https://random-site.com/article")
+                .title("Article")
+                .description("Some article")
+                .build(),
+
+            // 5. Another high confidence candidate
+            SearchResult.builder()
+                .url("https://education-foundation.org/scholarships")
+                .title("Education Foundation Scholarships")
+                .description("Scholarship opportunities")
+                .build()
+        );
+
+        // When: Process search results
+        ProcessingStatistics stats = searchResultProcessor.processSearchResults(searchResults, testSessionId);
+
+        // Then: Verify all statistics are accurate
+        assertThat(stats.getTotalResults()).isEqualTo(5);
+        assertThat(stats.getDuplicatesSkipped()).isEqualTo(1);  // result #2
+        assertThat(stats.getBlacklistedSkipped()).isEqualTo(1);  // result #3
+        // High confidence candidates: at least #1 and #5 (maybe #4 if it scores >= 0.60)
+        assertThat(stats.getHighConfidenceCreated()).isGreaterThanOrEqualTo(2);
+
+        // Verify database matches statistics
+        List<FundingSourceCandidate> candidates = (List<FundingSourceCandidate>) candidateRepository.findAll();
+        assertThat(candidates).hasSize(stats.getHighConfidenceCreated());
+
+        // Verify domain count (unique domains that weren't skipped)
+        List<Domain> domains = (List<Domain>) domainRepository.findAll();
+        // Should have: research-council.org, blacklisted.com (pre-existing), random-site.com, education-foundation.org
+        // Total: 4 domains (1 pre-existing blacklisted, 3 from processing)
+        assertThat(domains.size()).isGreaterThanOrEqualTo(3);
+    }
+
+    @Test
+    @DisplayName("Test 7/7: TLD tier validation - .ngo gets higher confidence than .com")
+    void testTldTierValidation() {
+        // Given: Same content, different TLDs
+        List<SearchResult> searchResults = List.of(
+            // High-tier TLD: .ngo (Tier 1: +0.20)
+            SearchResult.builder()
+                .url("https://international-grants.ngo/programmes")
+                .title("International Grants Programme")
+                .description("Grant funding for development projects")
+                .build(),
+
+            // Mid-tier TLD: .org (Tier 2: +0.15)
+            SearchResult.builder()
+                .url("https://grant-foundation.org/programmes")
+                .title("Grant Foundation Programme")
+                .description("Grant funding for development projects")
+                .build(),
+
+            // Low-tier TLD: .com (Tier 3: +0.08)
+            SearchResult.builder()
+                .url("https://grants-portal.com/programmes")
+                .title("Grants Portal Programme")
+                .description("Grant funding for development projects")
+                .build()
+        );
+
+        // When: Process search results
+        searchResultProcessor.processSearchResults(searchResults, testSessionId);
+
+        // Then: Verify confidence scores reflect TLD tiers
+        List<FundingSourceCandidate> candidates = (List<FundingSourceCandidate>) candidateRepository.findAll();
+        assertThat(candidates).hasSize(3);
+
+        // Find each candidate by URL
+        FundingSourceCandidate ngoCandidate = candidates.stream()
+            .filter(c -> c.getSourceUrl().contains(".ngo"))
+            .findFirst()
+            .orElseThrow();
+
+        FundingSourceCandidate orgCandidate = candidates.stream()
+            .filter(c -> c.getSourceUrl().contains(".org"))
+            .findFirst()
+            .orElseThrow();
+
+        FundingSourceCandidate comCandidate = candidates.stream()
+            .filter(c -> c.getSourceUrl().contains(".com"))
+            .findFirst()
+            .orElseThrow();
+
+        // Verify TLD hierarchy: .ngo > .org > .com
+        assertThat(ngoCandidate.getConfidenceScore())
+            .isGreaterThan(orgCandidate.getConfidenceScore());
+        assertThat(orgCandidate.getConfidenceScore())
+            .isGreaterThan(comCandidate.getConfidenceScore());
+
+        // Verify all are high confidence (created as candidates)
+        assertThat(ngoCandidate.getStatus()).isEqualTo(CandidateStatus.PENDING_CRAWL);
+        assertThat(orgCandidate.getStatus()).isEqualTo(CandidateStatus.PENDING_CRAWL);
+        assertThat(comCandidate.getStatus()).isEqualTo(CandidateStatus.PENDING_CRAWL);
+
+        // Verify confidence scores are properly scaled (BigDecimal scale 2)
+        assertThat(ngoCandidate.getConfidenceScore().scale()).isEqualTo(2);
+        assertThat(orgCandidate.getConfidenceScore().scale()).isEqualTo(2);
+        assertThat(comCandidate.getConfidenceScore().scale()).isEqualTo(2);
+    }
+}
