@@ -32,6 +32,10 @@
         <!-- Spring Boot -->
         <spring-boot.version>3.5.6</spring-boot.version>
 
+        <!-- AI/LLM -->
+        <langchain4j.version>1.8.0</langchain4j.version>
+        <caffeine.version>3.1.8</caffeine.version>
+
         <!-- Libraries -->
         <lombok.version>1.18.42</lombok.version>
         <vavr.version>0.10.7</vavr.version>
@@ -127,6 +131,25 @@
                 <groupId>org.flywaydb</groupId>
                 <artifactId>flyway-database-postgresql</artifactId>
                 <version>${flyway.version}</version>
+            </dependency>
+
+            <!-- LangChain4j for LLM Integration -->
+            <dependency>
+                <groupId>dev.langchain4j</groupId>
+                <artifactId>langchain4j</artifactId>
+                <version>${langchain4j.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>dev.langchain4j</groupId>
+                <artifactId>langchain4j-open-ai</artifactId>
+                <version>${langchain4j.version}</version>
+            </dependency>
+
+            <!-- Caffeine Cache -->
+            <dependency>
+                <groupId>com.github.ben-manes.caffeine</groupId>
+                <artifactId>caffeine</artifactId>
+                <version>${caffeine.version}</version>
             </dependency>
 
             <!-- Testing -->
