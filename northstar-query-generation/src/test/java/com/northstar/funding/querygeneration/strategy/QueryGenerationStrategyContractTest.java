@@ -5,7 +5,7 @@ import com.northstar.funding.domain.GeographicScope;
 import com.northstar.funding.domain.SearchEngineType;
 import com.northstar.funding.querygeneration.template.CategoryMapper;
 import com.northstar.funding.querygeneration.template.GeographicMapper;
-import dev.langchain4j.model.chat.ChatLanguageModel;
+import dev.langchain4j.model.chat.ChatModel;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
@@ -29,7 +29,7 @@ import static org.mockito.Mockito.when;
 class QueryGenerationStrategyContractTest {
 
     @Mock
-    private ChatLanguageModel chatModel;
+    private ChatModel chatModel;
 
     @Mock
     private CategoryMapper categoryMapper;
@@ -57,7 +57,7 @@ class QueryGenerationStrategyContractTest {
                 .thenReturn("Eastern European countries");
 
         // Mock LLM to return formatted query list
-        when(chatModel.generate(anyString())).thenReturn(
+        when(chatModel.chat(anyString())).thenReturn(
                 "1. scholarship Bulgaria students\n" +
                 "2. Bulgarian education funding\n" +
                 "3. student grants Bulgaria\n" +
