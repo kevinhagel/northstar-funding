@@ -6,7 +6,7 @@ import com.northstar.funding.domain.SearchEngineType;
 import com.northstar.funding.querygeneration.template.CategoryMapper;
 import com.northstar.funding.querygeneration.template.GeographicMapper;
 import com.northstar.funding.querygeneration.template.PromptTemplates;
-import dev.langchain4j.model.chat.ChatLanguageModel;
+import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.model.input.Prompt;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,13 +30,13 @@ public class KeywordQueryStrategy implements QueryGenerationStrategy {
 
     private static final Logger log = LoggerFactory.getLogger(KeywordQueryStrategy.class);
 
-    private final ChatLanguageModel chatModel;
+    private final ChatModel chatModel;
     private final CategoryMapper categoryMapper;
     private final GeographicMapper geographicMapper;
     private final SearchEngineType searchEngine;
 
     public KeywordQueryStrategy(
-            ChatLanguageModel chatModel,
+            ChatModel chatModel,
             CategoryMapper categoryMapper,
             GeographicMapper geographicMapper) {
         this.chatModel = chatModel;
@@ -73,7 +73,7 @@ public class KeywordQueryStrategy implements QueryGenerationStrategy {
                 Prompt prompt = PromptTemplates.KEYWORD_QUERY_TEMPLATE.apply(variables);
 
                 // Call LM Studio
-                String response = chatModel.generate(prompt.text());
+                String response = chatModel.chat(prompt.text());
 
                 // Parse response into query list
                 List<String> queries = parseQueries(response, maxQueries);

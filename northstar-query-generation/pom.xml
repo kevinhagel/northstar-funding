@@ -15,11 +15,6 @@
     <name>NorthStar Query Generation</name>
     <description>AI-powered search query generation using LM Studio</description>
 
-    <properties>
-        <langchain4j.version>0.36.2</langchain4j.version>
-        <caffeine.version>3.1.8</caffeine.version>
-    </properties>
-
     <dependencies>
         <!-- Internal Dependencies -->
         <dependency>
@@ -42,20 +37,17 @@
         <dependency>
             <groupId>dev.langchain4j</groupId>
             <artifactId>langchain4j</artifactId>
-            <version>${langchain4j.version}</version>
         </dependency>
 
         <dependency>
             <groupId>dev.langchain4j</groupId>
             <artifactId>langchain4j-open-ai</artifactId>
-            <version>${langchain4j.version}</version>
         </dependency>
 
         <!-- Caffeine Cache -->
         <dependency>
             <groupId>com.github.ben-manes.caffeine</groupId>
             <artifactId>caffeine</artifactId>
-            <version>${caffeine.version}</version>
         </dependency>
 
         <!-- Vavr for functional error handling -->

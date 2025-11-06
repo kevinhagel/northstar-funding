@@ -1,6 +1,6 @@
 package com.northstar.funding.querygeneration.config;
 
-import dev.langchain4j.model.chat.ChatLanguageModel;
+import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.model.openai.OpenAiChatModel;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -31,7 +31,7 @@ public class LmStudioConfig {
     private String modelName;
 
     /**
-     * Creates LangChain4j ChatLanguageModel configured for LM Studio.
+     * Creates LangChain4j ChatModel configured for LM Studio.
      *
      * <p>Key configuration:
      * <ul>
@@ -43,7 +43,7 @@ public class LmStudioConfig {
      * @return Configured chat model
      */
     @Bean
-    public ChatLanguageModel chatLanguageModel() {
+    public ChatModel chatModel() {
         // CRITICAL: LM Studio requires HTTP/1.1 (not HTTP/2)
         HttpClient.Builder httpClientBuilder = HttpClient.newBuilder()
                 .version(HttpClient.Version.HTTP_1_1)
