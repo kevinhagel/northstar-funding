@@ -35,18 +35,20 @@ This context influences:
 
 ### Core Technologies
 - **Java 25** (source and target level 25) via SDKMAN
-- **Spring Boot 3.5.6** with Spring Data JDBC (not JPA)
+- **Spring Boot 3.5.7** with Spring Data JDBC (not JPA)
 - **PostgreSQL 16** (Mac Studio @ 192.168.1.10:5432)
+- **PostgreSQL JDBC Driver 42.7.8**
+- **LangChain4j 1.8.0** for LLM integration (LM Studio)
 - **Vavr 0.10.7** for functional programming patterns (planned usage)
 - **Lombok 1.18.42** for boilerplate reduction (domain entities only)
 
 ### Testing
 - **JUnit 5** with Spring Boot Test
-- **Mockito** for unit testing (110 tests implemented)
-- **TestContainers** for PostgreSQL integration tests (planned, not yet implemented)
+- **Mockito** for unit testing (259 tests implemented)
+- **TestContainers 1.21.3** for PostgreSQL integration tests
 
 ### Infrastructure
-- **Flyway** for database migrations
+- **Flyway 11.15.0** for database migrations
 - **PostgreSQL 16** running on Mac Studio @ 192.168.1.10:5432
 
 ## Build & Development Commands
