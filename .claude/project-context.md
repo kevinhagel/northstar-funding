@@ -82,7 +82,7 @@ mvn flyway:info
 
 - **Language**: Java 25 (Oracle JDK via SDKMAN)
 - **Framework**: Spring Boot 3.5.6
-- **Build**: Maven 3.9.9
+- **Build**: Maven 3.9.11
 - **Database**: PostgreSQL 16 (in Docker)
 - **Vector DB**: Qdrant (for future RAG)
 - **AI**: LM Studio locally hosted models
