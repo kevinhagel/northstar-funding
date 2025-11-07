@@ -46,7 +46,15 @@
       "WebFetch(domain:mvnrepository.com)",
       "Bash(curl:*)",
       "Bash(timeout 5 curl:*)",
-      "Bash(time curl:*)"
+      "Bash(time curl:*)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:lmstudio.ai)",
+      "WebFetch(domain:git.rehounou.ca)",
+      "WebFetch(domain:marketplace.dify.ai)",
+      "Bash(ping:*)",
+      "Bash(rsync:*)",
+      "Bash(awk:*)",
+      "Bash(xargs:*)"
     ],
     "deny": [],
     "ask": []
