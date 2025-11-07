@@ -42,7 +42,11 @@
       "Skill(superpowers:brainstorming)",
       "mcp__code-index__set_project_path",
       "Bash(mkdir:*)",
-      "mcp__sequential-thinking__sequentialthinking"
+      "mcp__sequential-thinking__sequentialthinking",
+      "WebFetch(domain:mvnrepository.com)",
+      "Bash(curl:*)",
+      "Bash(timeout 5 curl:*)",
+      "Bash(time curl:*)"
     ],
     "deny": [],
     "ask": []

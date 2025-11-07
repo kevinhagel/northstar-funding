@@ -23,7 +23,7 @@ query-generation:
     base-url: http://192.168.1.10:1234/v1
     api-key: not-needed
     timeout-seconds: 30
-    model-name: llama-3.1-8b-instruct
+    model-name: qwen2.5-0.5b-instruct  # Fast 0.5B model for query generation (10-15x faster than 8B models)
 
   # Cache configuration
   cache:

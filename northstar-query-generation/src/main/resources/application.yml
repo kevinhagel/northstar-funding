@@ -15,7 +15,7 @@ query-generation:
     base-url: http://192.168.1.10:1234/v1
     api-key: not-needed  # LM Studio doesn't require API key
     timeout-seconds: 30
-    model-name: local-model  # Will use whatever model is loaded in LM Studio
+    model-name: qwen2.5-0.5b-instruct  # Fast 0.5B model for query generation (10-15x faster than 8B models)
 
   # Cache Configuration
   cache:

@@ -1,5 +1,7 @@
 package com.northstar.funding.querygeneration.config;
 
+import dev.langchain4j.http.client.jdk.JdkHttpClient;
+import dev.langchain4j.http.client.jdk.JdkHttpClientBuilder;
 import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.model.openai.OpenAiChatModel;
 import org.springframework.beans.factory.annotation.Value;
@@ -49,13 +51,20 @@ public class LmStudioConfig {
                 .version(HttpClient.Version.HTTP_1_1)
                 .connectTimeout(Duration.ofSeconds(10));
 
+        // Wrap in JdkHttpClientBuilder to pass to OpenAiChatModel
+        JdkHttpClientBuilder jdkHttpClientBuilder = JdkHttpClient.builder()
+                .httpClientBuilder(httpClientBuilder);
+
         return OpenAiChatModel.builder()
                 .baseUrl(baseUrl)
                 .apiKey(apiKey)  // LM Studio doesn't validate API key, but LangChain4j requires it
                 .modelName(modelName)
+                .httpClientBuilder(jdkHttpClientBuilder)  // Pass custom HTTP client with HTTP/1.1
                 .timeout(Duration.ofSeconds(timeoutSeconds))
-                .logRequests(false)
-                .logResponses(false)
+                .maxTokens(150)  // Limit response size for faster generation (query generation doesn't need long responses)
+                .temperature(0.7)  // Some randomness for query variety
+                .logRequests(true)   // Enable for debugging
+                .logResponses(true)  // Enable for debugging
                 .build();
     }
 }
