@@ -12,17 +12,20 @@ general:
   enable_metrics: false
 
 brand:
-  new_issue_url: false
-  docs_url: false
-  public_instances: false
-  wiki_url: false
-  issue_url: false
+  new_issue_url: ""
+  docs_url: ""
+  public_instances: ""
+  wiki_url: ""
+  issue_url: ""
 
 search:
   safe_search: 0
   autocomplete: ""
   default_lang: ""
   max_page: 0
+  formats:
+    - html
+    - json
   languages:
     - all
     - en
@@ -46,11 +49,11 @@ ui:
   hotkeys: default
 
 redis:
-  url: false
+  url: null
 
 checker:
   off_when_debug: true
-  scheduling: false
+  scheduling: null
 
 engines:
   - name: bing

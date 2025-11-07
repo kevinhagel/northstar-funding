@@ -147,6 +147,40 @@ services:
         max-size: "1m"
         max-file: "1"
 
+  # Perplexica - AI Search Engine (Perplexity Clone)
+  # =========================================
+  # Version: v1.11.2 (latest as of 2025-11-07)
+  # LM Studio integration added in v1.11.0
+  perplexica:
+    image: itzcrazykns1337/perplexica:latest
+    container_name: perplexica
+    hostname: perplexica
+    ports:
+      - "3001:3000"
+    volumes:
+      - perplexica-data:/home/perplexica/data
+      - perplexica-uploads:/home/perplexica/uploads
+      - ./perplexica/config.toml:/home/perplexica/config.toml:ro
+    environment:
+      - SEARXNG_API_URL=http://searxng:8080
+      # NOTE: LM Studio is configured via config.toml, not environment variables
+    networks:
+      - northstar-network
+    restart: unless-stopped
+    depends_on:
+      searxng:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://perplexica:3000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
 # =========================================
 # NETWORKS
 # =========================================
@@ -167,13 +201,21 @@ volumes:
   postgres-data:
     name: northstar-postgres-data
     driver: local
-  
+
   pgadmin-data:
     name: northstar-pgadmin-data
     driver: local
-  
+
   qdrant-data:
     name: northstar-qdrant-data
+    driver: local
+
+  perplexica-data:
+    name: northstar-perplexica-data
+    driver: local
+
+  perplexica-uploads:
+    name: northstar-perplexica-uploads
     driver: local
 
 # =========================================
