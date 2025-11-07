@@ -125,6 +125,8 @@ Add this service to your `docker/docker-compose.yml`:
 ```yaml
   # Perplexica - AI Search Engine (Perplexity Clone)
   # =========================================
+  # Version: v1.11.2 (latest as of 2025-11-07)
+  # LM Studio integration added in v1.11.0
   perplexica:
     image: itzcrazykns1337/perplexica:latest
     container_name: perplexica
@@ -137,7 +139,7 @@ Add this service to your `docker/docker-compose.yml`:
       - ./perplexica/config.toml:/home/perplexica/config.toml:ro
     environment:
       - SEARXNG_API_URL=http://searxng:8080
-      - OLLAMA_API_URL=http://host.docker.internal:1234/v1
+      # NOTE: LM Studio is configured via config.toml, not environment variables
     networks:
       - northstar-network
     restart: unless-stopped
@@ -195,14 +197,16 @@ OPENAI = ""  # Not needed for local LLMs
 
 [API_ENDPOINTS]
 SEARXNG = "http://searxng:8080"
-OLLAMA = "http://host.docker.internal:1234/v1"  # LM Studio OpenAI-compatible API
+
+[MODELS.LM_STUDIO]
+API_URL = "http://host.docker.internal:1234"  # LM Studio on Mac Studio
 
 [CHAT_MODEL]
-PROVIDER = "openai"  # LM Studio is OpenAI-compatible
-MODEL = "qwen2.5-0.5b-instruct"
-CUSTOMOPENAIBASEURL = "http://host.docker.internal:1234/v1"
-CUSTOMOPENAIAPIKEY = "not-needed"
+PROVIDER = "lm_studio"  # LM Studio provider added in Perplexica v1.11.0
+MODEL = "qwen2.5-0.5b-instruct"  # Model loaded in LM Studio
 ```
+
+**Note**: Perplexica v1.11.0+ includes native LM Studio provider support. The `MODELS.LM_STUDIO` section configures the API endpoint, and `CHAT_MODEL.PROVIDER = "lm_studio"` tells Perplexica to use this provider.
 
 ### Deployment Steps
 

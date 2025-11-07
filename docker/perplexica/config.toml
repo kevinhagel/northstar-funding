@@ -1,0 +1,16 @@
+[GENERAL]
+PORT = 3000
+SIMILARITY_MEASURE = "cosine"
+
+[API_KEYS]
+OPENAI = ""  # Not needed for local LLMs
+
+[API_ENDPOINTS]
+SEARXNG = "http://searxng:8080"
+
+[MODELS.LM_STUDIO]
+API_URL = "http://host.docker.internal:1234"
+
+[CHAT_MODEL]
+PROVIDER = "lm_studio"
+MODEL = "qwen2.5-0.5b-instruct"
