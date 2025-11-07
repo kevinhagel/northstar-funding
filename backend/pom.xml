@@ -23,7 +23,7 @@
     <properties>
         <!-- Java Version (Constitutional Requirement) -->
         <java.version>25</java.version>
-        <maven.version>3.9.9</maven.version>
+        <maven.version>3.9.11</maven.version>
 
         <!-- Dependency Versions -->
         <spring-boot.version>3.5.6</spring-boot.version>
@@ -331,7 +331,7 @@
 
     <!-- Maven Version Enforcement -->
     <prerequisites>
-        <maven>3.9.9</maven>
+        <maven>3.9.11</maven>
     </prerequisites>
 
 </project>
