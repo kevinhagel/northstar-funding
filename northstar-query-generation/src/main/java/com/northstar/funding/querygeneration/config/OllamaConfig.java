@@ -12,13 +12,13 @@ import java.net.http.HttpClient;
 import java.time.Duration;
 
 /**
- * Configuration for LM Studio integration.
+ * Configuration for Ollama integration.
  *
- * <p>CRITICAL: LM Studio requires HTTP/1.1 (does not support HTTP/2).
- * This configuration explicitly sets the HTTP version to prevent connection failures.
+ * <p>Using HTTP/1.1 for compatibility with Ollama's OpenAI-compatible API endpoint.
+ * This configuration connects to Ollama running natively on Mac Studio with Metal GPU acceleration.
  */
 @Configuration
-public class LmStudioConfig {
+public class OllamaConfig {
 
     @Value("${query-generation.lm-studio.base-url:http://192.168.1.10:1234/v1}")
     private String baseUrl;
@@ -33,20 +33,21 @@ public class LmStudioConfig {
     private String modelName;
 
     /**
-     * Creates LangChain4j ChatModel configured for LM Studio.
+     * Creates LangChain4j ChatModel configured for Ollama.
      *
      * <p>Key configuration:
      * <ul>
-     *   <li>HTTP/1.1: Required for LM Studio compatibility</li>
+     *   <li>HTTP/1.1: Compatible with Ollama's OpenAI-compatible API</li>
      *   <li>30s timeout: Allows time for query generation</li>
      *   <li>Non-blocking: Returns CompletableFuture for Virtual Thread integration</li>
+     *   <li>Concurrent requests: Ollama supports up to 10 parallel requests (OLLAMA_NUM_PARALLEL=10)</li>
      * </ul>
      *
      * @return Configured chat model
      */
     @Bean
     public ChatModel chatModel() {
-        // CRITICAL: LM Studio requires HTTP/1.1 (not HTTP/2)
+        // Using HTTP/1.1 for Ollama compatibility
         HttpClient.Builder httpClientBuilder = HttpClient.newBuilder()
                 .version(HttpClient.Version.HTTP_1_1)
                 .connectTimeout(Duration.ofSeconds(10));
@@ -57,7 +58,7 @@ public class LmStudioConfig {
 
         return OpenAiChatModel.builder()
                 .baseUrl(baseUrl)
-                .apiKey(apiKey)  // LM Studio doesn't validate API key, but LangChain4j requires it
+                .apiKey(apiKey)  // Ollama doesn't validate API key, but LangChain4j requires it
                 .modelName(modelName)
                 .httpClientBuilder(jdkHttpClientBuilder)  // Pass custom HTTP client with HTTP/1.1
                 .timeout(Duration.ofSeconds(timeoutSeconds))

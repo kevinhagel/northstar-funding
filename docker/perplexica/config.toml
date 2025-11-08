@@ -7,10 +7,13 @@ OPENAI = ""  # Not needed for local LLMs
 
 [API_ENDPOINTS]
 SEARXNG = "http://searxng:8080"
+OLLAMA = "http://192.168.1.10:11434"
 
-[MODELS.LM_STUDIO]
-API_URL = "http://host.docker.internal:1234"
-
+# Explicitly configure Ollama models to prevent auto-discovery issues
 [CHAT_MODEL]
-PROVIDER = "lm_studio"
-MODEL = "qwen2.5-0.5b-instruct"
+PROVIDER = "ollama"
+MODEL = "llama3.1:8b"
+
+[EMBEDDING_MODEL]
+PROVIDER = "ollama"
+MODEL = "nomic-embed-text"

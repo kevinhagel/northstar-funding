@@ -181,10 +181,10 @@ class KeywordVsAiOptimizedTest {
                 .generateQueries(request)
                 .get(30, TimeUnit.SECONDS);
 
-        // Assert - Tavily queries are long and natural language (allow slightly shorter for smaller models)
+        // Assert - Tavily queries are long and natural language
         assertThat(response.getQueries()).allMatch(query -> {
             int wordCount = query.split("\\s+").length;
-            return wordCount >= 12 && wordCount <= 40; // Natural language length
+            return wordCount >= 12 && wordCount <= 40; // llama3.1:8b should handle this reliably
         });
 
         // Assert - At least 60% of queries include contextual information about STEM/education

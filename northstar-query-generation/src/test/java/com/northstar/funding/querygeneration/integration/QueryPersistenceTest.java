@@ -83,7 +83,7 @@ class QueryPersistenceTest {
         matchingQueries.forEach(sq -> {
             assertThat(sq.getQueryText()).isNotEmpty();
             assertThat(sq.getGenerationMethod()).isEqualTo("AI_GENERATED");
-            assertThat(sq.getAiModelUsed()).isEqualTo("lm-studio");
+            assertThat(sq.getAiModelUsed()).isEqualTo("ollama-llama3.1:8b");
             assertThat(sq.getGenerationDate()).isNotNull();
             assertThat(sq.getTargetEngines()).contains(SearchEngineType.SERPER.name());
             assertThat(sq.getTags()).anyMatch(tag -> tag.startsWith("CATEGORY:"));

@@ -10,12 +10,12 @@ query-generation:
   min-queries-limit: 1
   default-queries: 10
 
-  # LM Studio Configuration
+  # Ollama Configuration
   lm-studio:
-    base-url: http://192.168.1.10:1234/v1
-    api-key: not-needed  # LM Studio doesn't require API key
-    timeout-seconds: 30
-    model-name: qwen2.5-0.5b-instruct  # Fast 0.5B model for query generation (10-15x faster than 8B models)
+    base-url: http://192.168.1.10:11434/v1
+    api-key: not-needed  # Ollama doesn't require API key
+    timeout-seconds: 60  # Increased for larger model
+    model-name: llama3.1:8b  # 8B model for reliable query generation (better instruction following)
 
   # Cache Configuration
   cache:

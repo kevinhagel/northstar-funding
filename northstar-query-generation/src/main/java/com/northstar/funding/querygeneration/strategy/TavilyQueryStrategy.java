@@ -105,15 +105,37 @@ public class TavilyQueryStrategy implements QueryGenerationStrategy {
      * 2. query two
      * 3. query three
      * </pre>
+     *
+     * <p>Filters out preamble text like "Here are N queries:" that some models include.
      */
     private List<String> parseQueries(String response, int maxQueries) {
         return Arrays.stream(response.split("\n"))
                 .map(String::trim)
                 .filter(line -> !line.isEmpty())
+                .filter(line -> !isPreamble(line)) // Filter out preambles
                 .map(line -> line.replaceFirst("^\\d+\\.\\s*", "")) // Remove "1. " prefix
+                .map(line -> line.replaceAll("^\"+|\"+$", "")) // Remove surrounding quotes
                 .filter(line -> !line.isEmpty())
                 .limit(maxQueries)
                 .collect(Collectors.toList());
+    }
+
+    /**
+     * Checks if a line is a preamble that should be filtered out.
+     *
+     * <p>Common preambles:
+     * <ul>
+     *   <li>"Here are N queries:"</li>
+     *   <li>"Here are N search queries:"</li>
+     *   <li>"Here are some queries:"</li>
+     * </ul>
+     */
+    private boolean isPreamble(String line) {
+        String lower = line.toLowerCase();
+        return lower.startsWith("here are") ||
+               lower.startsWith("here is") ||
+               lower.contains("search queries:") ||
+               lower.contains("queries:");
     }
 
     /**

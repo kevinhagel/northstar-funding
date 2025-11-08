@@ -54,7 +54,9 @@
       "Bash(ping:*)",
       "Bash(rsync:*)",
       "Bash(awk:*)",
-      "Bash(xargs:*)"
+      "Bash(xargs:*)",
+      "Bash(scp:*)",
+      "mcp__perplexity-mcp__perplexity_search_web"
     ],
     "deny": [],
     "ask": []

@@ -14,10 +14,10 @@ NorthStar Funding Discovery is a **planned** automated funding discovery platfor
 ✅ **Unit Tests**: 327 Mockito-based tests (all passing)
 ✅ **Multi-Module Maven Project**: 5 modules with clean separation of concerns
 ✅ **Search Result Processing**: SearchResultProcessor with confidence scoring, domain deduplication, and blacklist filtering
+✅ **Query Generation Module**: AI-powered search query generation using Ollama (llama3.1:8b) with LangChain4j, 24-hour caching, and concurrent generation (58 tests passing)
 
 ⚠️ **Partial Crawler Implementation**: Search result processing pipeline (no web crawling yet)
-❌ **NO Search Integration** - No search engine adapters
-❌ **NO AI Integration** - No LM Studio or AI-powered features
+❌ **NO Search Integration** - No search engine adapters (queries generated but not executed)
 ❌ **NO Application Layer** - No REST API, no orchestration, no scheduler
 ❌ **NO Judging Module** - northstar-judging module is empty
 
@@ -38,7 +38,7 @@ This context influences:
 - **Spring Boot 3.5.7** with Spring Data JDBC (not JPA)
 - **PostgreSQL 16** (Mac Studio @ 192.168.1.10:5432)
 - **PostgreSQL JDBC Driver 42.7.8**
-- **LangChain4j 1.8.0** for LLM integration (LM Studio)
+- **LangChain4j 1.8.0** for LLM integration (Ollama)
 - **Vavr 0.10.7** for functional programming patterns (planned usage)
 - **Lombok 1.18.42** for boilerplate reduction (domain entities only)
 
@@ -50,6 +50,73 @@ This context influences:
 ### Infrastructure
 - **Flyway 11.15.0** for database migrations
 - **PostgreSQL 16** running on Mac Studio @ 192.168.1.10:5432
+- **Ollama** (native on Mac Studio, NOT in Docker) for LLM inference with concurrent requests
+- **Docker Compose** infrastructure on Mac Studio @ 192.168.1.10
+
+### Ollama Configuration (Mac Studio)
+
+**Installation**: Native installation (NOT Docker) to access Metal GPU acceleration
+
+**Network Configuration**:
+- Listening on `0.0.0.0:11434` (all network interfaces)
+- Accessible from MacBook M2, Docker containers, and Perplexica
+- Configured via `~/Library/LaunchAgents/homebrew.mxcl.ollama.plist` with explicit EnvironmentVariables section
+
+**Models** (stored on T7 SSD at `/Volumes/T7-NorthStar/ollama-models`):
+- `llama3.1:8b` - Primary model for query generation (reliable structured output)
+- `qwen2.5:0.5b` - Fast but unreliable for structured output (not recommended)
+- `phi3:medium` - Alternative model
+- `nomic-embed-text` - Embedding model for Perplexica
+
+**Environment Variables** (via launchd plist):
+```bash
+OLLAMA_HOST=0.0.0.0:11434                          # Listen on all interfaces
+OLLAMA_MODELS=/Volumes/T7-NorthStar/ollama-models # Model storage on T7 SSD
+OLLAMA_NUM_PARALLEL=10                             # Concurrent requests (key advantage over LM Studio)
+OLLAMA_MAX_LOADED_MODELS=2                         # Max models in memory
+OLLAMA_FLASH_ATTENTION=1                           # Enable Flash Attention optimization
+OLLAMA_KV_CACHE_TYPE=q8_0                          # Quantized KV cache for memory efficiency
+```
+
+**Verifying Ollama**:
+```bash
+# From MacBook M2 or Docker container
+curl http://192.168.1.10:11434/v1/models
+
+# Check listening interface on Mac Studio
+ssh macstudio "lsof -i :11434"
+# Should show: *:11434 (all interfaces), not localhost:11434
+```
+
+**Why Native Installation**:
+- Metal GPU acceleration requires native Ollama, not Docker
+- Concurrent request support via `OLLAMA_NUM_PARALLEL=10` (LM Studio doesn't support this)
+- Lower latency for query generation (multiple parallel requests)
+
+### Development Machine Architecture
+
+**MacBook M2** (Development Machine):
+- IDE and code editing
+- Git repository at `/Users/kevin/github/northstar-funding`
+- Docker configuration files in `docker/` subdirectory
+
+**Mac Studio** (Infrastructure Server @ 192.168.1.10):
+- NO IDEs or development tools
+- NOT used as an interactive user machine
+- Runs infrastructure services only (PostgreSQL, Qdrant, SearXNG, Perplexica, Ollama)
+- Docker files deployed to `~/northstar/` directory
+
+**Critical Workflow:**
+```bash
+# After editing docker-compose.yml or config files in docker/ on MacBook M2:
+rsync -av docker/ macstudio:~/northstar/
+```
+
+**Why This Matters:**
+- All Docker infrastructure changes are made on MacBook M2 in the git repo
+- Changes are synced to Mac Studio for deployment
+- Mac Studio is treated as a headless server, not a development machine
+- This keeps the git repository as the single source of truth
 
 ## Build & Development Commands
 
@@ -100,6 +167,82 @@ mvn flyway:validate -pl northstar-persistence
 ```
 
 **Note**: Flyway commands must use `-pl northstar-persistence` to target the correct module.
+
+### Ollama Configuration (Mac Studio)
+
+**Ollama runs natively on Mac Studio** (NOT in Docker) to leverage Metal GPU acceleration.
+
+**Models Available:**
+- `qwen2.5:0.5b` - 397 MB - Fast, lightweight model for simple tasks
+- `llama3.1:8b` - 4.9 GB - General purpose chat and reasoning
+- `phi3:medium` - 7.9 GB - Microsoft's efficient 14B parameter model
+- `nomic-embed-text:latest` - 274 MB - Text embeddings for RAG/vector search
+
+**Model Storage:** `/Volumes/T7-NorthStar/ollama-models/` (external SSD, ~13GB)
+
+**Concurrent Request Configuration:**
+- `OLLAMA_NUM_PARALLEL=10` - Maximum 10 concurrent inference requests
+- `OLLAMA_MAX_LOADED_MODELS=2` - Keep 2 models in memory simultaneously
+- `OLLAMA_FLASH_ATTENTION=1` - Enable flash attention optimization for Apple Silicon
+
+**API Access:**
+- From Mac Studio host: `http://localhost:11434`
+- From Docker containers: `http://host.docker.internal:11434`
+- Server binds to: `0.0.0.0:11434` (accessible from network)
+
+**Verification:**
+```bash
+# List models
+ssh macstudio "ollama list"
+
+# Test API
+curl http://192.168.1.10:11434/api/tags
+
+# Test from Docker container
+docker run --rm --network northstar-network curlimages/curl:latest \
+  curl -s http://host.docker.internal:11434/api/tags
+```
+
+### Perplexica with Ollama (AI-Powered Search)
+
+**Status:** ✅ Working with workaround
+
+**Configuration Location:** `docker/docker-compose.yml` and `docker/perplexica/config.toml`
+
+**Critical Environment Variables (docker-compose.yml):**
+```yaml
+environment:
+  - SEARXNG_API_URL=http://searxng:8080
+  - OLLAMA_BASE_URL=http://192.168.1.10:11434
+  - OLLAMA_API_URL=http://192.168.1.10:11434
+  - MODEL=llama3.1:8b
+  - CHAT_MODEL=llama3.1:8b
+  - ACTION_MODEL=llama3.1:8b
+  - WRITER_MODEL=llama3.1:8b
+  - CODER_MODEL=llama3.1:8b
+  - EMBEDDING_MODEL=nomic-embed-text
+```
+
+**Known Issue - UI Auto-Discovery Bug:**
+- Perplexica's UI auto-discovers all Ollama models and miscategorizes them
+- UI shows all models in both "Chat Models" and "Embedding Models" sections
+- **DO NOT use the UI to configure models** - it doesn't persist correctly
+
+**Workaround:**
+- Environment variables override UI configuration at runtime
+- Ignore the incorrect UI model display
+- The application works correctly despite UI showing wrong config
+- Models are properly used: `llama3.1:8b` for chat, `nomic-embed-text` for embeddings
+
+**Performance Notes:**
+- First query is slow (~60+ seconds) while Ollama loads model into memory
+- Subsequent queries should be faster (model stays loaded)
+- Concurrent requests supported via Ollama (10 parallel)
+
+**Access:**
+- Web UI: http://192.168.1.10:3001
+- Uses SearXNG (port 8080) for web search
+- Uses Ollama (port 11434) for AI inference
 
 ### Running the Application
 **Currently there is NO application to run.** The northstar-application module is empty. Only the domain model and persistence layer exist.
@@ -196,6 +339,119 @@ public class DomainService {
 
 **Location**: `northstar-persistence/src/main/java/com/northstar/funding/persistence/`
 
+### Query Generation Module (`northstar-query-generation`)
+
+**Status**: ✅ **FULLY IMPLEMENTED** - AI-powered search query generation with concurrent execution
+
+**Purpose**: Generate optimized search queries for funding discovery across multiple search engines using Ollama LLM.
+
+**Key Features**:
+- **AI-Powered Query Generation**: Uses Ollama (llama3.1:8b) via LangChain4j for intelligent query creation
+- **Engine-Specific Strategies**: Different query styles for keyword engines (Brave, Serper, SearXNG) vs AI engines (Tavily)
+- **24-Hour Caching**: Identical requests within 24 hours return cached results (Caffeine cache)
+- **Concurrent Execution**: Virtual Threads enable parallel query generation for multiple search engines
+- **Async Processing**: All operations non-blocking with CompletableFuture
+
+**Components**:
+
+**1. Query Generation Strategies** (`northstar-query-generation/src/main/java/...strategy/`):
+- `KeywordQueryStrategy` - Short, focused queries (3-8 words) for Brave, Serper, SearXNG
+  - Example: "Bulgaria educational funding grants", "Eastern Europe teacher scholarships"
+- `TavilyQueryStrategy` - Long, contextual queries (12-40 words) for Tavily AI search
+  - Example: "What European Union funding opportunities are available to support modernizing science and technology education programs in rural areas of Poland and Hungary?"
+- **Preamble Filtering**: Both strategies filter out LLM preambles like "Here are N queries:"
+
+**2. Services**:
+- `QueryGenerationService` - Main orchestrator with concurrent generation support
+  - `generateQueries()` - Single engine query generation
+  - `generateForMultipleProviders()` - Parallel generation for 4+ engines using Virtual Threads
+- `QueryCacheServiceImpl` - 24-hour Caffeine cache with database persistence
+
+**3. Configuration** (`OllamaConfig.java`):
+```java
+@Bean
+public ChatModel chatModel() {
+    return OpenAiChatModel.builder()
+        .baseUrl("http://192.168.1.10:11434/v1")  // Ollama OpenAI-compatible endpoint
+        .apiKey("not-needed")                      // Ollama doesn't require API key
+        .modelName("llama3.1:8b")                  // 8B model for reliable structured output
+        .timeout(Duration.ofSeconds(60))           // 60s for larger model
+        .maxTokens(150)
+        .temperature(0.7)
+        .build();
+}
+```
+
+**4. Application Configuration** (`application.yml`):
+```yaml
+query-generation:
+  lm-studio:
+    base-url: http://192.168.1.10:11434/v1
+    api-key: not-needed
+    timeout-seconds: 60
+    model-name: llama3.1:8b  # Reliable 8B model (qwen2.5:0.5b too small for structured output)
+  cache:
+    ttl-hours: 24
+    max-size: 1000
+```
+
+**5. Query Parsing** (Critical Implementation Detail):
+Both strategies parse LLM responses with robust filtering:
+```java
+private List<String> parseQueries(String response, int maxQueries) {
+    return Arrays.stream(response.split("\n"))
+        .map(String::trim)
+        .filter(line -> !line.isEmpty())
+        .filter(line -> !isPreamble(line))          // Filter preambles
+        .map(line -> line.replaceFirst("^\\d+\\.\\s*", ""))  // Remove "1. " prefix
+        .map(line -> line.replaceAll("^\"+|\"+$", ""))       // Remove quotes
+        .filter(line -> !line.isEmpty())
+        .limit(maxQueries)
+        .collect(Collectors.toList());
+}
+
+private boolean isPreamble(String line) {
+    String lower = line.toLowerCase();
+    return lower.startsWith("here are") ||
+           lower.startsWith("here is") ||
+           lower.contains("search queries:") ||
+           lower.contains("queries:");
+}
+```
+
+**Integration Tests** (58 tests, all passing):
+- `SingleProviderQueryGenerationTest` - Validates query generation for each engine
+- `CacheHitTest` - Validates 24-hour cache behavior and fast retrieval (<50ms)
+- `KeywordVsAiOptimizedTest` - Validates different query styles for keyword vs AI engines
+- `MultiProviderParallelTest` - Validates concurrent generation for 4 engines simultaneously
+- `QueryPersistenceTest` - Validates database persistence with correct metadata
+
+**Test Coverage**:
+- ✅ All 58 tests passing (100% pass rate)
+- ✅ Concurrent generation completes in <30s for 4 engines (not sequential 4×5s=20s)
+- ✅ Keyword queries: 3-10 words, focused and targeted
+- ✅ AI queries: 12-40 words, contextual and natural language
+- ✅ Cache hit retrieval: <50ms (vs seconds for LLM call)
+- ✅ Database persistence: Saves query text, model name, engine, categories, geographic scope
+
+**Model Selection** (llama3.1:8b chosen over qwen2.5:0.5b):
+- ✅ **llama3.1:8b**: Reliably generates exact query counts, follows structured prompts, produces quality output
+- ❌ **qwen2.5:0.5b**: Fast (397MB) but unreliable - sometimes generates 2 queries instead of 3, concatenates queries, includes numbering prefixes
+
+**Key Design Decisions**:
+- **Ollama over LM Studio**: Concurrent request support (`OLLAMA_NUM_PARALLEL=10`) enables parallel query generation
+- **LangChain4j**: Provides OpenAI-compatible client with proper streaming, timeouts, and error handling
+- **Virtual Threads**: Java 21+ feature enables efficient concurrent operations without complex thread pools
+- **Caffeine Cache**: In-memory cache with TTL for fast retrieval of identical requests
+- **Database Persistence**: Queries saved with metadata for analytics and audit trail
+
+**Location**: `northstar-query-generation/src/main/java/com/northstar/funding/querygeneration/`
+
+**Not Yet Implemented**:
+- Integration with search engine adapters (queries generated but not executed)
+- Dynamic prompt tuning based on search result quality
+- Multi-language query generation (currently English only)
+
 ### Crawler Module (`northstar-crawler`)
 
 **Status**: Partial implementation - search result processing pipeline only
@@ -282,8 +538,10 @@ SearchResult → Extract Domain → Check Duplicate → Check Blacklist
 - V8: `domain` - Domain deduplication and blacklist
 - V9: Update candidate_status enum for two-phase workflow
 
+**Query Generation Tables (Implemented):**
+- V10: `search_queries` - Query library (used by northstar-query-generation module)
+
 **Tables for Planned Features (Schema Exists, No Application Code):**
-- V10: `search_queries` - Query library (planned)
 - V11: `search_session_statistics` - Per-engine performance metrics (planned)
 - V12: Extend discovery_session for search tracking
 - V13: `query_generation_sessions` - AI query generation tracking (planned)

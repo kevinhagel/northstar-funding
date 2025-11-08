@@ -71,12 +71,12 @@ class MultiProviderParallelTest {
 
         Duration totalTime = Duration.between(start, Instant.now());
 
-        // Assert - All providers returned queries
+        // Assert - All providers returned queries (llama3.1:8b should be reliable)
         assertThat(results).hasSize(4);
         assertThat(results.get(SearchEngineType.BRAVE)).hasSize(5);
         assertThat(results.get(SearchEngineType.SERPER)).hasSize(5);
         assertThat(results.get(SearchEngineType.SEARXNG)).hasSize(5);
-        // Smaller models may generate fewer queries than requested
+        // Tavily may generate 2-5 queries (AI-optimized, different strategy)
         assertThat(results.get(SearchEngineType.TAVILY))
                 .hasSizeGreaterThanOrEqualTo(2)
                 .hasSizeLessThanOrEqualTo(5);
@@ -112,10 +112,10 @@ class MultiProviderParallelTest {
                 )
                 .get(30, TimeUnit.SECONDS);
 
-        // Assert
+        // Assert - llama3.1:8b should generate exact counts
         assertThat(results).hasSize(2);
         assertThat(results.get(SearchEngineType.BRAVE)).hasSize(3);
-        // Smaller models may generate fewer queries than requested
+        // Tavily may generate 2-3 queries (AI-optimized)
         assertThat(results.get(SearchEngineType.TAVILY))
                 .hasSizeGreaterThanOrEqualTo(2)
                 .hasSizeLessThanOrEqualTo(3);

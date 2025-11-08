@@ -105,7 +105,7 @@ class SingleProviderQueryGenerationTest {
                 .generateQueries(request)
                 .get(30, TimeUnit.SECONDS);
 
-        // Assert
+        // Assert - llama3.1:8b should reliably generate exact count
         assertThat(response.getSearchEngine()).isEqualTo(SearchEngineType.SERPER);
         assertThat(response.getQueries()).hasSize(3);
         assertThat(response.isFromCache()).isFalse();
@@ -132,7 +132,7 @@ class SingleProviderQueryGenerationTest {
                 .generateQueries(request)
                 .get(30, TimeUnit.SECONDS);
 
-        // Assert
+        // Assert - llama3.1:8b should reliably generate exact count
         assertThat(response.getSearchEngine()).isEqualTo(SearchEngineType.SEARXNG);
         assertThat(response.getQueries()).hasSize(3);
         assertThat(response.isFromCache()).isFalse();

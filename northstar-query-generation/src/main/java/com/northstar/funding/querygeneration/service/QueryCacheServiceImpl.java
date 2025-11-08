@@ -91,7 +91,7 @@ public class QueryCacheServiceImpl implements QueryCacheService {
                             .createdAt(Instant.now())
                             .updatedAt(Instant.now())
                             .generationMethod("AI_GENERATED")
-                            .aiModelUsed("lm-studio")
+                            .aiModelUsed("ollama-llama3.1:8b")
                             .generationDate(LocalDate.now())
                             .build();
 
