@@ -1,0 +1,38 @@
+spring:
+  # Kafka configuration (TestContainers will override via @DynamicPropertySource)
+  kafka:
+    bootstrap-servers: localhost:9092
+    consumer:
+      group-id: test-group
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: com.northstar.funding.kafka.events
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+    listener:
+      ack-mode: manual
+
+  # PostgreSQL for DomainService dependency
+  datasource:
+    url: jdbc:postgresql://localhost:5432/testdb
+    username: test
+    password: test
+
+  flyway:
+    enabled: true
+    clean-disabled: false
+
+  # Redis/Valkey (TestContainers will override via @DynamicPropertySource if needed)
+  data:
+    redis:
+      host: localhost
+      port: 6379
+
+logging:
+  level:
+    com.northstar.funding: DEBUG
+    org.springframework.kafka: INFO
+    org.testcontainers: INFO
