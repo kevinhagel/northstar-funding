@@ -20,16 +20,16 @@ import java.time.Duration;
 @Configuration
 public class OllamaConfig {
 
-    @Value("${query-generation.lm-studio.base-url:http://192.168.1.10:1234/v1}")
+    @Value("${query-generation.ollama.base-url:http://192.168.1.10:11434/v1}")
     private String baseUrl;
 
-    @Value("${query-generation.lm-studio.api-key:not-needed}")
+    @Value("${query-generation.ollama.api-key:not-needed}")
     private String apiKey;
 
-    @Value("${query-generation.lm-studio.timeout-seconds:30}")
+    @Value("${query-generation.ollama.timeout-seconds:60}")
     private int timeoutSeconds;
 
-    @Value("${query-generation.lm-studio.model-name:local-model}")
+    @Value("${query-generation.ollama.model-name:llama3.1:8b}")
     private String modelName;
 
     /**

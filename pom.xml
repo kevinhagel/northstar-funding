@@ -23,6 +23,7 @@
         <module>northstar-kafka-common</module>
         <module>northstar-search-adapters</module>
         <module>northstar-search-workflow</module>
+        <module>northstar-rest-api</module>
     </modules>
 
     <properties>
