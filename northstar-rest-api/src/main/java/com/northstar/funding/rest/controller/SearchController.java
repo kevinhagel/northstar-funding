@@ -1,5 +1,6 @@
 package com.northstar.funding.rest.controller;
 
+import com.northstar.funding.domain.DiscoverySession;
 import com.northstar.funding.kafka.events.SearchRequestEvent;
 import com.northstar.funding.persistence.service.DiscoverySessionService;
 import com.northstar.funding.querygeneration.service.QueryGenerationService;
@@ -94,19 +95,20 @@ public class SearchController {
                 request.projectScale(),
                 request.queryLanguage());
 
-        // 1. Generate search queries using AI (for all search engines)
-        UUID sessionId = UUID.randomUUID();
-        List<String> queries = generateQueriesForAllEngines(request, sessionId);
-
-        log.info("✅ Generated {} search queries across multiple engines", queries.size());
-
-        // 2. Create discovery session
+        // 1. Create discovery session first (database will auto-generate sessionId)
         var session = com.northstar.funding.domain.DiscoverySession.builder()
-                .sessionId(sessionId)
                 .status(com.northstar.funding.domain.SessionStatus.RUNNING)
                 .sessionType(com.northstar.funding.domain.SessionType.MANUAL)
                 .build();
-        sessionService.createSession(session);
+        DiscoverySession savedSession = sessionService.createSession(session);
+        UUID sessionId = savedSession.getSessionId();
+
+        log.info("📋 Created discovery session: sessionId={}", sessionId);
+
+        // 2. Generate search queries using AI (for all search engines)
+        List<String> queries = generateQueriesForAllEngines(request, sessionId);
+
+        log.info("✅ Generated {} search queries across multiple engines", queries.size());
 
         // 3. Publish SearchRequestEvent for each query
         queries.forEach(query -> {

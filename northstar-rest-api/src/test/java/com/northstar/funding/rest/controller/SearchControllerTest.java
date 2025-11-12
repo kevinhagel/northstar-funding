@@ -62,6 +62,15 @@ class SearchControllerTest {
 
     @Test
     void executeSearch_WithValidRequest_ReturnsInitiatedStatus() {
+        // Given - mock discovery session service to return a session with auto-generated ID
+        var mockSession = DiscoverySession.builder()
+                .sessionId(java.util.UUID.randomUUID())
+                .status(SessionStatus.RUNNING)
+                .sessionType(SessionType.MANUAL)
+                .build();
+        when(discoverySessionService.createSession(any(DiscoverySession.class)))
+                .thenReturn(mockSession);
+
         // Given - mock query generation service to return 3 queries per engine (9 total)
         when(queryGenerationService.generateQueries(any()))
                 .thenReturn(CompletableFuture.completedFuture(
@@ -118,6 +127,15 @@ class SearchControllerTest {
 
         // Clear any existing messages by consuming them
         KafkaTestUtils.getRecords(consumer, Duration.ofMillis(100));
+
+        // Given - mock discovery session service to return a session with auto-generated ID
+        var mockSession = DiscoverySession.builder()
+                .sessionId(java.util.UUID.randomUUID())
+                .status(SessionStatus.RUNNING)
+                .sessionType(SessionType.MANUAL)
+                .build();
+        when(discoverySessionService.createSession(any(DiscoverySession.class)))
+                .thenReturn(mockSession);
 
         // Given - mock query generation service
         when(queryGenerationService.generateQueries(any()))
