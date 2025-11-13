@@ -60,7 +60,8 @@
       "Bash(git push:*)",
       "Bash(mvn spring-boot:run:*)",
       "Bash(mvn:*)",
-      "Bash(bash -c:*)"
+      "Bash(bash -c:*)",
+      "Bash(time mvn test:*)"
     ],
     "deny": [],
     "ask": []

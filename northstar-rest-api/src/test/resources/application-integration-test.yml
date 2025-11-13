@@ -1,0 +1,46 @@
+spring:
+  # DataSource configured dynamically by TestContainers via @DynamicPropertySource
+  datasource:
+    # url, username, password set by AbstractIntegrationTest
+    driver-class-name: org.postgresql.Driver
+
+  # Kafka configured dynamically by TestContainers via @DynamicPropertySource
+  kafka:
+    # bootstrap-servers set by AbstractIntegrationTest
+    consumer:
+      auto-offset-reset: earliest
+      group-id: integration-test-group
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: "*"
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+
+  # Flyway migrations for schema creation
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    validate-on-migrate: true
+
+# Query generation configuration (Ollama will be mocked in tests)
+query-generation:
+  ollama:
+    base-url: http://192.168.1.10:11434/v1
+    api-key: not-needed
+    timeout-seconds: 60
+    model-name: llama3.1:8b
+  cache:
+    ttl-hours: 24
+    max-size: 1000
+
+# Logging configuration for tests
+logging:
+  level:
+    com.northstar.funding: DEBUG
+    org.testcontainers: INFO
+    org.springframework.kafka: INFO
+    org.springframework.test: INFO
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE

@@ -1,23 +1,15 @@
 package com.northstar.funding.persistence.repository;
 
 import java.time.LocalDateTime;
-import java.util.List;
 import java.util.UUID;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.data.jdbc.DataJdbcTest;
-import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.DynamicPropertyRegistry;
-import org.springframework.test.context.DynamicPropertySource;
-import org.testcontainers.containers.PostgreSQLContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
 
 import com.northstar.funding.domain.Domain;
 import com.northstar.funding.domain.DomainStatus;
+import com.northstar.funding.persistence.AbstractPersistenceIntegrationTest;
 
 import java.math.BigDecimal;
 
@@ -29,27 +21,9 @@ import static org.assertj.core.api.Assertions.assertThat;
  * Tests domain-level deduplication, blacklisting, quality tracking.
  * Uses TestContainers with PostgreSQL for realistic testing.
  *
- * Pattern: @DataJdbcTest - One test class per repository
- * Reference: SearchQueryRepositoryTest.java
+ * Extends AbstractPersistenceIntegrationTest for shared TestContainers configuration.
  */
-@DataJdbcTest
-@Testcontainers
-@ActiveProfiles("postgres-test")
-@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
-class DomainRepositoryTest {
-
-    @Container
-    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:16-alpine")
-        .withDatabaseName("test")
-        .withUsername("test")
-        .withPassword("test");
-
-    @DynamicPropertySource
-    static void configureProperties(DynamicPropertyRegistry registry) {
-        registry.add("spring.datasource.url", postgres::getJdbcUrl);
-        registry.add("spring.datasource.username", postgres::getUsername);
-        registry.add("spring.datasource.password", postgres::getPassword);
-    }
+class DomainRepositoryIntegrationTest extends AbstractPersistenceIntegrationTest {
 
     @Autowired
     private DomainRepository repository;
@@ -113,7 +87,7 @@ class DomainRepositoryTest {
         LocalDateTime futureRetry = now.plusHours(1);
 
         Domain ready = Domain.builder()
-            
+
             .domainName("ready.org")
             .status(DomainStatus.PROCESSING_FAILED)
             .retryAfter(pastRetry)
@@ -121,7 +95,7 @@ class DomainRepositoryTest {
             .build();
 
         Domain notReady = Domain.builder()
-            
+
             .domainName("not-ready.org")
             .status(DomainStatus.PROCESSING_FAILED)
             .retryAfter(futureRetry)
@@ -143,7 +117,7 @@ class DomainRepositoryTest {
     void testFindHighQualityDomains() {
         // Given
         Domain highQuality1 = Domain.builder()
-            
+
             .domainName("high1.org")
             .status(DomainStatus.PROCESSED_HIGH_QUALITY)
             .highQualityCandidateCount(5)
@@ -152,7 +126,7 @@ class DomainRepositoryTest {
             .build();
 
         Domain highQuality2 = Domain.builder()
-            
+
             .domainName("high2.org")
             .status(DomainStatus.PROCESSED_HIGH_QUALITY)
             .highQualityCandidateCount(3)
@@ -161,7 +135,7 @@ class DomainRepositoryTest {
             .build();
 
         Domain lowCount = Domain.builder()
-            
+
             .domainName("low.org")
             .status(DomainStatus.PROCESSED_HIGH_QUALITY)
             .highQualityCandidateCount(1)
@@ -215,7 +189,7 @@ class DomainRepositoryTest {
     void testFindNoFundsForYear() {
         // Given
         Domain noFunds2024 = Domain.builder()
-            
+
             .domainName("nofunds2024.org")
             .status(DomainStatus.NO_FUNDS_THIS_YEAR)
             .noFundsYear(2024)
@@ -223,7 +197,7 @@ class DomainRepositoryTest {
             .build();
 
         Domain noFunds2025 = Domain.builder()
-            
+
             .domainName("nofunds2025.org")
             .status(DomainStatus.NO_FUNDS_THIS_YEAR)
             .noFundsYear(2025)
@@ -265,14 +239,14 @@ class DomainRepositoryTest {
         LocalDateTime twoDaysAgo = now.minusDays(2);
 
         Domain recent = Domain.builder()
-            
+
             .domainName("recent.org")
             .status(DomainStatus.DISCOVERED)
             .discoveredAt(oneHourAgo)
             .build();
 
         Domain old = Domain.builder()
-            
+
             .domainName("old.org")
             .status(DomainStatus.DISCOVERED)
             .discoveredAt(twoDaysAgo)
@@ -293,7 +267,7 @@ class DomainRepositoryTest {
     void testFindFrequentlyProcessedDomains() {
         // Given
         Domain frequent = Domain.builder()
-            
+
             .domainName("frequent.org")
             .status(DomainStatus.PROCESSED_HIGH_QUALITY)
             .processingCount(10)
@@ -302,7 +276,7 @@ class DomainRepositoryTest {
             .build();
 
         Domain infrequent = Domain.builder()
-            
+
             .domainName("infrequent.org")
             .status(DomainStatus.PROCESSED_HIGH_QUALITY)
             .processingCount(2)
@@ -362,7 +336,7 @@ class DomainRepositoryTest {
     void testGetAverageConfidenceScore() {
         // Given
         Domain domain1 = Domain.builder()
-            
+
             .domainName("domain1.org")
             .status(DomainStatus.PROCESSED_HIGH_QUALITY)
             .bestConfidenceScore(new BigDecimal("0.80"))
@@ -370,7 +344,7 @@ class DomainRepositoryTest {
             .build();
 
         Domain domain2 = Domain.builder()
-            
+
             .domainName("domain2.org")
             .status(DomainStatus.PROCESSED_HIGH_QUALITY)
             .bestConfidenceScore(new BigDecimal("0.90"))
@@ -392,7 +366,7 @@ class DomainRepositoryTest {
     void testGetTotalCandidateCount() {
         // Given
         Domain domain = Domain.builder()
-            
+
             .domainName("test.org")
             .status(DomainStatus.PROCESSED_HIGH_QUALITY)
             .highQualityCandidateCount(5)
@@ -414,15 +388,6 @@ class DomainRepositoryTest {
         return Domain.builder()
             .domainName(domainName)
             .status(status)
-            .discoveredAt(LocalDateTime.now())
-            .build();
-    }
-
-    private Domain createDomain(String domainName, DomainStatus status, UUID discoverySessionId) {
-        return Domain.builder()
-            .domainName(domainName)
-            .status(status)
-            .discoverySessionId(discoverySessionId)
             .discoveredAt(LocalDateTime.now())
             .build();
     }

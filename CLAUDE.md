@@ -671,36 +671,117 @@ class DomainServiceTest {
 
 ### Integration Tests (TestContainers)
 
-**Status**: NOT YET IMPLEMENTED. Planned for future development.
+**Status**: ✅ IMPLEMENTED - Feature 011 (Docker-based integration tests)
 
-**When implemented**, follow this pattern:
+**Infrastructure**:
+- PostgreSQL 16 Alpine container
+- Kafka 7.4.0 KRaft mode (no Zookeeper)
+- Singleton container pattern with reuse enabled
+- Base classes: `AbstractIntegrationTest` (REST API), `AbstractPersistenceIntegrationTest` (repositories)
+
+**Test Organization**:
+- REST API tests: `northstar-rest-api/src/test/java/.../rest/integration/`
+  - `SearchWorkflowIntegrationTest` - End-to-end REST → Kafka → Database workflow (3 scenarios)
+  - `DatabasePersistenceIntegrationTest` - Session persistence verification (2 scenarios)
+  - `KafkaIntegrationTest` - Event publication and structure validation (2 scenarios)
+  - `ContainerConnectivityTest` - Docker/TestContainers connectivity verification
+- Repository tests: `northstar-persistence/src/test/java/.../repository/`
+  - `DomainRepositoryIntegrationTest` (15 tests)
+  - `FundingProgramRepositoryIntegrationTest` (14 tests)
+  - `OrganizationRepositoryIntegrationTest` (11 tests)
+  - `AdminUserRepositoryIntegrationTest` (14 tests)
+  - `SearchResultRepositoryIntegrationTest` (13 tests)
+
+**REST API Integration Test Pattern** (extend `AbstractIntegrationTest`):
 ```java
-@SpringBootTest
-@Testcontainers
 @Transactional
-@ActiveProfiles("postgres-test")
-public class YourIntegrationTest {
-    @Container
-    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:16-alpine")
-        .withDatabaseName("testdb")
-        .withUsername("test")
-        .withPassword("test");
+public class YourIntegrationTest extends AbstractIntegrationTest {
+    @Autowired
+    private TestRestTemplate restTemplate;
 
-    @DynamicPropertySource
-    static void configureProperties(DynamicPropertyRegistry registry) {
-        registry.add("spring.datasource.url", postgres::getJdbcUrl);
-        registry.add("spring.datasource.username", postgres::getUsername);
-        registry.add("spring.datasource.password", postgres::getPassword);
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
+
+    @Test
+    void testEndpoint() {
+        // Given - Mock services
+        when(queryGenerationService.generateQueries(any()))
+            .thenReturn(CompletableFuture.completedFuture(response));
+
+        // When - Execute REST call
+        ResponseEntity<Response> result = restTemplate.postForEntity(
+            "/api/search/execute",
+            request,
+            Response.class
+        );
+
+        // Then - Verify response, database, Kafka
+        assertThat(result.getStatusCode()).isEqualTo(HttpStatus.OK);
     }
 }
 ```
 
-**See**: `northstar-notes/decisions/002-testcontainers-integration-test-pattern.md`
+**Repository Integration Test Pattern** (extend `AbstractPersistenceIntegrationTest`):
+```java
+class YourRepositoryIntegrationTest extends AbstractPersistenceIntegrationTest {
+    @Autowired
+    private YourRepository repository;
+
+    @BeforeEach
+    void setUp() {
+        repository.deleteAll();
+    }
+
+    @Test
+    void testRepositoryMethod() {
+        // Given
+        Entity entity = createTestEntity();
+
+        // When
+        repository.save(entity);
+
+        // Then
+        var found = repository.findById(entity.getId());
+        assertThat(found).isPresent();
+    }
+}
+```
+
+**Key Features**:
+- **Container Reuse**: `@Container` with `withReuse(true)` for fast execution
+- **@Transactional**: Automatic rollback after each test for isolation
+- **Mocked Services**: `@MockBean` for QueryGenerationService and DiscoverySessionService
+- **Test Utilities**: `TestFixtures`, `ExpectedDatabaseState`, `ExpectedKafkaEvents`
+- **Docker Configuration**: See `DOCKER-SETUP.md` for local/remote Docker setup
+
+**Running Integration Tests**:
+```bash
+# All REST API integration tests
+mvn test -Dtest='*IntegrationTest' -pl northstar-rest-api
+
+# All repository integration tests
+mvn test -Dtest='*IntegrationTest' -pl northstar-persistence
+
+# Specific test
+mvn test -Dtest=SearchWorkflowIntegrationTest -pl northstar-rest-api
+
+# Container connectivity verification
+mvn test -Dtest=ContainerConnectivityTest -pl northstar-rest-api
+```
+
+**Prerequisites**: Docker must be running (see `DOCKER-SETUP.md`)
+
+**See**:
+- `DOCKER-SETUP.md` - Docker setup and troubleshooting
+- `northstar-notes/decisions/002-testcontainers-integration-test-pattern.md` - Architecture decision
+- `specs/011-create-comprehensive-docker/` - Feature specification
 
 ### Running Tests
+
+**Unit Tests** (fast, no Docker required):
 ```bash
-# All tests
-mvn test
+# All unit tests (exclude integration tests)
+mvn test -Dtest='!*IntegrationTest'
 
 # Specific service test
 mvn test -Dtest=DomainServiceTest
@@ -713,6 +794,34 @@ mvn test -pl northstar-crawler
 
 # SearchResultProcessor tests
 mvn test -Dtest=SearchResultProcessorTest
+```
+
+**Integration Tests** (requires Docker):
+```bash
+# All integration tests (REST API + Repositories)
+mvn test -Dtest='*IntegrationTest'
+
+# REST API integration tests only
+mvn test -Dtest='*IntegrationTest' -pl northstar-rest-api
+
+# Repository integration tests only
+mvn test -Dtest='*IntegrationTest' -pl northstar-persistence
+
+# Specific integration test
+mvn test -Dtest=SearchWorkflowIntegrationTest -pl northstar-rest-api
+
+# Container connectivity verification
+mvn test -Dtest=ContainerConnectivityTest -pl northstar-rest-api
+```
+
+**All Tests** (unit + integration):
+```bash
+# Run everything (requires Docker)
+mvn test
+
+# Specific module
+mvn test -pl northstar-rest-api
+mvn test -pl northstar-persistence
 ```
 
 ## Development Workflow
