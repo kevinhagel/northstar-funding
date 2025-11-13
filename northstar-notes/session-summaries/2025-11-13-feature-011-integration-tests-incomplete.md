@@ -1,8 +1,9 @@
 # Feature 011: Docker-based Integration Tests - INCOMPLETE/BLOCKED
 
 **Date**: 2025-11-13
-**Status**: ⚠️ INCOMPLETE - Architectural blocker encountered
-**Branch**: 011-integration-tests
+**Status**: ⚠️ INCOMPLETE/BLOCKED - Merged to main with partial completion
+**Branch**: 011-create-comprehensive-docker (merged to main)
+**Commit**: 9fd2d80
 **Time Invested**: ~3 hours
 **Success Rate**: 60% (infrastructure complete, REST API tests blocked)
 
@@ -99,13 +100,16 @@ ExpectedDatabaseState.assertSessionCreated(sessionId, jdbcTemplate);  // Always 
 
 ## Decision
 
-**Mark Feature 011 as INCOMPLETE/BLOCKED** and move on.
+**Marked Feature 011 as INCOMPLETE/BLOCKED and merged to main.**
 
 **Rationale**:
 - Time invested (3+ hours) exceeded value
 - Architectural issue requires fundamental redesign
 - Repository tests already provide database validation
 - REST API unit tests already exist
+- User decision: "Repository tests are sufficient for database validation. Move on, close this feature, mark it as incomplete/blocked"
+
+**Final Action**: Committed, pushed, and merged to main on 2025-11-13 at 15:07 EET.
 
 ## Files Created
 
