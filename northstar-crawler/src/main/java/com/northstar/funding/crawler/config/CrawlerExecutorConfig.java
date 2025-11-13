@@ -16,7 +16,7 @@ import java.util.concurrent.Executors;
  * Constitutional requirement: NO WebFlux/Reactive - use Virtual Threads instead.
  */
 @Configuration
-public class VirtualThreadConfig {
+public class CrawlerExecutorConfig {
 
     /**
      * Creates an unbounded Virtual Thread executor for search operations.

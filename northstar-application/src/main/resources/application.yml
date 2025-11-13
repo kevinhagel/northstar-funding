@@ -1,0 +1,90 @@
+# Server Configuration
+server:
+  port: 8090  # Non-conflicting port (not 8080)
+
+spring:
+  application:
+    name: northstar-funding-discovery
+
+  # DataSource Configuration (PostgreSQL on Mac Studio)
+  datasource:
+    url: jdbc:postgresql://192.168.1.10:5432/northstar_funding
+    username: northstar_user
+    password: northstar_password
+    driver-class-name: org.postgresql.Driver
+
+  # Spring Data JDBC Configuration
+  data:
+    jdbc:
+      repositories:
+        enabled: true
+
+  # Kafka Configuration (Mac Studio)
+  kafka:
+    bootstrap-servers: 192.168.1.10:9092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+    consumer:
+      group-id: northstar-search-workflow
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: com.northstar.funding.kafka.events
+    listener:
+      ack-mode: manual
+
+  # Redis/Valkey Configuration (Mac Studio)
+  data.redis:
+    host: 192.168.1.10
+    port: 6379
+    timeout: 2000ms
+
+# Query Generation Configuration (Ollama)
+query-generation:
+  ollama:
+    base-url: http://192.168.1.10:11434/v1
+    api-key: not-needed
+    timeout-seconds: 60
+    model-name: llama3.1:8b
+  cache:
+    ttl-hours: 24
+    max-size: 1000
+
+# Search Adapters Configuration
+search:
+  searxng:
+    base-url: http://192.168.1.10:8080
+    timeout-seconds: 10
+    max-results: 25
+
+# SpringDoc OpenAPI Configuration
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    enabled: true
+    tags-sorter: alpha
+    operations-sorter: alpha
+  show-actuator: true
+
+# Actuator Configuration
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: when-authorized
+
+# Logging Configuration
+logging:
+  level:
+    root: INFO
+    com.northstar.funding: DEBUG
+    org.springframework.kafka: WARN
+    org.springframework.data.jdbc: DEBUG
+  pattern:
+    console: "%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"

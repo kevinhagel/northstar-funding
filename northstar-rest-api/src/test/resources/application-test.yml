@@ -1,0 +1,28 @@
+spring:
+  kafka:
+    bootstrap-servers: ${spring.embedded.kafka.brokers}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+
+  # Disable database for REST API tests (not needed)
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
+      - org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
+
+query-generation:
+  ollama:
+    base-url: http://192.168.1.10:11434/v1
+    api-key: not-needed
+    timeout-seconds: 60
+    model-name: llama3.1:8b
+  cache:
+    ttl-hours: 24
+    max-size: 1000
+
+logging:
+  level:
+    com.northstar.funding: DEBUG
+    org.springframework.kafka: INFO

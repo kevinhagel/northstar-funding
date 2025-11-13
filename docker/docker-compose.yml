@@ -1,14 +1,96 @@
 
 # NorthStar Funding Discovery - Docker Compose Infrastructure
-# Constitutional Compliance: PostgreSQL + pgAdmin + Qdrant + SearXNG
+# Constitutional Compliance: PostgreSQL + pgAdmin + Qdrant + SearXNG + Kafka + Valkey
 # Deployment Target: Mac Studio (192.168.1.10)
-# LM Studio runs natively on Mac Studio (not in Docker)
+# Ollama runs natively on Mac Studio (not in Docker)
 
 services:
   # =========================================
+  # MESSAGE BROKER
+  # =========================================
+
+  kafka:
+    image: confluentinc/cp-kafka:7.4.0
+    container_name: northstar-kafka
+    hostname: kafka
+    ports:
+      - "9092:9092"
+      - "9094:9094"
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://192.168.1.10:9092
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:29093
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:29092,CONTROLLER://0.0.0.0:29093,PLAINTEXT_HOST://0.0.0.0:9092
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'true'
+      KAFKA_DELETE_TOPIC_ENABLE: 'true'
+      KAFKA_LOG_RETENTION_HOURS: 168
+      KAFKA_LOG_SEGMENT_BYTES: 1073741824
+      KAFKA_LOG_RETENTION_CHECK_INTERVAL_MS: 300000
+      CLUSTER_ID: 'MkU3OEVBNTcwNTJENDM2Qk'
+    volumes:
+      - kafka-data:/var/lib/kafka/data
+    networks:
+      - northstar-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "kafka-broker-api-versions", "--bootstrap-server", "localhost:9092"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # =========================================
+  # CACHE & SESSION STORE
+  # =========================================
+
+  valkey:
+    image: valkey/valkey:7.2
+    container_name: northstar-valkey
+    hostname: valkey
+    ports:
+      - "6379:6379"
+    command: >
+      valkey-server
+      --appendonly yes
+      --appendfsync everysec
+      --maxmemory 2gb
+      --maxmemory-policy allkeys-lru
+      --save 900 1
+      --save 300 10
+      --save 60 10000
+    volumes:
+      - valkey-data:/data
+    networks:
+      - northstar-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "valkey-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # =========================================
   # DATABASE SERVICES
   # =========================================
-  
+
   # PostgreSQL 16 - Primary Database (Constitutional Requirement)
   postgres:
     image: postgres:16
@@ -39,43 +121,27 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
+    command: >
+      postgres
+      -c max_connections=200
+      -c shared_buffers=256MB
+      -c effective_cache_size=1GB
+      -c maintenance_work_mem=64MB
+      -c checkpoint_completion_target=0.9
+      -c wal_buffers=16MB
+      -c default_statistics_target=100
+      -c random_page_cost=1.1
+      -c effective_io_concurrency=200
+      -c work_mem=4MB
+      -c min_wal_size=1GB
+      -c max_wal_size=4GB
 
-  # pgAdmin - PostgreSQL Administration Interface
-  pgadmin:
-    image: dpage/pgadmin4:latest
-    container_name: northstar-pgadmin
-    hostname: pgadmin
-    ports:
-      - "5050:80"
-    environment:
-      PGADMIN_DEFAULT_EMAIL: kevin@northstar.bg
-      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-admin123}
-      PGADMIN_CONFIG_SERVER_MODE: 'False'
-      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: 'False'
-    volumes:
-      - pgadmin-data:/var/lib/pgadmin
-    networks:
-      - northstar-network
-    restart: unless-stopped
-    depends_on:
-      postgres:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost/misc/ping"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-    logging:
-      driver: json-file
-      options:
-        max-size: "10m"
-        max-file: "3"
-
+  # =========================================
   # VECTOR DATABASE
   # =========================================
   qdrant:
     image: qdrant/qdrant:latest
-    container_name: qdrant
+    container_name: northstar-qdrant
     hostname: qdrant
     ports:
       - "6333:6333"
@@ -108,13 +174,12 @@ services:
         max-size: "10m"
         max-file: "3"
 
-  # SearXNG - Open Source Search Engine for Funding Discovery
   # =========================================
   # SEARCH ENGINE
   # =========================================
 
   searxng:
-    container_name: searxng
+    container_name: northstar-searxng
     image: docker.io/searxng/searxng:latest
     restart: unless-stopped
     ports:
@@ -127,6 +192,9 @@ services:
       - SEARXNG_USERAGENT_WHITELIST=.*
       - SEARXNG_DEFAULT_LANG=en
       - SEARXNG_ENGINES_CATEGORIES=general,news,science
+    depends_on:
+      valkey:
+        condition: service_healthy
     networks:
       - northstar-network
     healthcheck:
@@ -147,13 +215,14 @@ services:
         max-size: "1m"
         max-file: "1"
 
-  # Perplexica - AI Search Engine (Perplexity Clone)
+  # =========================================
+  # AI SEARCH (PERPLEXICA)
   # =========================================
   # Version: v1.11.2 (latest as of 2025-11-07)
   # Ollama integration (replaces LM Studio)
   perplexica:
     image: itzcrazykns1337/perplexica:latest
-    container_name: perplexica
+    container_name: northstar-perplexica
     hostname: perplexica
     ports:
       - "3001:3000"
@@ -192,6 +261,132 @@ services:
         max-size: "10m"
         max-file: "3"
 
+  # =========================================
+  # LLM CHAT INTERFACE
+  # =========================================
+
+  # Open WebUI - Modern LLM Chat Interface
+  # Replacement for Perplexica's chat functionality
+  # Respects model configuration, fast responses (4-6s), no auto-discovery issues
+  # Access: http://192.168.1.10:3002
+  open-webui:
+    image: ghcr.io/open-webui/open-webui:main
+    container_name: northstar-open-webui
+    hostname: open-webui
+    ports:
+      - "3002:8080"
+    environment:
+      - OLLAMA_BASE_URL=http://192.168.1.10:11434
+      - WEBUI_SECRET_KEY=northstar-secret-key-change-in-production
+      - ENABLE_SIGNUP=true
+      - DEFAULT_USER_ROLE=user
+      - WEBUI_NAME=NorthStar LLM Chat
+      - DEFAULT_MODELS=llama3.1:8b
+    volumes:
+      - open-webui-data:/app/backend/data
+    networks:
+      - northstar-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # =========================================
+  # MANAGEMENT TOOLS
+  # =========================================
+
+  # pgAdmin - PostgreSQL Administration Interface
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: northstar-pgadmin
+    hostname: pgadmin
+    ports:
+      - "5050:80"
+    environment:
+      PGADMIN_DEFAULT_EMAIL: kevin@northstar.bg
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-admin123}
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: 'False'
+    volumes:
+      - pgadmin-data:/var/lib/pgadmin
+    networks:
+      - northstar-network
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/misc/ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Redis Commander - Valkey Administration Interface
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: northstar-redis-commander
+    hostname: redis-commander
+    ports:
+      - "8082:8081"
+    environment:
+      - REDIS_HOSTS=valkey:valkey:6379:0
+      - HTTP_USER=admin
+      - HTTP_PASSWORD=admin123
+    depends_on:
+      valkey:
+        condition: service_healthy
+    networks:
+      - northstar-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:8081 || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Kafka UI - Kafka Administration Interface
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: northstar-kafka-ui
+    hostname: kafka-ui
+    ports:
+      - "8081:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: northstar-cluster
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092
+      SERVER_SERVLET_CONTEXT_PATH: /kafka-ui
+      LOGGING_LEVEL_COM_PROVECTUS: DEBUG
+    depends_on:
+      kafka:
+        condition: service_healthy
+    networks:
+      - northstar-network
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
 # =========================================
 # NETWORKS
 # =========================================
@@ -209,6 +404,14 @@ networks:
 # =========================================
 
 volumes:
+  kafka-data:
+    name: northstar-kafka-data
+    driver: local
+
+  valkey-data:
+    name: northstar-valkey-data
+    driver: local
+
   postgres-data:
     name: northstar-postgres-data
     driver: local
@@ -229,24 +432,30 @@ volumes:
     name: northstar-perplexica-uploads
     driver: local
 
+  open-webui-data:
+    name: northstar-open-webui-data
+    driver: local
+
 # =========================================
-# CONSTITUTIONAL COMPLIANCE VERIFICATION
+# INFRASTRUCTURE SUMMARY
 # =========================================
 
-# ✅ Technology Stack (NON-NEGOTIABLE):
-#    - PostgreSQL 16 for structured data storage
-#    - pgAdmin for database administration
-#    - Qdrant for RAG/vector storage (when needed)
-#    - SearXNG for funding opportunity discovery
-#    - LM Studio runs NATIVELY on Mac Studio (not containerized)
+# ✅ Core Services:
+#    - Kafka (Message Broker) - Port 9092
+#    - Valkey (Cache) - Port 6379
+#    - PostgreSQL 16 (Database) - Port 5432
+#    - Qdrant (Vector DB) - Ports 6333, 6334
+#    - SearXNG (Search) - Port 8080
+#    - Perplexica (AI Search) - Port 3001
+#    - Open WebUI (LLM Chat) - Port 3002
 #
-# ✅ Complexity Management (ESSENTIAL):
-#    - 4 infrastructure services only
-#    - Single network, clear service boundaries
-#    - Application services (Backend/Frontend) deployed separately
+# ✅ Management Tools:
+#    - pgAdmin (PostgreSQL UI) - Port 5050
+#    - Redis Commander (Valkey UI) - Port 8082
+#    - Kafka UI (Kafka UI) - Port 8081
 #
-# ✅ Infrastructure Integration:
-#    - Mac Studio deployment target (192.168.1.10)
-#    - Persistent data volumes for reliability
-#    - Health monitoring for all services
-#    - Configuration files properly mounted
+# ✅ External Dependencies:
+#    - Ollama runs NATIVELY on Mac Studio (192.168.1.10:11434)
+#    - All services use single 'northstar-network' bridge network
+#    - Persistent volumes for all stateful services
+#

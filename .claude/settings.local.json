@@ -56,7 +56,11 @@
       "Bash(awk:*)",
       "Bash(xargs:*)",
       "Bash(scp:*)",
-      "mcp__perplexity-mcp__perplexity_search_web"
+      "mcp__perplexity-mcp__perplexity_search_web",
+      "Bash(git push:*)",
+      "Bash(mvn spring-boot:run:*)",
+      "Bash(mvn:*)",
+      "Bash(bash -c:*)"
     ],
     "deny": [],
     "ask": []

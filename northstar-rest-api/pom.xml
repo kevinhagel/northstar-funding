@@ -11,30 +11,15 @@
         <version>1.0.0-SNAPSHOT</version>
     </parent>
 
-    <artifactId>northstar-application</artifactId>
-    <name>NorthStar Application Module</name>
-    <description>Spring Boot application orchestration</description>
+    <artifactId>northstar-rest-api</artifactId>
+    <name>NorthStar REST API</name>
+    <description>REST API for search workflow triggers</description>
 
     <dependencies>
-        <!-- Internal modules -->
+        <!-- Internal modules - only what we need -->
         <dependency>
             <groupId>com.northstar.funding</groupId>
             <artifactId>northstar-domain</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.northstar.funding</groupId>
-            <artifactId>northstar-persistence</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.northstar.funding</groupId>
-            <artifactId>northstar-crawler</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.northstar.funding</groupId>
-            <artifactId>northstar-judging</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
@@ -44,41 +29,31 @@
         </dependency>
         <dependency>
             <groupId>com.northstar.funding</groupId>
-            <artifactId>northstar-search-adapters</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.northstar.funding</groupId>
-            <artifactId>northstar-search-workflow</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.northstar.funding</groupId>
             <artifactId>northstar-query-generation</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>com.northstar.funding</groupId>
-            <artifactId>northstar-rest-api</artifactId>
+            <artifactId>northstar-persistence</artifactId>
             <version>${project.version}</version>
         </dependency>
 
-        <!-- Spring Boot Starter Web -->
+        <!-- Spring Boot Web -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
 
-        <!-- Spring Boot Actuator -->
+        <!-- Spring Boot Validation -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-actuator</artifactId>
+            <artifactId>spring-boot-starter-validation</artifactId>
         </dependency>
 
-        <!-- Spring Data Redis (Valkey cache) -->
+        <!-- Spring Kafka (for publishing events) -->
         <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-data-redis</artifactId>
+            <groupId>org.springframework.kafka</groupId>
+            <artifactId>spring-kafka</artifactId>
         </dependency>
 
         <!-- SpringDoc OpenAPI (Swagger) -->
@@ -86,6 +61,13 @@
             <groupId>org.springdoc</groupId>
             <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
             <version>2.7.0</version>
+        </dependency>
+
+        <!-- Lombok -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <scope>provided</scope>
         </dependency>
 
         <!-- Testing -->
@@ -104,8 +86,19 @@
     <build>
         <plugins>
             <plugin>
-                <groupId>org.springframework.boot</groupId>
-                <artifactId>spring-boot-maven-plugin</artifactId>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <source>25</source>
+                    <target>25</target>
+                    <annotationProcessorPaths>
+                        <path>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                            <version>${lombok.version}</version>
+                        </path>
+                    </annotationProcessorPaths>
+                </configuration>
             </plugin>
         </plugins>
     </build>
