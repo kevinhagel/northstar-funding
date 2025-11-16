@@ -51,6 +51,11 @@ public class ProcessingStatistics {
     private int lowConfidenceCreated;
 
     /**
+     * Results skipped due to invalid URLs (domain extraction failed)
+     */
+    private int invalidUrlsSkipped;
+
+    /**
      * Get total candidates created (high + low confidence)
      *
      * @return total candidates created

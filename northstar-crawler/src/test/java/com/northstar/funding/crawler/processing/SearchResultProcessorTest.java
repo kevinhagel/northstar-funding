@@ -143,7 +143,7 @@ class SearchResultProcessorTest {
     }
 
     @Test
-    @DisplayName("Low confidence results do not create candidates")
+    @DisplayName("Low confidence results create SKIPPED_LOW_CONFIDENCE candidates")
     void testLowConfidenceFiltered() {
         // Given: 2 search results with low confidence scores
         SearchResult result1 = SearchResult.builder()
@@ -172,16 +172,26 @@ class SearchResultProcessorTest {
         when(confidenceScorer.calculateConfidence("Perhaps Grants", "Not sure about this", "https://lowconf2.org/perhaps"))
             .thenReturn(new java.math.BigDecimal("0.55"));
 
+        // Mock domain registration
+        when(domainService.registerOrGetDomain(anyString(), eq(testSessionId)))
+            .thenReturn(com.northstar.funding.domain.Domain.builder().domainId(UUID.randomUUID()).build());
+
+        // Mock candidate creation
+        when(candidateCreationService.createCandidate(anyString(), anyString(), anyString(), any(), eq(testSessionId), any()))
+            .thenReturn(com.northstar.funding.domain.FundingSourceCandidate.builder().build());
+
         // When
         ProcessingStatistics stats = searchResultProcessor.processSearchResults(
             results, testSessionId
         );
 
-        // Then: Should process 2 results, create 0 candidates (both low confidence)
+        // Then: Should process 2 results, create 2 low-confidence candidates
+        // BUG FIX: lowConfidenceCreated now correctly tracked (was always 0 before)
+        // DESIGN FIX: Low confidence results now create candidates with SKIPPED_LOW_CONFIDENCE status
         assertThat(stats.getTotalResults()).isEqualTo(2);
         assertThat(stats.getHighConfidenceCreated()).isZero();
-        assertThat(stats.getLowConfidenceCreated()).isZero();
-        assertThat(stats.getTotalCandidatesCreated()).isZero();
+        assertThat(stats.getLowConfidenceCreated()).isEqualTo(2);  // BUG FIX: Now correctly tracked
+        assertThat(stats.getTotalCandidatesCreated()).isEqualTo(2);  // DESIGN FIX: Both create candidates
     }
 
     @Test
@@ -372,8 +382,10 @@ class SearchResultProcessorTest {
         when(confidenceScorer.calculateConfidence("More Funding", "Another opportunity", "https://highconf2.org/page"))
             .thenReturn(new java.math.BigDecimal("0.90"));
 
-        // Mock domain registration for high confidence domains
+        // Mock domain registration for all non-blacklisted domains
         when(domainService.registerOrGetDomain(eq("example.org"), eq(testSessionId)))
+            .thenReturn(com.northstar.funding.domain.Domain.builder().domainId(UUID.randomUUID()).build());
+        when(domainService.registerOrGetDomain(eq("lowconf.org"), eq(testSessionId)))
             .thenReturn(com.northstar.funding.domain.Domain.builder().domainId(UUID.randomUUID()).build());
         when(domainService.registerOrGetDomain(eq("highconf1.org"), eq(testSessionId)))
             .thenReturn(com.northstar.funding.domain.Domain.builder().domainId(UUID.randomUUID()).build());
@@ -386,15 +398,17 @@ class SearchResultProcessorTest {
         );
 
         // Then: Verify all statistics
+        // BUG FIX: lowConfidenceCreated now correctly tracked
+        // DESIGN FIX: Low confidence results now create candidates too
         assertThat(stats.getTotalResults()).isEqualTo(6);
         assertThat(stats.getDuplicatesSkipped()).isEqualTo(1);  // result2 (example.org duplicate)
         assertThat(stats.getBlacklistedSkipped()).isEqualTo(1); // result3 (blacklist.com)
         assertThat(stats.getHighConfidenceCreated()).isEqualTo(3);  // result1, result5, result6
-        assertThat(stats.getLowConfidenceCreated()).isZero();  // No low confidence candidates created
-        assertThat(stats.getTotalCandidatesCreated()).isEqualTo(3);
+        assertThat(stats.getLowConfidenceCreated()).isEqualTo(1);  // BUG FIX: result4 now correctly tracked
+        assertThat(stats.getTotalCandidatesCreated()).isEqualTo(4);  // DESIGN FIX: 3 high + 1 low
 
-        // Verify 3 candidates created
-        verify(candidateCreationService, times(3)).createCandidate(
+        // Verify 4 candidates created (3 high + 1 low confidence)
+        verify(candidateCreationService, times(4)).createCandidate(
             any(), any(), any(), any(), any(), any()
         );
     }
@@ -474,9 +488,10 @@ class SearchResultProcessorTest {
             "https://random-blog.net/funding"
         )).thenReturn(new java.math.BigDecimal("0.42"));  // Low
 
-        // Mock domain registration
+        // Mock domain registration for all non-blacklisted domains
         UUID euDomainId = UUID.randomUUID();
         UUID usBulgariaDomainId = UUID.randomUUID();
+        UUID randomBlogDomainId = UUID.randomUUID();
         when(domainService.registerOrGetDomain("ec.europa.eu", testSessionId))
             .thenReturn(com.northstar.funding.domain.Domain.builder()
                 .domainId(euDomainId)
@@ -487,6 +502,11 @@ class SearchResultProcessorTest {
                 .domainId(usBulgariaDomainId)
                 .domainName("us-bulgaria.org")
                 .build());
+        when(domainService.registerOrGetDomain("random-blog.net", testSessionId))
+            .thenReturn(com.northstar.funding.domain.Domain.builder()
+                .domainId(randomBlogDomainId)
+                .domainName("random-blog.net")
+                .build());
 
         // When: Process all results
         ProcessingStatistics stats = searchResultProcessor.processSearchResults(
@@ -494,12 +514,14 @@ class SearchResultProcessorTest {
         );
 
         // Then: Verify end-to-end statistics
+        // BUG FIX: lowConfidenceCreated now correctly tracked
+        // DESIGN FIX: Low confidence results now create candidates too
         assertThat(stats.getTotalResults()).isEqualTo(5);
         assertThat(stats.getDuplicatesSkipped()).isEqualTo(1);  // duplicateHorizon
         assertThat(stats.getBlacklistedSkipped()).isEqualTo(1);  // spamSite
         assertThat(stats.getHighConfidenceCreated()).isEqualTo(2);  // horizonEurope, usBulgaria
-        assertThat(stats.getLowConfidenceCreated()).isZero();
-        assertThat(stats.getTotalCandidatesCreated()).isEqualTo(2);
+        assertThat(stats.getLowConfidenceCreated()).isEqualTo(1);  // BUG FIX: lowQuality now correctly tracked
+        assertThat(stats.getTotalCandidatesCreated()).isEqualTo(3);  // DESIGN FIX: 2 high + 1 low
 
         // Verify specific candidates created with correct data
         verify(candidateCreationService).createCandidate(
@@ -520,9 +542,272 @@ class SearchResultProcessorTest {
             eq(new java.math.BigDecimal("0.88"))
         );
 
-        // Verify only 2 candidates created (not 3, not 4)
-        verify(candidateCreationService, times(2)).createCandidate(
+        verify(candidateCreationService).createCandidate(
+            eq("Blog Post About Funding"),
+            eq("Random person's opinion on grants"),
+            eq("https://random-blog.net/funding"),
+            eq(randomBlogDomainId),
+            eq(testSessionId),
+            eq(new java.math.BigDecimal("0.42"))
+        );
+
+        // Verify 3 candidates created (2 high confidence + 1 low confidence)
+        verify(candidateCreationService, times(3)).createCandidate(
             any(), any(), any(), any(), any(), any()
         );
+    }
+
+    // ========== Pipeline Stage Tests (T008-T021) ==========
+
+    @Test
+    @DisplayName("extractAndValidateDomain - Valid URL returns domain")
+    void extractAndValidateDomain_ValidUrl_ReturnsDomain() {
+        // Given
+        SearchResult result = SearchResult.builder()
+            .url("https://example.org/grants")
+            .build();
+        ProcessingContext context = new ProcessingContext(testSessionId);
+        when(domainService.extractDomainFromUrl("https://example.org/grants"))
+            .thenReturn(java.util.Optional.of("example.org"));
+
+        // When
+        java.util.Optional<String> domain = searchResultProcessor.extractAndValidateDomain(result, context);
+
+        // Then
+        assertThat(domain).isPresent().contains("example.org");
+        assertThat(context.getInvalidUrlsSkipped()).isZero();
+    }
+
+    @Test
+    @DisplayName("extractAndValidateDomain - Invalid URL records and returns empty")
+    void extractAndValidateDomain_InvalidUrl_RecordsAndReturnsEmpty() {
+        // Given
+        SearchResult result = SearchResult.builder()
+            .url("htp://invalid..url//")
+            .build();
+        ProcessingContext context = new ProcessingContext(testSessionId);
+        when(domainService.extractDomainFromUrl("htp://invalid..url//"))
+            .thenReturn(java.util.Optional.empty());
+
+        // When
+        java.util.Optional<String> domain = searchResultProcessor.extractAndValidateDomain(result, context);
+
+        // Then
+        assertThat(domain).isEmpty();
+        assertThat(context.getInvalidUrlsSkipped()).isEqualTo(1);
+    }
+
+    @Test
+    @DisplayName("isSpamTld - Spam TLD records and returns true")
+    void isSpamTld_SpamTld_RecordsAndReturnsTrue() {
+        // Given
+        SearchResult result = SearchResult.builder()
+            .url("https://scam.xyz/grants")
+            .build();
+        ProcessingContext context = new ProcessingContext(testSessionId);
+        when(domainCredibilityService.isSpamTld("https://scam.xyz/grants"))
+            .thenReturn(true);
+
+        // When
+        boolean isSpam = searchResultProcessor.isSpamTld(result, context);
+
+        // Then
+        assertThat(isSpam).isTrue();
+        assertThat(context.getSpamTldFiltered()).isEqualTo(1);
+        verify(domainCredibilityService).isSpamTld("https://scam.xyz/grants");
+    }
+
+    @Test
+    @DisplayName("isSpamTld - Legit TLD returns false")
+    void isSpamTld_LegitTld_ReturnsFalse() {
+        // Given
+        SearchResult result = SearchResult.builder()
+            .url("https://example.org/grants")
+            .build();
+        ProcessingContext context = new ProcessingContext(testSessionId);
+        when(domainCredibilityService.isSpamTld("https://example.org/grants"))
+            .thenReturn(false);
+
+        // When
+        boolean isSpam = searchResultProcessor.isSpamTld(result, context);
+
+        // Then
+        assertThat(isSpam).isFalse();
+        assertThat(context.getSpamTldFiltered()).isZero();
+    }
+
+    @Test
+    @DisplayName("isDuplicate - Unique first time returns false")
+    void isDuplicate_UniqueFirstTime_ReturnsFalse() {
+        // Given
+        ProcessingContext context = new ProcessingContext(testSessionId);
+        String domain = "example.org";
+
+        // When
+        boolean isDuplicate = searchResultProcessor.isDuplicate(domain, context);
+
+        // Then
+        assertThat(isDuplicate).isFalse();
+        assertThat(context.getDuplicatesSkipped()).isZero();
+    }
+
+    @Test
+    @DisplayName("isDuplicate - Second occurrence returns true")
+    void isDuplicate_SecondOccurrence_ReturnsTrue() {
+        // Given
+        ProcessingContext context = new ProcessingContext(testSessionId);
+        String domain = "example.org";
+        context.markDomainAsSeen(domain);  // First occurrence
+
+        // When
+        boolean isDuplicate = searchResultProcessor.isDuplicate(domain, context);
+
+        // Then
+        assertThat(isDuplicate).isTrue();
+        assertThat(context.getDuplicatesSkipped()).isEqualTo(1);
+    }
+
+    @Test
+    @DisplayName("isBlacklisted - Blacklisted domain records and returns true")
+    void isBlacklisted_BlacklistedDomain_RecordsAndReturnsTrue() {
+        // Given
+        String domain = "spam.com";
+        ProcessingContext context = new ProcessingContext(testSessionId);
+        when(domainService.isBlacklisted("spam.com")).thenReturn(true);
+
+        // When
+        boolean isBlacklisted = searchResultProcessor.isBlacklisted(domain, context);
+
+        // Then
+        assertThat(isBlacklisted).isTrue();
+        assertThat(context.getBlacklistedSkipped()).isEqualTo(1);
+        verify(domainService).isBlacklisted("spam.com");
+    }
+
+    @Test
+    @DisplayName("isBlacklisted - Allowed domain returns false")
+    void isBlacklisted_AllowedDomain_ReturnsFalse() {
+        // Given
+        String domain = "example.org";
+        ProcessingContext context = new ProcessingContext(testSessionId);
+        when(domainService.isBlacklisted("example.org")).thenReturn(false);
+
+        // When
+        boolean isBlacklisted = searchResultProcessor.isBlacklisted(domain, context);
+
+        // Then
+        assertThat(isBlacklisted).isFalse();
+        assertThat(context.getBlacklistedSkipped()).isZero();
+    }
+
+    @Test
+    @DisplayName("calculateConfidence - Valid result returns score")
+    void calculateConfidence_ValidResult_ReturnsScore() {
+        // Given
+        SearchResult result = SearchResult.builder()
+            .url("https://example.org/grants")
+            .title("EU Grants")
+            .description("Funding for research")
+            .build();
+        when(confidenceScorer.calculateConfidence(
+            "EU Grants", "Funding for research", "https://example.org/grants"
+        )).thenReturn(new java.math.BigDecimal("0.85"));
+
+        // When
+        java.math.BigDecimal confidence = searchResultProcessor.calculateConfidence(result);
+
+        // Then
+        assertThat(confidence).isEqualByComparingTo(new java.math.BigDecimal("0.85"));
+        verify(confidenceScorer).calculateConfidence(
+            "EU Grants", "Funding for research", "https://example.org/grants"
+        );
+    }
+
+    @Test
+    @DisplayName("classifyConfidence - Above threshold records high and returns true")
+    void classifyConfidence_AboveThreshold_RecordsHighAndReturnsTrue() {
+        // Given
+        java.math.BigDecimal confidence = new java.math.BigDecimal("0.85");
+        ProcessingContext context = new ProcessingContext(testSessionId);
+
+        // When
+        boolean isHigh = searchResultProcessor.classifyConfidence(confidence, context);
+
+        // Then
+        assertThat(isHigh).isTrue();
+        assertThat(context.getHighConfidenceCreated()).isEqualTo(1);
+        assertThat(context.getLowConfidenceCreated()).isZero();
+    }
+
+    @Test
+    @DisplayName("classifyConfidence - Below threshold records low and returns false")
+    void classifyConfidence_BelowThreshold_RecordsLowAndReturnsFalse() {
+        // Given
+        java.math.BigDecimal confidence = new java.math.BigDecimal("0.45");
+        ProcessingContext context = new ProcessingContext(testSessionId);
+
+        // When
+        boolean isHigh = searchResultProcessor.classifyConfidence(confidence, context);
+
+        // Then
+        assertThat(isHigh).isFalse();
+        assertThat(context.getHighConfidenceCreated()).isZero();
+        assertThat(context.getLowConfidenceCreated()).isEqualTo(1);  // BUG FIX VALIDATED
+    }
+
+    @Test
+    @DisplayName("classifyConfidence - Exactly threshold records high and returns true")
+    void classifyConfidence_ExactlyThreshold_RecordsHighAndReturnsTrue() {
+        // Given
+        java.math.BigDecimal confidence = new java.math.BigDecimal("0.60");
+        ProcessingContext context = new ProcessingContext(testSessionId);
+
+        // When
+        boolean isHigh = searchResultProcessor.classifyConfidence(confidence, context);
+
+        // Then
+        assertThat(isHigh).isTrue();  // >= threshold
+        assertThat(context.getHighConfidenceCreated()).isEqualTo(1);
+    }
+
+    @Test
+    @DisplayName("createAndSaveCandidate - Valid inputs creates and saves")
+    void createAndSaveCandidate_ValidInputs_CreatesAndSaves() {
+        // Given
+        SearchResult result = SearchResult.builder()
+            .url("https://example.org/grants")
+            .title("EU Grants")
+            .description("Funding")
+            .build();
+        String domain = "example.org";
+        java.math.BigDecimal confidence = new java.math.BigDecimal("0.85");
+        ProcessingContext context = new ProcessingContext(testSessionId);
+
+        UUID domainId = UUID.randomUUID();
+        com.northstar.funding.domain.Domain mockDomain = com.northstar.funding.domain.Domain.builder()
+            .domainId(domainId)
+            .domainName(domain)
+            .build();
+        com.northstar.funding.domain.FundingSourceCandidate mockCandidate =
+            com.northstar.funding.domain.FundingSourceCandidate.builder()
+            .build();
+
+        when(domainService.registerOrGetDomain(domain, testSessionId))
+            .thenReturn(mockDomain);
+        when(candidateCreationService.createCandidate(
+            "EU Grants", "Funding", "https://example.org/grants",
+            domainId, testSessionId, confidence
+        )).thenReturn(mockCandidate);
+
+        // When
+        searchResultProcessor.createAndSaveCandidate(result, domain, confidence, context);
+
+        // Then
+        verify(domainService).registerOrGetDomain(domain, testSessionId);
+        verify(candidateCreationService).createCandidate(
+            "EU Grants", "Funding", "https://example.org/grants",
+            domainId, testSessionId, confidence
+        );
+        verify(candidateRepository).save(mockCandidate);
     }
 }
