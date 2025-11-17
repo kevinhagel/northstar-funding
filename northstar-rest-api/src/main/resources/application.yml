@@ -1,0 +1,17 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: northstar-rest-api
+
+  datasource:
+    url: jdbc:postgresql://192.168.1.10:5432/northstar_funding
+    username: northstar_user
+    password: northstar_password
+    driver-class-name: org.postgresql.Driver
+
+  # Spring Data JDBC configuration
+  jdbc:
+    template:
+      query-timeout: 30

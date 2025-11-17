@@ -17,8 +17,9 @@ NorthStar Funding Discovery is a **planned** automated funding discovery platfor
 ✅ **Query Generation Module**: AI-powered search query generation using Ollama (llama3.1:8b) with LangChain4j, 24-hour caching, and concurrent generation (58 tests passing)
 
 ⚠️ **Partial Crawler Implementation**: Search result processing pipeline (no web crawling yet)
+⚠️ **Partial REST API**: Module exists but needs endpoints for admin dashboard
+⚠️ **Admin Dashboard**: Architecture designed (2025-11-16), implementation starting with Feature 013
 ❌ **NO Search Integration** - No search engine adapters (queries generated but not executed)
-❌ **NO Application Layer** - No REST API, no orchestration, no scheduler
 ❌ **NO Judging Module** - northstar-judging module is empty
 
 ### Project Context
@@ -41,6 +42,16 @@ This context influences:
 - **LangChain4j 1.8.0** for LLM integration (Ollama)
 - **Vavr 0.10.7** for functional programming patterns (planned usage)
 - **Lombok 1.18.42** for boilerplate reduction (domain entities only)
+
+### Frontend (Admin Dashboard)
+- **Vue 3.4+** with TypeScript
+- **Vite 5.0** for build and dev server
+- **PrimeVue 3.50** (FREE, MIT license) for UI components
+- **PrimeIcons 7.0** for icons
+- **Pinia 2.1** for state management
+- **Axios 1.6** for HTTP client
+- **Chart.js 4.4** for statistics visualizations
+- **date-fns 3.0** for date formatting
 
 ### Testing
 - **JUnit 5** with Spring Boot Test
@@ -156,8 +167,8 @@ mvn flyway:migrate -pl northstar-persistence
 # Clean database (DESTRUCTIVE - drops all objects)
 mvn flyway:clean -pl northstar-persistence
 
-# Clean and re-migrate (fresh start)
-mvn flyway:clean flyway:migrate -pl northstar-persistence
+# Clean and re-migrate (fresh start) - RECOMMENDED for development
+mvn flyway:clean flyway:migrate -Dflyway.cleanDisabled=false -pl northstar-persistence
 
 # Show migration status
 mvn flyway:info -pl northstar-persistence
@@ -167,6 +178,8 @@ mvn flyway:validate -pl northstar-persistence
 ```
 
 **Note**: Flyway commands must use `-pl northstar-persistence` to target the correct module.
+
+**Development Workflow**: In development (not production), you can completely rewrite database migrations without losing anything. Use the clean + migrate command above to start fresh.
 
 ### Ollama Configuration (Mac Studio)
 
@@ -1018,13 +1031,187 @@ ALTER TABLE funding_source_candidate
   ALTER COLUMN confidence_score TYPE NUMERIC(3,2);
 ```
 
+## Admin Dashboard (Vue 3 + PrimeVue)
+
+**Status**: Architecture designed (2025-11-16), Feature 013 ready for implementation
+
+**Purpose**: Kevin and Huw need a web interface to review, enhance, and approve funding source candidates discovered by the automated search system. This is the **critical human component** of the human-AI hybrid workflow.
+
+### Architecture
+
+**Three-Layer System:**
+```
+Vue Admin UI (northstar-admin-ui/)    ← Port 5173 (Vite dev server)
+    ↓ HTTP REST (JSON via Axios)
+REST API (northstar-rest-api/)        ← Port 8080 (Spring Boot)
+    ↓ Spring Data JDBC
+Persistence (northstar-persistence/)   ← PostgreSQL 192.168.1.10:5432
+```
+
+**Key Principle**: Domain entities NEVER leave the service layer. REST API uses DTOs (Data Transfer Objects) as the contract boundary.
+
+### Data Flow (Domain → DTO → JSON → Vue)
+
+```
+Database Table (PostgreSQL)
+  ↓ Spring Data JDBC
+Domain Entity (FundingSourceCandidate.java with UUID, BigDecimal, enums)
+  ↓ Mapper Service
+DTO (CandidateDTO.java with String types only)
+  ↓ Jackson serialization
+JSON (HTTP response with primitives)
+  ↓ Axios fetch
+TypeScript Interface (Candidate.ts mirrors DTO)
+  ↓ Vue component
+PrimeVue DataTable display
+```
+
+### DTO Location and Pattern
+
+**Location**: `northstar-rest-api/src/main/java/com/northstar/funding/rest/dto/`
+
+**Pattern**:
+```java
+// Read model (GET responses)
+public record CandidateDTO(
+    String id,              // UUID → String
+    String url,
+    String title,
+    String confidenceScore, // BigDecimal → String
+    String status,          // Enum → String
+    String createdAt        // LocalDateTime → ISO-8601
+) {}
+
+// Write model (PUT requests)
+public record UpdateCandidateRequest(
+    @NotBlank String title,
+    @NotNull CandidateStatus status,
+    List<ContactDTO> contacts
+) {}
+
+// Mapper
+@Service
+public class CandidateDTOMapper {
+    public CandidateDTO toDTO(FundingSourceCandidate entity);
+    public FundingSourceCandidate toDomain(DTO dto, UUID id);
+}
+```
+
+### TypeScript Types Mirror DTOs
+
+**Location**: `northstar-admin-ui/src/types/candidate.ts`
+
+```typescript
+export interface Candidate {
+  id: string;
+  url: string;
+  title: string;
+  confidenceScore: string;
+  status: CandidateStatus;
+  createdAt: string;
+}
+
+export type CandidateStatus =
+  | 'PENDING_CRAWL'
+  | 'CRAWLED'
+  | 'ENHANCED'
+  | 'APPROVED';
+```
+
+**Critical**: Keep TypeScript interfaces in sync with Java DTOs manually (code generation can be added later if needed).
+
+### Feature Roadmap (Vertical Slices)
+
+Each feature delivers **complete end-to-end value** across all three layers:
+
+- **Feature 013**: Review Queue (view candidates) ← **NEXT**
+  - Vue: ReviewQueue.vue with PrimeVue DataTable
+  - REST: GET /api/candidates (pagination, filters)
+  - Persistence: CandidateRepository (already exists)
+
+- **Feature 014**: Candidate Enhancement (edit & save)
+  - Vue: CandidateDetail.vue with forms
+  - REST: GET /api/candidates/{id}, PUT /api/candidates/{id}
+  - Persistence: Update logic + enhancement tracking
+
+- **Feature 015**: Contact Intelligence (AI extraction)
+  - Vue: Contact form with "AI Extract" button
+  - REST: POST /api/candidates/{id}/extract-contacts (Ollama integration)
+  - Persistence: ContactIntelligence CRUD
+
+- **Feature 016**: Approval Workflow (approve/reject)
+  - Vue: Approve/Reject buttons
+  - REST: POST /api/candidates/{id}/approve, POST /api/candidates/{id}/reject
+  - Persistence: Status updates, blacklist domain on reject
+
+- **Feature 017**: Statistics Dashboard
+  - Vue: Dashboard.vue with Chart.js
+  - REST: GET /api/statistics/overview, GET /api/statistics/trends
+  - Persistence: Aggregate queries
+
+- **Feature 018**: Domain Management
+  - Vue: DomainManagement.vue
+  - REST: GET /api/domains, POST /api/domains/blacklist
+  - Persistence: Domain CRUD, blacklist updates
+
+### Development Workflow
+
+**Terminal 1: Backend**
+```bash
+cd /Users/kevin/github/northstar-funding
+mvn spring-boot:run -pl northstar-rest-api
+# → http://localhost:8080
+```
+
+**Terminal 2: Frontend**
+```bash
+cd /Users/kevin/github/northstar-funding/northstar-admin-ui
+npm run dev
+# → http://localhost:5173
+# Vite proxy forwards /api/* to localhost:8080 (handles CORS)
+```
+
+### Vue Project Structure
+
+```
+northstar-admin-ui/
+├── package.json          # Vue 3, PrimeVue, Axios, TypeScript
+├── vite.config.ts        # Vite + proxy config
+├── src/
+│   ├── main.ts           # Vue app entry
+│   ├── router/           # Vue Router (queue, detail, stats, domains)
+│   ├── views/            # Page components
+│   ├── components/       # Reusable components
+│   ├── services/         # API client (Axios)
+│   ├── types/            # TypeScript interfaces (mirror DTOs)
+│   └── stores/           # Pinia state management
+```
+
+### Security & Authentication
+
+**Phase 1 (Now)**: No authentication - runs on localhost (Kevin/Huw only)
+
+**Phase 2 (Before production)**:
+- Add Spring Security with JWT tokens
+- Use existing `admin_user` table and `AdminRole` enum
+- Add login page in Vue
+- Implement role-based access control
+
+### Reference Documents
+
+**Architecture**: `northstar-notes/architecture/admin-dashboard-architecture.md` (complete design with UI mockups)
+
+**Session Summary**: `northstar-notes/session-summaries/2025-11-16-admin-dashboard-planning.md` (planning discussion)
+
+---
+
 ## Important Notes
 
-- **NO application layer exists** - only domain model, persistence, and search result processing
+- **Admin Dashboard starting** - Feature 013 ready for `/specify` (2025-11-16)
 - **Partial crawler implementation** - search result processing pipeline only (no web crawling yet)
+- **Partial REST API** - module exists but needs endpoints for admin dashboard
 - **NO search engine adapters** - SearchResultProcessor exists but no search engines connected
 - **NO judging module** - northstar-judging module is empty
 - Database schema includes tables for planned features that don't exist yet
-- All tests are unit tests with Mockito - no integration tests yet
 - Service layer follows strict DI pattern (explicit constructors, no Lombok)
-- All 327 tests passing (as of Story 1.3 completion)
+- All 277 tests passing in northstar-crawler (as of Feature 012 completion)

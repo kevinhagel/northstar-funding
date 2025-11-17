@@ -1,0 +1,487 @@
+openapi: 3.0.3
+info:
+  title: NorthStar Admin Dashboard - Candidates API
+  description: |
+    REST API for managing funding source candidates in the admin dashboard.
+
+    This API provides endpoints for:
+    - Listing candidates with pagination, filtering, and sorting
+    - Approving candidates for client-facing database
+    - Rejecting candidates and blacklisting domains
+
+    Feature: 013 - Admin Dashboard Review Queue
+  version: 1.0.0
+  contact:
+    name: NorthStar Funding Discovery
+
+servers:
+  - url: http://localhost:8080/api
+    description: Local development server
+
+tags:
+  - name: Candidates
+    description: Funding source candidate operations
+
+paths:
+  /candidates:
+    get:
+      tags:
+        - Candidates
+      summary: List candidates with filtering and pagination
+      description: |
+        Retrieve paginated list of funding source candidates with optional filters and sorting.
+
+        Supports:
+        - Pagination (page, size)
+        - Multi-select filters (status, searchEngine)
+        - Range filter (minConfidence)
+        - Date range filter (startDate, endDate)
+        - Sorting (sortBy, sortDirection)
+      operationId: listCandidates
+      parameters:
+        - name: page
+          in: query
+          description: Page number (0-indexed)
+          required: false
+          schema:
+            type: integer
+            format: int32
+            default: 0
+            minimum: 0
+          example: 0
+
+        - name: size
+          in: query
+          description: Number of items per page
+          required: false
+          schema:
+            type: integer
+            format: int32
+            default: 20
+            enum: [10, 20, 50, 100]
+          example: 20
+
+        - name: status
+          in: query
+          description: Filter by candidate status (multi-select)
+          required: false
+          schema:
+            type: array
+            items:
+              type: string
+              enum:
+                - NEW
+                - PENDING_CRAWL
+                - CRAWLED
+                - ENHANCED
+                - JUDGED
+                - APPROVED
+                - REJECTED
+                - SKIPPED_LOW_CONFIDENCE
+                - BLACKLISTED
+          style: form
+          explode: true
+          example: [PENDING_CRAWL, CRAWLED]
+
+        - name: minConfidence
+          in: query
+          description: Minimum confidence score threshold (0.00-1.00)
+          required: false
+          schema:
+            type: number
+            format: double
+            minimum: 0.00
+            maximum: 1.00
+            default: 0.00
+          example: 0.70
+
+        - name: searchEngine
+          in: query
+          description: Filter by search engine (multi-select)
+          required: false
+          schema:
+            type: array
+            items:
+              type: string
+              enum:
+                - BRAVE
+                - TAVILY
+                - PERPLEXITY
+                - SEARXNG
+                - BROWSERBASE
+          style: form
+          explode: true
+          example: [TAVILY, BRAVE]
+
+        - name: startDate
+          in: query
+          description: Filter by created date >= startDate (ISO-8601 LocalDate)
+          required: false
+          schema:
+            type: string
+            format: date
+          example: "2025-11-10"
+
+        - name: endDate
+          in: query
+          description: Filter by created date <= endDate (ISO-8601 LocalDate)
+          required: false
+          schema:
+            type: string
+            format: date
+          example: "2025-11-16"
+
+        - name: sortBy
+          in: query
+          description: Column to sort by
+          required: false
+          schema:
+            type: string
+            enum:
+              - url
+              - title
+              - confidenceScore
+              - status
+              - searchEngine
+              - createdAt
+            default: createdAt
+          example: createdAt
+
+        - name: sortDirection
+          in: query
+          description: Sort direction
+          required: false
+          schema:
+            type: string
+            enum: [ASC, DESC]
+            default: DESC
+          example: DESC
+
+      responses:
+        '200':
+          description: Successful response with paginated candidates
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CandidatePage'
+              example:
+                content:
+                  - id: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+                    url: "https://commission.europa.eu/funding-tenders"
+                    title: "Horizon Europe - EU Funding Portal"
+                    confidenceScore: "0.85"
+                    status: "PENDING_CRAWL"
+                    searchEngine: "TAVILY"
+                    createdAt: "2025-11-16T10:30:00"
+                  - id: "b2c3d4e5-f6a7-8901-bcde-f12345678901"
+                    url: "https://ec.europa.eu/programmes/erasmus-plus"
+                    title: "Erasmus+ Programme Guide 2025"
+                    confidenceScore: "0.75"
+                    status: "CRAWLED"
+                    searchEngine: "BRAVE"
+                    createdAt: "2025-11-16T09:15:00"
+                totalElements: 42
+                totalPages: 3
+                currentPage: 0
+                pageSize: 20
+
+        '400':
+          description: Bad request (invalid parameters)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                timestamp: "2025-11-16T11:00:00"
+                status: 400
+                error: "Bad Request"
+                message: "Invalid parameter: minConfidence must be between 0.00 and 1.00"
+                path: "/api/candidates"
+
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /candidates/{id}/approve:
+    put:
+      tags:
+        - Candidates
+      summary: Approve a candidate
+      description: |
+        Mark a candidate as APPROVED for inclusion in client-facing database.
+
+        Business Rules:
+        - Candidate must exist
+        - Candidate must not already be APPROVED
+        - Status updated to APPROVED
+      operationId: approveCandidate
+      parameters:
+        - name: id
+          in: path
+          description: Candidate ID (UUID)
+          required: true
+          schema:
+            type: string
+            format: uuid
+          example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+
+      responses:
+        '200':
+          description: Candidate approved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Candidate'
+              example:
+                id: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+                url: "https://commission.europa.eu/funding-tenders"
+                title: "Horizon Europe - EU Funding Portal"
+                confidenceScore: "0.85"
+                status: "APPROVED"
+                searchEngine: "TAVILY"
+                createdAt: "2025-11-16T10:30:00"
+
+        '400':
+          description: Bad request (candidate already approved)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                timestamp: "2025-11-16T11:00:00"
+                status: 400
+                error: "Bad Request"
+                message: "Candidate is already approved"
+                path: "/api/candidates/a1b2c3d4-e5f6-7890-abcd-ef1234567890/approve"
+
+        '404':
+          description: Candidate not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                timestamp: "2025-11-16T11:00:00"
+                status: 404
+                error: "Not Found"
+                message: "Candidate not found with id: a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+                path: "/api/candidates/a1b2c3d4-e5f6-7890-abcd-ef1234567890/approve"
+
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /candidates/{id}/reject:
+    put:
+      tags:
+        - Candidates
+      summary: Reject a candidate and blacklist domain
+      description: |
+        Mark a candidate as REJECTED and blacklist the domain to prevent future discoveries.
+
+        Business Rules:
+        - Candidate must exist
+        - Candidate must not already be REJECTED
+        - Candidate status updated to REJECTED
+        - Domain status updated to BLACKLISTED
+
+        Side Effects:
+        - Domain from candidate URL is blacklisted
+        - Future candidates from same domain will be automatically filtered
+      operationId: rejectCandidate
+      parameters:
+        - name: id
+          in: path
+          description: Candidate ID (UUID)
+          required: true
+          schema:
+            type: string
+            format: uuid
+          example: "b2c3d4e5-f6a7-8901-bcde-f12345678901"
+
+      responses:
+        '200':
+          description: Candidate rejected and domain blacklisted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Candidate'
+              example:
+                id: "b2c3d4e5-f6a7-8901-bcde-f12345678901"
+                url: "https://spam-site.xyz/fake-funding"
+                title: "Get Free Money Now!!!"
+                confidenceScore: "0.25"
+                status: "REJECTED"
+                searchEngine: "SEARXNG"
+                createdAt: "2025-11-16T08:00:00"
+
+        '400':
+          description: Bad request (candidate already rejected)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                timestamp: "2025-11-16T11:00:00"
+                status: 400
+                error: "Bad Request"
+                message: "Candidate is already rejected"
+                path: "/api/candidates/b2c3d4e5-f6a7-8901-bcde-f12345678901/reject"
+
+        '404':
+          description: Candidate not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                timestamp: "2025-11-16T11:00:00"
+                status: 404
+                error: "Not Found"
+                message: "Candidate not found with id: b2c3d4e5-f6a7-8901-bcde-f12345678901"
+                path: "/api/candidates/b2c3d4e5-f6a7-8901-bcde-f12345678901/reject"
+
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  schemas:
+    Candidate:
+      type: object
+      description: Funding source candidate DTO
+      required:
+        - id
+        - url
+        - title
+        - confidenceScore
+        - status
+        - searchEngine
+        - createdAt
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Candidate UUID
+          example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+        url:
+          type: string
+          format: uri
+          description: Funding source URL
+          example: "https://commission.europa.eu/funding-tenders"
+        title:
+          type: string
+          description: Page title from search result
+          example: "Horizon Europe - EU Funding Portal"
+        confidenceScore:
+          type: string
+          description: Confidence score 0.00-1.00 as string
+          pattern: "^(0\\.\\d{2}|1\\.00)$"
+          example: "0.85"
+        status:
+          type: string
+          enum:
+            - NEW
+            - PENDING_CRAWL
+            - CRAWLED
+            - ENHANCED
+            - JUDGED
+            - APPROVED
+            - REJECTED
+            - SKIPPED_LOW_CONFIDENCE
+            - BLACKLISTED
+          description: Candidate workflow status
+          example: "PENDING_CRAWL"
+        searchEngine:
+          type: string
+          enum:
+            - BRAVE
+            - TAVILY
+            - PERPLEXITY
+            - SEARXNG
+            - BROWSERBASE
+          description: Search engine that discovered this candidate
+          example: "TAVILY"
+        createdAt:
+          type: string
+          format: date-time
+          description: Discovery timestamp (ISO-8601)
+          example: "2025-11-16T10:30:00"
+
+    CandidatePage:
+      type: object
+      description: Paginated list of candidates
+      required:
+        - content
+        - totalElements
+        - totalPages
+        - currentPage
+        - pageSize
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/Candidate'
+          description: Array of candidates for current page
+        totalElements:
+          type: integer
+          format: int32
+          description: Total number of candidates matching filters
+          example: 42
+        totalPages:
+          type: integer
+          format: int32
+          description: Total number of pages
+          example: 3
+        currentPage:
+          type: integer
+          format: int32
+          description: Current page number (0-indexed)
+          example: 0
+        pageSize:
+          type: integer
+          format: int32
+          description: Number of items per page
+          example: 20
+
+    ErrorResponse:
+      type: object
+      description: Standard error response
+      required:
+        - timestamp
+        - status
+        - error
+        - message
+        - path
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+          description: Error timestamp (ISO-8601)
+          example: "2025-11-16T11:00:00"
+        status:
+          type: integer
+          format: int32
+          description: HTTP status code
+          example: 404
+        error:
+          type: string
+          description: HTTP status text
+          example: "Not Found"
+        message:
+          type: string
+          description: Error description
+          example: "Candidate not found with id: a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+        path:
+          type: string
+          description: Request path
+          example: "/api/candidates/a1b2c3d4-e5f6-7890-abcd-ef1234567890/approve"
