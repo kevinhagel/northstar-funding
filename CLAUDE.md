@@ -210,21 +210,42 @@ See: `northstar-notes/decisions/001-text-array-over-jsonb.md`
 
 ## Admin Dashboard (Vue + PrimeVue)
 
-**Status**: Architecture designed, Feature 013 ready for implementation
+**Status**: ✅ **Feature 013 Complete** - Review Queue implemented with PrimeVue DataTable
 
 **Purpose**: Web UI for Kevin/Huw to review, enhance, approve funding candidates.
 
-**Architecture**: Vue 3 (port 5173) → REST API (port 8080) → PostgreSQL (192.168.1.10:5432)
+**Architecture**: Vue 3 + TypeScript (port 5173) → REST API (port 8080) → PostgreSQL (192.168.1.10:5432)
+
+**Tech Stack**:
+- Vue 3.5+ with Composition API & TypeScript
+- PrimeVue 3.50 (DataTable, filters, confirmations, toasts)
+- Pinia 2.1 for state management
+- Axios 1.6 for HTTP calls
+- Vite 6.0 build tool
 
 **Key Principle**: Domain entities stay in service layer. REST uses DTOs (String types only).
 
-**Development**:
+**Running the Application**:
 ```bash
-mvn spring-boot:run -pl northstar-rest-api        # Terminal 1
-cd northstar-admin-ui && npm run dev              # Terminal 2 (Vite proxy handles CORS)
+# Terminal 1: Start REST API
+mvn spring-boot:run -pl northstar-rest-api
+
+# Terminal 2: Start Vue Dev Server
+cd northstar-admin-dashboard && npm run dev
+
+# Access: http://localhost:5173
 ```
 
-**Feature Roadmap**: Review Queue → Enhancement → Contact AI → Approval → Stats → Domains
+**Features Implemented (Feature 013)**:
+- ✅ Review Queue with PrimeVue DataTable (paginated, sortable)
+- ✅ Filters: Status (multi-select), Confidence (dropdown), Search Engine (multi-select)
+- ✅ Color-coded confidence scores (green/yellow/orange)
+- ✅ Quick actions: View, Enhance, Approve, Reject
+- ✅ Approve/Reject with confirmation dialogs
+- ✅ Toast notifications for success/error
+- ✅ Placeholder pages for Candidate Detail & Enhancement (Features 014-015)
+
+**Feature Roadmap**: ✅ Review Queue → Enhancement → Contact AI → Approval → Stats → Domains
 
 **Full Details**: See `northstar-notes/architecture/admin-dashboard-architecture.md` for complete DTO patterns, UI mockups, API endpoints, and data flow diagrams.
 

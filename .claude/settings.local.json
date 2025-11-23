@@ -64,7 +64,11 @@
       "Bash(time mvn test:*)",
       "SlashCommand(/specify:*)",
       "SlashCommand(/plan)",
-      "Bash(mv:*)"
+      "Bash(mv:*)",
+      "Bash(npm create:*)",
+      "Bash(npm install)",
+      "Bash(npm install:*)",
+      "Bash(npm run build:*)"
     ],
     "deny": [],
     "ask": []
