@@ -68,7 +68,8 @@
       "Bash(npm create:*)",
       "Bash(npm install)",
       "Bash(npm install:*)",
-      "Bash(npm run build:*)"
+      "Bash(npm run build:*)",
+      "Bash(PGPASSWORD=northstar_password psql:*)"
     ],
     "deny": [],
     "ask": []
