@@ -314,49 +314,97 @@ function confirmReject(candidate: Candidate) {
 </script>
 
 <style scoped>
+/* Celestial Navigation Theme - Review Queue */
+
 .review-queue {
   max-width: 1600px;
   margin: 0 auto;
-  padding: 2rem;
+  padding: 0 2rem 2rem;
 }
 
+/* Page Header with Constellation Styling */
 .header {
-  margin-bottom: 2rem;
+  margin-bottom: 2.5rem;
+  padding: 2rem 0 1.5rem;
+  border-bottom: 1px solid var(--border-subtle);
+  position: relative;
+}
+
+.header::before {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 120px;
+  height: 2px;
+  background: linear-gradient(90deg, var(--aurora), transparent);
 }
 
 .header h1 {
-  font-size: 2rem;
-  font-weight: 700;
-  margin-bottom: 0.5rem;
-  color: #333;
+  font-family: var(--font-display);
+  font-size: 2.25rem;
+  font-weight: 600;
+  margin-bottom: 0.625rem;
+  color: var(--text-primary);
+  letter-spacing: -0.02em;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.header h1::before {
+  content: '◆';
+  color: var(--aurora);
+  font-size: 1.5rem;
+  opacity: 0.7;
 }
 
 .subtitle {
-  color: #666;
-  font-size: 1.1rem;
+  color: var(--text-secondary);
+  font-size: 1rem;
+  font-weight: 400;
+  letter-spacing: 0.01em;
 }
 
+/* Glassmorphic Filter Card */
 .filters-card {
-  background: white;
-  border-radius: 8px;
-  padding: 1.5rem;
+  background: var(--surface-elevated);
+  backdrop-filter: blur(20px) saturate(180%);
+  border-radius: 12px;
+  padding: 1.75rem;
   margin-bottom: 2rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--border-subtle);
+  position: relative;
+  overflow: hidden;
+}
+
+.filters-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--cosmic-glow), transparent);
 }
 
 .filter-row {
   display: grid;
   grid-template-columns: repeat(3, 1fr) auto;
-  gap: 1rem;
+  gap: 1.25rem;
   align-items: end;
 }
 
 .filter-group label {
   display: block;
-  font-weight: 600;
+  font-family: var(--font-body);
+  font-weight: 500;
   margin-bottom: 0.5rem;
-  color: #555;
-  font-size: 0.9rem;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
 }
 
 .filter-input {
@@ -365,60 +413,303 @@ function confirmReject(candidate: Candidate) {
 
 .filter-actions {
   display: flex;
-  gap: 0.5rem;
+  gap: 0.625rem;
 }
 
+/* Data Table Enhancements */
 .candidates-table {
-  font-size: 0.9rem;
+  font-family: var(--font-body);
+  font-size: 0.9375rem;
 }
 
+/* URL Links with Aurora Accent */
 .url-link {
-  color: #3b82f6;
+  color: var(--aurora);
   text-decoration: none;
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+  transition: all 0.2s ease;
 }
 
 .url-link:hover {
+  color: var(--starlight);
   text-decoration: underline;
+  text-shadow: 0 0 8px var(--star-shimmer);
 }
 
+.url-link i {
+  font-size: 0.75rem;
+  opacity: 0.6;
+}
+
+/* Confidence Score Badges with Cosmic Colors */
 .confidence-high {
-  color: #10b981;
+  color: var(--starlight);
   font-weight: 700;
+  font-family: var(--font-mono);
+  text-shadow: 0 0 8px var(--star-shimmer);
+  background: rgba(244, 208, 63, 0.1);
+  padding: 0.25rem 0.625rem;
+  border-radius: 6px;
+  border: 1px solid rgba(244, 208, 63, 0.3);
+  display: inline-block;
 }
 
 .confidence-medium {
-  color: #f59e0b;
+  color: var(--nova);
   font-weight: 600;
+  font-family: var(--font-mono);
+  background: rgba(255, 107, 53, 0.1);
+  padding: 0.25rem 0.625rem;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 107, 53, 0.3);
+  display: inline-block;
 }
 
 .confidence-low {
-  color: #ef4444;
+  color: var(--aurora);
   font-weight: 500;
+  font-family: var(--font-mono);
+  background: var(--cosmic-glow);
+  padding: 0.25rem 0.625rem;
+  border-radius: 6px;
+  border: 1px solid rgba(0, 217, 255, 0.3);
+  display: inline-block;
 }
 
+/* Action Buttons with Hover Effects */
 .action-buttons {
   display: flex;
-  gap: 0.25rem;
+  gap: 0.375rem;
   flex-wrap: wrap;
 }
 
+/* Empty State with Celestial Styling */
 .empty-state {
   text-align: center;
-  padding: 3rem;
-  color: #666;
+  padding: 4rem 2rem;
+  color: var(--text-secondary);
 }
 
 .empty-state i {
-  font-size: 3rem;
-  color: #ccc;
+  font-size: 4rem;
+  color: var(--constellation);
   display: block;
-  margin-bottom: 1rem;
+  margin-bottom: 1.5rem;
+  opacity: 0.4;
+  animation: float 3s ease-in-out infinite;
 }
 
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+}
+
+.empty-state p {
+  font-family: var(--font-body);
+  font-size: 1.125rem;
+  margin-bottom: 1.5rem;
+  color: var(--text-secondary);
+}
+
+/* Pagination Styling */
 .pagination {
-  margin-top: 1rem;
+  margin-top: 1.5rem;
+}
+
+/* PrimeVue Component Overrides for Dark Theme */
+:deep(.p-card) {
+  background: var(--surface-elevated);
+  backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid var(--border-subtle);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  border-radius: 12px;
+}
+
+:deep(.p-card .p-card-body) {
+  padding: 1.5rem;
+}
+
+:deep(.p-card .p-card-content) {
+  padding: 0;
+}
+
+:deep(.p-datatable .p-datatable-thead > tr > th) {
+  background: var(--nebula-blue);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 0.875rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  border-bottom: 2px solid var(--constellation);
+  padding: 1rem 0.75rem;
+}
+
+:deep(.p-datatable .p-datatable-tbody > tr) {
+  background: transparent;
+  transition: all 0.2s ease;
+}
+
+:deep(.p-datatable .p-datatable-tbody > tr:hover) {
+  background: rgba(74, 88, 153, 0.15);
+}
+
+:deep(.p-datatable .p-datatable-tbody > tr > td) {
+  color: var(--text-primary);
+  border-bottom: 1px solid var(--border-subtle);
+  padding: 0.875rem 0.75rem;
+}
+
+:deep(.p-datatable .p-datatable-tbody > tr.p-row-odd) {
+  background: rgba(26, 31, 58, 0.3);
+}
+
+:deep(.p-datatable .p-datatable-tbody > tr.p-row-odd:hover) {
+  background: rgba(74, 88, 153, 0.2);
+}
+
+/* PrimeVue Tag Component */
+:deep(.p-tag) {
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  padding: 0.375rem 0.75rem;
+  border-radius: 6px;
+  backdrop-filter: blur(8px);
+}
+
+:deep(.p-tag.p-tag-success) {
+  background: rgba(16, 185, 129, 0.2);
+  color: #10b981;
+  border: 1px solid rgba(16, 185, 129, 0.4);
+}
+
+:deep(.p-tag.p-tag-danger) {
+  background: rgba(239, 68, 68, 0.2);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.4);
+}
+
+:deep(.p-tag.p-tag-info) {
+  background: var(--cosmic-glow);
+  color: var(--aurora);
+  border: 1px solid rgba(0, 217, 255, 0.3);
+}
+
+:deep(.p-tag.p-tag-warning) {
+  background: rgba(245, 158, 11, 0.2);
+  color: #f59e0b;
+  border: 1px solid rgba(245, 158, 11, 0.4);
+}
+
+/* PrimeVue Button Component */
+:deep(.p-button) {
+  font-family: var(--font-body);
+  font-weight: 500;
+  border-radius: 8px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid transparent;
+}
+
+:deep(.p-button:hover) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+:deep(.p-button.p-button-text) {
+  background: transparent;
+  border: 1px solid var(--border-subtle);
+}
+
+:deep(.p-button.p-button-text:hover) {
+  background: var(--cosmic-glow);
+  border-color: var(--aurora);
+}
+
+:deep(.p-button.p-button-success) {
+  background: rgba(16, 185, 129, 0.2);
+  color: #10b981;
+  border: 1px solid rgba(16, 185, 129, 0.4);
+}
+
+:deep(.p-button.p-button-success:hover) {
+  background: rgba(16, 185, 129, 0.3);
+  border-color: #10b981;
+}
+
+:deep(.p-button.p-button-danger) {
+  background: rgba(239, 68, 68, 0.2);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.4);
+}
+
+:deep(.p-button.p-button-danger:hover) {
+  background: rgba(239, 68, 68, 0.3);
+  border-color: #ef4444;
+}
+
+/* PrimeVue Input Components */
+:deep(.p-multiselect),
+:deep(.p-dropdown) {
+  background: var(--surface);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-primary);
+  transition: all 0.2s ease;
+}
+
+:deep(.p-multiselect:hover),
+:deep(.p-dropdown:hover) {
+  border-color: var(--constellation);
+}
+
+:deep(.p-multiselect.p-focus),
+:deep(.p-dropdown.p-focus) {
+  border-color: var(--aurora);
+  box-shadow: 0 0 0 2px var(--cosmic-glow);
+}
+
+:deep(.p-multiselect .p-multiselect-label),
+:deep(.p-dropdown .p-dropdown-label) {
+  color: var(--text-primary);
+  font-family: var(--font-body);
+}
+
+/* PrimeVue Paginator */
+:deep(.p-paginator) {
+  background: var(--surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  padding: 0.75rem;
+  margin-top: 1.5rem;
+}
+
+:deep(.p-paginator .p-paginator-pages .p-paginator-page) {
+  color: var(--text-secondary);
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+:deep(.p-paginator .p-paginator-pages .p-paginator-page:hover) {
+  background: var(--cosmic-glow);
+  color: var(--aurora);
+}
+
+:deep(.p-paginator .p-paginator-pages .p-paginator-page.p-highlight) {
+  background: var(--constellation);
+  color: var(--text-primary);
+  box-shadow: 0 0 12px var(--cosmic-glow);
+}
+
+/* Loading Spinner */
+:deep(.p-progress-spinner) {
+  opacity: 0.8;
+}
+
+:deep(.p-progress-spinner-circle) {
+  stroke: var(--aurora);
 }
 </style>
