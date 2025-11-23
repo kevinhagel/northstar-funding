@@ -1,0 +1,59 @@
+# NorthStar Search Adapters Configuration
+#
+# Configure search engine API keys and endpoints.
+# API keys should be provided via environment variables (not committed to git).
+
+search-adapters:
+  # Brave Search API
+  # Sign up: https://brave.com/search/api/
+  # Free tier: 2,000 queries/month
+  brave:
+    api-key: ${BRAVE_API_KEY:}
+    api-url: https://api.search.brave.com/res/v1/web/search
+    timeout-seconds: 10
+
+  # Serper.dev (Google Search API)
+  # Sign up: https://serper.dev/
+  # Free tier: 2,500 queries/month
+  # NOTE: Serper adapter not yet implemented
+  serper:
+    api-key: ${SERPER_API_KEY:}
+    api-url: https://google.serper.dev/search
+    timeout-seconds: 10
+
+  # SearXNG (Self-hosted search engine)
+  # Local Docker: http://localhost:8080
+  # Mac Studio: http://192.168.1.10:8080
+  searxng:
+    api-url: ${SEARXNG_API_URL:http://192.168.1.10:8080}
+    timeout-seconds: 10
+
+  # Tavily AI Search API
+  # Sign up: https://tavily.com/
+  # Free tier: 1,000 queries/month
+  # NOTE: Tavily adapter not yet implemented
+  tavily:
+    api-key: ${TAVILY_API_KEY:}
+    api-url: https://api.tavily.com/search
+    timeout-seconds: 15
+
+# WebClient HTTP settings
+spring:
+  webflux:
+    # Connection timeout
+    # Increase if search engines are slow
+    connection-timeout: 10s
+
+    # Read timeout
+    # Time to wait for search results
+    read-timeout: 30s
+
+# Logging
+logging:
+  level:
+    com.northstar.funding.searchadapters: INFO
+    com.northstar.funding.searchadapters.workflow: DEBUG
+    com.northstar.funding.searchadapters.brave: DEBUG
+    com.northstar.funding.searchadapters.serper: DEBUG
+    com.northstar.funding.searchadapters.searxng: DEBUG
+    com.northstar.funding.searchadapters.tavily: DEBUG

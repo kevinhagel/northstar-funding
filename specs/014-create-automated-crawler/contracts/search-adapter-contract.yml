@@ -1,0 +1,202 @@
+# Search Adapter Contract
+# Defines the interface contract for all search engine adapter implementations
+
+contract:
+  name: SearchAdapter
+  version: 1.0.0
+  description: Common interface for all search engine adapters (Brave, Serper, SearXNG, Tavily)
+
+interface:
+  methods:
+    - name: search
+      description: Execute search query and return results
+      parameters:
+        - name: query
+          type: String
+          required: true
+          description: Search query string (keyword or natural language)
+          examples:
+            - "Bulgaria educational funding grants"
+            - "What European Union funding opportunities are available for teacher training programs in Eastern Europe?"
+        - name: maxResults
+          type: int
+          required: true
+          description: Maximum number of results to return
+          constraints:
+            minimum: 1
+            maximum: 50
+          default: 10
+      returns:
+        type: List<SearchResult>
+        description: List of search results (empty list if zero results - NOT an error)
+        empty_list_meaning: Zero results found (valid outcome, not an error)
+      throws:
+        - exception: SearchAdapterException
+          when:
+            - API authentication failure (invalid/missing API key)
+            - Network connectivity failure
+            - API rate limit exceeded
+            - API returns 5xx server error
+            - Request timeout
+          not_thrown_for:
+            - Zero search results (return empty list instead)
+
+    - name: getEngineType
+      description: Get the search engine type this adapter implements
+      returns:
+        type: SearchEngineType
+        enum_values: [BRAVE, SERPER, SEARXNG, TAVILY]
+        description: Identifies which search engine this adapter uses
+
+    - name: isAvailable
+      description: Check if this adapter is currently available for use
+      returns:
+        type: boolean
+        description: true if adapter can be used (configured and reachable), false otherwise
+      criteria:
+        returns_true_when:
+          - API key is configured (if required)
+          - API endpoint is reachable
+          - Adapter is not disabled in configuration
+        returns_false_when:
+          - API key is missing (for paid services)
+          - API endpoint is unreachable
+          - Adapter is explicitly disabled in configuration
+
+implementations:
+  - class: BraveSearchAdapter
+    engine: BRAVE
+    requires_api_key: true
+    api_endpoint: https://api.search.brave.com/res/v1/web/search
+    query_style: keyword
+    max_results_per_call: 20
+
+  - class: SerperAdapter
+    engine: SERPER
+    requires_api_key: true
+    api_endpoint: https://google.serper.dev/search
+    query_style: keyword
+    max_results_per_call: 100
+
+  - class: SearXNGAdapter
+    engine: SEARXNG
+    requires_api_key: false
+    api_endpoint: http://192.168.1.10:8080
+    query_style: keyword
+    max_results_per_call: 100
+
+  - class: TavilyAdapter
+    engine: TAVILY
+    requires_api_key: true
+    api_endpoint: https://api.tavily.com/search
+    query_style: natural_language
+    max_results_per_call: 10
+
+response_mapping:
+  description: How to map search engine API responses to SearchResult domain model
+  common_fields:
+    - api_field: url
+      domain_field: sourceUrl
+      required: true
+      type: String
+      description: Full URL of the search result
+
+    - api_field: title
+      domain_field: metadataTitle
+      required: false
+      type: String
+      description: Page title from search metadata
+      fallback: Extract from URL if missing
+
+    - api_field: description
+      domain_field: metadataDescription
+      required: false
+      type: String
+      description: Page description/snippet from search metadata
+      fallback: Empty string if missing
+
+  adapter_specific_mappings:
+    BraveSearchAdapter:
+      url: results[].url
+      title: results[].title
+      description: results[].description
+
+    SerperAdapter:
+      url: organic[].link
+      title: organic[].title
+      description: organic[].snippet
+
+    SearXNGAdapter:
+      url: results[].url
+      title: results[].title
+      description: results[].content
+
+    TavilyAdapter:
+      url: results[].url
+      title: results[].title
+      description: results[].content
+
+error_handling:
+  retry_policy:
+    description: Adapters should NOT retry on failure - let SearchWorkflowService handle retries
+    rationale: Service layer has better context for retry decisions (e.g., skip engine if all queries fail)
+
+  zero_results:
+    is_error: false
+    action: Return empty list
+    logging: INFO level
+    tracking: Record in search_session_statistics with zero_result=true
+
+  api_failures:
+    is_error: true
+    action: Throw SearchAdapterException
+    logging: WARN level
+    tracking: Record in search_session_statistics with error_occurred=true
+
+validation:
+  input_validation:
+    - query must not be null or blank
+    - maxResults must be between 1 and 50
+
+  output_validation:
+    - All SearchResult objects must have non-null sourceUrl
+    - sourceUrl must be valid HTTP/HTTPS URL
+    - searchEngineSource must match adapter's getEngineType()
+    - discoveredAt must be current timestamp
+
+testing:
+  contract_tests:
+    - test: search_with_results
+      given: Valid query with known results
+      when: search() called
+      then: Returns non-empty List<SearchResult>
+
+    - test: search_with_zero_results
+      given: Valid query with no matching results
+      when: search() called
+      then: Returns empty List (no exception thrown)
+
+    - test: search_with_invalid_api_key
+      given: Missing or invalid API key
+      when: search() called
+      then: Throws SearchAdapterException
+
+    - test: search_with_network_failure
+      given: Network connectivity issue
+      when: search() called
+      then: Throws SearchAdapterException
+
+    - test: get_engine_type
+      given: Adapter instance
+      when: getEngineType() called
+      then: Returns correct SearchEngineType enum
+
+    - test: is_available_when_configured
+      given: Valid API key and reachable endpoint
+      when: isAvailable() called
+      then: Returns true
+
+    - test: is_available_when_not_configured
+      given: Missing API key
+      when: isAvailable() called
+      then: Returns false

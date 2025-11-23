@@ -61,7 +61,10 @@
       "Bash(mvn spring-boot:run:*)",
       "Bash(mvn:*)",
       "Bash(bash -c:*)",
-      "Bash(time mvn test:*)"
+      "Bash(time mvn test:*)",
+      "SlashCommand(/specify:*)",
+      "SlashCommand(/plan)",
+      "Bash(mv:*)"
     ],
     "deny": [],
     "ask": []

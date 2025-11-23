@@ -305,7 +305,7 @@ services:
 
   # pgAdmin - PostgreSQL Administration Interface
   pgadmin:
-    image: dpage/pgadmin4:latest
+    image: dpage/pgadmin4:9.10
     container_name: northstar-pgadmin
     hostname: pgadmin
     ports:

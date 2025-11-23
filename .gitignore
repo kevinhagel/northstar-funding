@@ -6,3 +6,6 @@ northstar-notes/.obsidian/
 
 # Git worktrees
 .worktrees/
+
+# Archived old implementations
+archived-frontends/

@@ -87,6 +87,8 @@ public class FundingSourceCandidate {
     // Discovery Metadata
     private String discoveryMethod;
     private String searchQuery;
+    private SearchEngineType searchEngineSource; // Search engine that discovered this candidate
+    private String metadataTitle; // Page title from search engine metadata
     private String extractedData; // Raw scraped data as JSON string
     private UUID duplicateOfCandidateId;
 

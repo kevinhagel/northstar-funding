@@ -1,0 +1,296 @@
+# Search Workflow Contract
+# Defines the orchestration contract for nightly search execution
+
+contract:
+  name: SearchWorkflowService
+  version: 1.0.0
+  description: Orchestrates nightly search workflow (query generation → search → processing)
+
+service_methods:
+  - name: executeNightlySearch
+    description: Execute complete nightly search for a specific day's categories
+    parameters:
+      - name: dayOfWeek
+        type: DayOfWeek
+        required: true
+        description: Which day's categories to search (MONDAY-SUNDAY)
+        enum_values: [MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY, SATURDAY, SUNDAY]
+    returns:
+      type: SearchWorkflowResult
+      description: Summary of search execution with statistics
+    workflow:
+      steps:
+        - step: 1
+          action: Get categories for day
+          service: DayOfWeekCategories.getCategories(dayOfWeek)
+          output: List<FundingSearchCategory>
+
+        - step: 2
+          action: Create discovery session
+          service: DiscoverySessionService.createSession()
+          output: UUID sessionId
+
+        - step: 3
+          action: Generate queries for each category
+          service: QueryGenerationService.generateQueries(category)
+          concurrency: Sequential (one category at a time)
+          output: Map<FundingSearchCategory, List<String>> queries
+
+        - step: 4
+          action: Execute searches
+          service: SearchAdapter.search(query, maxResults)
+          concurrency: Parallel (Virtual Threads)
+          distribution: Round-robin across 4 adapters
+          output: List<SearchResult> allResults
+
+        - step: 5
+          action: Process search results
+          service: SearchResultProcessor.processResults(allResults)
+          output: ProcessingStatistics
+
+        - step: 6
+          action: Track zero-result queries
+          service: Record in search_session_statistics
+          condition: When results.isEmpty()
+          fields:
+            zero_result: true
+            results_count: 0
+
+        - step: 7
+          action: Update session statistics
+          service: DiscoverySessionService.updateStatistics()
+          output: void
+
+        - step: 8
+          action: Build result summary
+          service: Build SearchWorkflowResult
+          output: SearchWorkflowResult
+
+  - name: executeManualSearch
+    description: Execute search for specific categories and adapters (manual trigger)
+    parameters:
+      - name: request
+        type: ManualSearchRequest
+        required: true
+        description: Manual search request with categories and engines
+    returns:
+      type: SearchWorkflowResult
+    workflow:
+      steps:
+        - Same as executeNightlySearch but using request.categories and request.engines
+
+adapter_distribution:
+  strategy: round_robin
+  description: Distribute categories across 4 adapters using modulo operation
+  algorithm: |
+    for (int i = 0; i < categories.size(); i++) {
+        FundingSearchCategory category = categories.get(i);
+
+        // Assign 2 adapters per category using round-robin
+        SearchAdapter adapter1 = adapters.get(i % 4);
+        SearchAdapter adapter2 = adapters.get((i + 2) % 4);
+
+        // Execute searches with both adapters in parallel
+    }
+  ensures:
+    - All 4 adapters used every night
+    - Each category searched by 2 different adapters
+    - Load distributed evenly across adapters
+
+category_schedule:
+  MONDAY:
+    categories: [INDIVIDUAL_SCHOLARSHIPS, STUDENT_FINANCIAL_AID, TEACHER_SCHOLARSHIPS, ACADEMIC_FELLOWSHIPS]
+    count: 4
+  TUESDAY:
+    categories: [PROGRAM_GRANTS, CURRICULUM_DEVELOPMENT, AFTER_SCHOOL_PROGRAMS, SUMMER_PROGRAMS, EXTRACURRICULAR_ACTIVITIES]
+    count: 5
+  WEDNESDAY:
+    categories: [INFRASTRUCTURE_FUNDING, TECHNOLOGY_EQUIPMENT, LIBRARY_RESOURCES]
+    count: 3
+  THURSDAY:
+    categories: [TEACHER_DEVELOPMENT, PROFESSIONAL_TRAINING, ADMINISTRATIVE_CAPACITY]
+    count: 3
+  FRIDAY:
+    categories: [STEM_EDUCATION, ARTS_EDUCATION, SPECIAL_NEEDS_EDUCATION, LANGUAGE_PROGRAMS]
+    count: 4
+  SATURDAY:
+    categories: [COMMUNITY_PARTNERSHIPS, PARENT_ENGAGEMENT, NGO_EDUCATION_PROJECTS]
+    count: 3
+  SUNDAY:
+    categories: [EDUCATION_RESEARCH, PILOT_PROGRAMS, INNOVATION_GRANTS, EARLY_CHILDHOOD_EDUCATION, ADULT_EDUCATION, VOCATIONAL_TRAINING, EDUCATIONAL_TECHNOLOGY, ARTS_CULTURE]
+    count: 8
+
+concurrency:
+  query_generation:
+    mode: sequential
+    rationale: Ollama has OLLAMA_NUM_PARALLEL=10, but sequential is simpler for initial implementation
+    future: Consider parallel generation for 8+ categories (Sunday)
+
+  search_execution:
+    mode: parallel
+    technology: Java 25 Virtual Threads
+    pattern: |
+      ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
+      List<CompletableFuture<List<SearchResult>>> futures = adapters.stream()
+          .map(adapter -> CompletableFuture.supplyAsync(() ->
+              adapter.search(query, maxResults), executor))
+          .toList();
+      CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
+    ensures:
+      - All adapters execute searches concurrently
+      - No thread pool configuration needed
+      - Lightweight threads scale to hundreds of concurrent searches
+
+  result_processing:
+    mode: sequential
+    rationale: ProcessingStatistics uses in-memory HashSet for deduplication
+
+error_handling:
+  adapter_failure:
+    policy: Continue with other adapters
+    action: Log warning, record in statistics, continue processing
+    example: |
+      try {
+          results = adapter.search(query, maxResults);
+      } catch (SearchAdapterException e) {
+          logger.warn("Adapter {} failed: {}", adapter.getEngineType(), e.getMessage());
+          statistics.recordFailure(adapter.getEngineType(), e.getMessage());
+          // Continue with next adapter - do not abort workflow
+      }
+
+  zero_results:
+    policy: NOT an error
+    action: Record in search_session_statistics with zero_result=true
+    logging: INFO level
+    tracking: Track per query+adapter combination for effectiveness analysis
+
+  query_generation_failure:
+    policy: Skip category
+    action: Log error, continue with remaining categories
+    fallback: Could use static fallback queries (not in initial implementation)
+
+  all_adapters_fail:
+    policy: Complete workflow with partial results
+    action: Log error, return SearchWorkflowResult with hasFailures=true
+    notification: Consider alerting if >= 3 of 4 adapters fail
+
+statistics_tracking:
+  discovery_session:
+    fields:
+      - session_id: UUID (primary key)
+      - session_type: AUTOMATED_SEARCH
+      - started_at: LocalDateTime
+      - completed_at: LocalDateTime
+      - total_results_found: int
+      - candidates_created: int
+      - duplicates_skipped: int
+      - blacklisted_skipped: int
+
+  search_session_statistics:
+    fields:
+      - statistic_id: UUID (primary key)
+      - session_id: UUID (foreign key)
+      - search_engine: SearchEngineType
+      - query_text: String
+      - results_count: int
+      - zero_result: boolean
+      - average_confidence: BigDecimal(3,2)
+      - execution_time_ms: int
+      - error_occurred: boolean
+      - error_message: String
+
+  search_workflow_result:
+    fields:
+      - sessionId: UUID
+      - queriesGenerated: int
+      - totalSearchesExecuted: int
+      - totalResultsFound: int
+      - candidatesCreated: int
+      - duplicatesSkipped: int
+      - blacklistedSkipped: int
+      - lowConfidenceSkipped: int
+      - zeroResultCount: int
+      - resultsByEngine: Map<SearchEngineType, Integer>
+      - zeroResultsByEngine: Map<SearchEngineType, Integer>
+      - executionDuration: Duration
+      - hasFailures: boolean
+      - failureMessages: Map<SearchEngineType, String>
+
+performance_targets:
+  nightly_execution:
+    max_duration: 10 minutes
+    typical_duration: 5-7 minutes
+    calculation: |
+      Monday (4 categories):
+        - Query generation: 4 categories × 3 queries × 2s = 24s
+        - Search execution: 12 queries × 4 adapters (parallel) ≈ 60s
+        - Result processing: < 30s
+        Total: ~2 minutes
+
+      Sunday (8 categories):
+        - Query generation: 8 categories × 3 queries × 2s = 48s
+        - Search execution: 24 queries × 4 adapters (parallel) ≈ 120s
+        - Result processing: < 60s
+        Total: ~4 minutes
+
+  search_latency:
+    per_query_per_adapter: 1-3 seconds
+    parallel_execution: Same as single query (Virtual Threads)
+
+data_quality:
+  confidence_threshold: 0.60
+  precision: BigDecimal with scale 2
+  deduplication: Domain-level (in-memory HashSet)
+  blacklist: Checked before confidence scoring
+
+testing:
+  contract_tests:
+    - test: execute_nightly_search_monday
+      given: Monday schedule (4 categories)
+      when: executeNightlySearch(MONDAY)
+      then:
+        - Creates discovery session
+        - Generates ~12 queries (4 categories × 3 queries)
+        - Executes searches across all 4 adapters
+        - Creates high-confidence candidates (>= 0.6)
+        - Returns SearchWorkflowResult with statistics
+
+    - test: execute_with_adapter_failure
+      given: One adapter throws SearchAdapterException
+      when: executeNightlySearch(MONDAY)
+      then:
+        - Continues with remaining 3 adapters
+        - Records failure in statistics
+        - Returns SearchWorkflowResult with hasFailures=true
+
+    - test: execute_with_zero_results
+      given: All searches return empty results
+      when: executeNightlySearch(MONDAY)
+      then:
+        - Records zero_result=true for each query+adapter
+        - Does NOT throw exception
+        - Returns SearchWorkflowResult with zeroResultCount > 0
+
+    - test: manual_search_execution
+      given: ManualSearchRequest with specific categories and engines
+      when: executeManualSearch(request)
+      then:
+        - Uses only requested categories and engines
+        - Executes workflow same as nightly
+        - Returns SearchWorkflowResult
+
+dependencies:
+  required_services:
+    - QueryGenerationService (northstar-query-generation)
+    - SearchResultProcessor (northstar-crawler)
+    - DomainService (northstar-persistence)
+    - DiscoverySessionService (northstar-persistence)
+    - All 4 SearchAdapter implementations (northstar-search-adapters)
+
+  external_services:
+    - Ollama @ 192.168.1.10:11434 (query generation)
+    - PostgreSQL @ 192.168.1.10:5432 (persistence)
+    - Brave Search API (if API key configured)
+    - Serper.dev API (if API key configured)
+    - SearXNG @ 192.168.1.10:8080 (self-hosted)
+    - Tavily API (if API key configured)

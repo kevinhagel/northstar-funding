@@ -16,17 +16,38 @@
     <description>Search engine adapters (SearXNG, Brave, Serper, Tavily)</description>
 
     <dependencies>
-        <!-- Domain module (SearchEngineType enum) -->
+        <!-- Domain module (SearchEngineType enum, FundingSearchCategory, etc) -->
         <dependency>
             <groupId>com.northstar.funding</groupId>
             <artifactId>northstar-domain</artifactId>
             <version>${project.version}</version>
         </dependency>
 
-        <!-- Spring Web (RestTemplate for HTTP calls) -->
+        <!-- Persistence module (DiscoverySessionService, repositories) -->
+        <dependency>
+            <groupId>com.northstar.funding</groupId>
+            <artifactId>northstar-persistence</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <!-- Query Generation module (QueryGenerationService) -->
+        <dependency>
+            <groupId>com.northstar.funding</groupId>
+            <artifactId>northstar-query-generation</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <!-- Crawler module (SearchResultProcessor) -->
+        <dependency>
+            <groupId>com.northstar.funding</groupId>
+            <artifactId>northstar-crawler</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <!-- Spring WebFlux (WebClient for non-blocking HTTP calls) -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-web</artifactId>
+            <artifactId>spring-boot-starter-webflux</artifactId>
         </dependency>
 
         <!-- Jackson for JSON parsing -->
@@ -48,6 +69,14 @@
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
         </dependency>
+
+        <!-- WireMock for mocking HTTP responses in tests (standalone with all Jetty dependencies) -->
+        <dependency>
+            <groupId>org.wiremock</groupId>
+            <artifactId>wiremock-standalone</artifactId>
+            <version>3.3.1</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
@@ -56,8 +85,6 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
-                    <source>25</source>
-                    <target>25</target>
                     <annotationProcessorPaths>
                         <path>
                             <groupId>org.projectlombok</groupId>
