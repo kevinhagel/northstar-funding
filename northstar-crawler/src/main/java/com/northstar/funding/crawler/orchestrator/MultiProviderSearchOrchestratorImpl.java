@@ -5,7 +5,6 @@ import com.northstar.funding.crawler.adapter.PerplexicaAdapter;
 import com.northstar.funding.crawler.adapter.SearchProviderAdapter;
 import com.northstar.funding.crawler.adapter.SearxngAdapter;
 import com.northstar.funding.crawler.adapter.SerperAdapter;
-import com.northstar.funding.crawler.adapter.TavilyAdapter;
 import com.northstar.funding.crawler.antispam.AntiSpamFilter;
 import com.northstar.funding.crawler.antispam.SpamAnalysisResult;
 import com.northstar.funding.domain.DiscoverySession;
@@ -48,7 +47,6 @@ public class MultiProviderSearchOrchestratorImpl implements MultiProviderSearchO
     private final BraveSearchAdapter braveSearchAdapter;
     private final SearxngAdapter searxngAdapter;
     private final SerperAdapter serperAdapter;
-    private final TavilyAdapter tavilyAdapter;
     private final PerplexicaAdapter perplexicaAdapter;
     private final AntiSpamFilter antiSpamFilter;
     private final DomainService domainService;
@@ -60,7 +58,6 @@ public class MultiProviderSearchOrchestratorImpl implements MultiProviderSearchO
             BraveSearchAdapter braveSearchAdapter,
             SearxngAdapter searxngAdapter,
             SerperAdapter serperAdapter,
-            TavilyAdapter tavilyAdapter,
             PerplexicaAdapter perplexicaAdapter,
             AntiSpamFilter antiSpamFilter,
             DomainService domainService,
@@ -71,7 +68,6 @@ public class MultiProviderSearchOrchestratorImpl implements MultiProviderSearchO
         this.braveSearchAdapter = braveSearchAdapter;
         this.searxngAdapter = searxngAdapter;
         this.serperAdapter = serperAdapter;
-        this.tavilyAdapter = tavilyAdapter;
         this.perplexicaAdapter = perplexicaAdapter;
         this.antiSpamFilter = antiSpamFilter;
         this.domainService = domainService;
@@ -79,7 +75,7 @@ public class MultiProviderSearchOrchestratorImpl implements MultiProviderSearchO
         this.discoverySessionService = discoverySessionService;
         this.virtualThreadExecutor = virtualThreadExecutor;
 
-        log.info("MultiProviderSearchOrchestratorImpl initialized with 5 providers (including Perplexica) and Virtual Thread executor");
+        log.info("MultiProviderSearchOrchestratorImpl initialized with 4 providers (Brave, SearXNG, Serper, Perplexica) and Virtual Thread executor");
     }
 
     @Override
@@ -94,7 +90,7 @@ public class MultiProviderSearchOrchestratorImpl implements MultiProviderSearchO
 
         long startTime = System.currentTimeMillis();
 
-        // Execute all 5 providers in parallel using Virtual Threads
+        // Execute all 4 providers in parallel using Virtual Threads
         CompletableFuture<ProviderSearchResult> braveFuture = executeProviderAsync(
                 braveSearchAdapter, keywordQuery, maxResultsPerProvider, discoverySessionId);
 
@@ -104,15 +100,12 @@ public class MultiProviderSearchOrchestratorImpl implements MultiProviderSearchO
         CompletableFuture<ProviderSearchResult> serperFuture = executeProviderAsync(
                 serperAdapter, keywordQuery, maxResultsPerProvider, discoverySessionId);
 
-        CompletableFuture<ProviderSearchResult> tavilyFuture = executeProviderAsync(
-                tavilyAdapter, aiOptimizedQuery, maxResultsPerProvider, discoverySessionId);
-
         CompletableFuture<ProviderSearchResult> perplexicaFuture = executeProviderAsync(
                 perplexicaAdapter, aiOptimizedQuery, maxResultsPerProvider, discoverySessionId);
 
         // Wait for all providers to complete (or timeout after 15 seconds - increased for Perplexica)
         try {
-            CompletableFuture.allOf(braveFuture, searxngFuture, serperFuture, tavilyFuture, perplexicaFuture)
+            CompletableFuture.allOf(braveFuture, searxngFuture, serperFuture, perplexicaFuture)
                     .orTimeout(15, TimeUnit.SECONDS)
                     .join();
 
@@ -121,7 +114,6 @@ public class MultiProviderSearchOrchestratorImpl implements MultiProviderSearchO
                     braveFuture.join(),
                     searxngFuture.join(),
                     serperFuture.join(),
-                    tavilyFuture.join(),
                     perplexicaFuture.join()
             );
 
