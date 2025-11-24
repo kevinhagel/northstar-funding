@@ -4,19 +4,22 @@ This file provides guidance to Claude Code when working with this repository.
 
 ## Project Overview
 
-NorthStar Funding Discovery is an automated funding discovery platform for EU/Eastern Europe opportunities. Currently implemented: foundational domain model, persistence layer, query generation module, and partial search result processing.
+NorthStar Funding Discovery is an automated funding discovery platform for EU/Eastern Europe opportunities. Core infrastructure complete through Feature 014.
 
-### Current State
+### Current State (as of Feature 014 - 2025-11-24)
 
 ✅ **Domain Model**: 19 entities + 16 enums (funding sources, organizations, programs, domains, sessions)
 ✅ **Persistence Layer**: 9 Spring Data JDBC repositories + 5 service classes
 ✅ **Database Schema**: 17 Flyway migrations
-✅ **Query Generation Module**: AI-powered query generation (Ollama + LangChain4j, 24-hour caching, 58 tests)
+✅ **Query Generation Module**: AI-powered query generation (LangChain4j, 24-hour caching, 58 tests)
+✅ **Search Adapters**: 4 providers (Brave, SearXNG, Serper mocked, Perplexica) with Virtual Threads
+✅ **Search Workflow**: Complete pipeline - Query → Search → Process → Candidates
 ✅ **Search Result Processing**: Confidence scoring, domain deduplication, blacklist filtering
-✅ **Tests**: 327 unit tests (Mockito), integration tests (TestContainers)
+✅ **Tests**: 28/29 search adapter tests + 327 unit tests (Mockito), integration tests (TestContainers)
 
-⚠️ **Partial**: Crawler (processing pipeline only), REST API (needs admin endpoints)
-❌ **Missing**: Search engine adapters, web crawling, judging module
+⚠️ **Partial**: REST API (basic endpoints, needs admin dashboard), Admin UI (Feature 013 paused)
+⏳ **Deferred**: Automated scheduling (Feature 016), LM Studio integration (Feature 015)
+❌ **Not Started**: Phase 2 web crawling (deep content analysis)
 
 ### Project Context
 Developer: American expat in Burgas, Bulgaria
@@ -39,32 +42,32 @@ Developer: American expat in Burgas, Bulgaria
 
 **Infrastructure (Mac Studio @ 192.168.1.10):**
 - PostgreSQL 16 (port 5432)
-- Ollama (native, NOT Docker - Metal GPU acceleration)
+- LM Studio (native, port 1234) - PRIMARY for Perplexica integration
 - Docker Compose (SearXNG, Perplexica, etc.)
 
-### Ollama Configuration
+### LM Studio Configuration
 
-**Native Installation** (NOT Docker) for Metal GPU acceleration
+**STANDARD FOR PERPLEXICA**: LM Studio is the proven, reliable LLM server for Perplexica integration.
 
-**Models** (on `/Volumes/T7-NorthStar/ollama-models`):
-- `llama3.1:8b` - Primary for query generation (reliable structured output)
-- `qwen2.5:0.5b` - Fast but unreliable for structured output
-- `phi3:medium`, `nomic-embed-text`
+**Port**: `http://192.168.1.10:1234`
 
-**Key Environment Variables:**
-```bash
-OLLAMA_HOST=0.0.0.0:11434
-OLLAMA_NUM_PARALLEL=10           # Concurrent requests (advantage over LM Studio)
-OLLAMA_MAX_LOADED_MODELS=2
-OLLAMA_FLASH_ATTENTION=1
-```
+**Why LM Studio over Ollama**:
+- Proven reliability with Perplexica (production tested)
+- Works correctly despite not claiming concurrent support
+- Ollama claimed `OLLAMA_NUM_PARALLEL=10` but failed in practice with Perplexica
+- Decision documented in session 2025-11-24
 
-**Access:**
-- Mac Studio: `http://localhost:11434`
-- Docker containers: `http://host.docker.internal:11434`
-- Network: `http://192.168.1.10:11434`
+**Verify:** `ssh macstudio "curl -s http://localhost:1234/v1/models || echo 'LM Studio not responding at port 1234'"`
 
-**Verify:** `curl http://192.168.1.10:11434/v1/models`
+### Ollama Configuration (DEPRECATED for Search Workflows)
+
+**Status**: Available for experimentation but NOT used in search workflows due to parallelism failures with Perplexica.
+
+**If Needed for Testing**:
+- Native installation on `/Volumes/T7-NorthStar/ollama-models`
+- Access: `http://192.168.1.10:11434`
+- Models: `llama3.1:8b`, `qwen2.5:0.5b`, `phi3:medium`, `nomic-embed-text`
+- **Note**: Will revisit Ollama in future when parallelism issues are resolved
 
 ### Development Machine Architecture
 
