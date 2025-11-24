@@ -1,31 +1,31 @@
 package com.northstar.funding.crawler;
 
-import com.northstar.funding.crawler.orchestrator.MultiProviderSearchOrchestrator;
-import com.northstar.funding.crawler.orchestrator.SearchExecutionResult;
-import com.northstar.funding.domain.DiscoverySession;
-import com.northstar.funding.domain.FundingSourceCandidate;
-import com.northstar.funding.domain.SearchResult;
-import com.northstar.funding.domain.SessionStatus;
+import com.northstar.funding.crawler.service.ScheduledCrawlService;
+import com.northstar.funding.crawler.service.ScheduledCrawlService.CrawlResult;
 import com.northstar.funding.domain.SessionType;
-import com.northstar.funding.persistence.repository.DiscoverySessionRepository;
-import com.northstar.funding.persistence.repository.FundingSourceCandidateRepository;
-import com.northstar.funding.persistence.repository.SearchResultRepository;
-import io.vavr.control.Try;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.UUID;
-
 /**
- * Simple command-line application to execute a search and populate the database.
+ * Simple command-line runner for testing scheduled crawl functionality.
  *
- * This is a minimal runner for testing and manual execution.
- * For production scheduling, see NightlyDiscoveryScheduler.
+ * Usage:
+ *   mvn spring-boot:run -pl northstar-crawler
+ *   mvn spring-boot:run -pl northstar-crawler -Dspring-boot.run.arguments="custom search query"
+ *
+ * Or with run-crawl.sh wrapper:
+ *   ./run-crawl.sh
+ *   ./run-crawl.sh "EU funding opportunities"
+ *
+ * This runner executes the complete scheduled crawl flow:
+ * 1. Multi-provider search execution
+ * 2. Result processing with confidence scoring
+ * 3. Candidate creation (high confidence >= 0.60)
+ * 4. Domain registration and blacklist management
+ * 5. Statistics tracking
  */
 @SpringBootApplication
 @ComponentScan(basePackages = {
@@ -39,82 +39,54 @@ public class SimpleCrawlRunner {
     }
 
     @Bean
-    public CommandLineRunner executeSearch(
-        MultiProviderSearchOrchestrator orchestrator,
-        DiscoverySessionRepository sessionRepository,
-        SearchResultRepository searchResultRepository,
-        FundingSourceCandidateRepository candidateRepository
-    ) {
+    public CommandLineRunner executeCrawl(ScheduledCrawlService crawlService) {
         return args -> {
             System.out.println("\n========================================");
-            System.out.println("SIMPLE CRAWL RUNNER");
+            System.out.println("NorthStar Funding Discovery - Crawl Runner");
             System.out.println("========================================\n");
 
-            // Get query from command line args or use default
+            // Parse query from arguments
             String query = args.length > 0
                 ? String.join(" ", args)
                 : "EU funding opportunities Bulgaria 2025";
 
             System.out.println("Query: " + query);
-            System.out.println("----------------------------------------\n");
+            System.out.println("Max results per provider: 20");
+            System.out.println("Providers: BraveSearch, SearXNG, Serper, Tavily, Perplexica");
+            System.out.println();
 
-            // Create discovery session
-            DiscoverySession session = DiscoverySession.builder()
-                .sessionType(SessionType.MANUAL)
-                .executedBy("SimpleCrawlRunner")
-                .startedAt(LocalDateTime.now())
-                .status(SessionStatus.RUNNING)
-                .build();
+            System.out.println("\n--- Executing Scheduled Crawl ---\n");
 
-            DiscoverySession savedSession = sessionRepository.save(session);
-            UUID sessionId = savedSession.getSessionId();
-            System.out.println("Created session: " + sessionId);
-
-            // Execute search
-            Try<SearchExecutionResult> result = orchestrator.executeMultiProviderSearch(
-                query,    // keyword query
-                null,     // ai-optimized query (optional)
-                20,       // max results per provider
-                sessionId
+            // Execute complete crawl
+            CrawlResult result = crawlService.executeCrawl(
+                    query,
+                    SessionType.MANUAL,
+                    "SimpleCrawlRunner"
             );
 
-            if (result.isSuccess()) {
-                SearchExecutionResult executionResult = result.get();
+            if (result.success()) {
+                System.out.println("\n--- Crawl Results ---");
+                System.out.println("Session ID: " + result.sessionId());
+                System.out.println("Duration: " + result.durationMs() + "ms");
+                System.out.println();
+                System.out.println("High-confidence candidates created: " + result.highConfidenceCandidatesCreated());
+                System.out.println("Low-confidence candidates created: " + result.lowConfidenceCandidatesCreated());
+                System.out.println("Total candidates: " + (result.highConfidenceCandidatesCreated() + result.lowConfidenceCandidatesCreated()));
+                System.out.println();
+                System.out.println("Spam TLD filtered: " + result.spamFiltered());
+                System.out.println("Duplicates skipped: " + result.duplicatesSkipped());
+                System.out.println("Blacklisted skipped: " + result.blacklistedSkipped());
 
-                System.out.println("\nSearch completed successfully:");
-                System.out.println("  - Provider failures: " + executionResult.providerErrors().size());
-                System.out.println("  - Total results: " + executionResult.successfulResults().size());
-
-                // Save search results
-                List<SearchResult> searchResults = executionResult.successfulResults();
-                if (!searchResults.isEmpty()) {
-                    searchResultRepository.saveAll(searchResults);
-                    System.out.println("  - Saved " + searchResults.size() + " search results to database");
-                }
-
-                // Count candidates created (orchestrator should have created them)
-                List<FundingSourceCandidate> candidates = candidateRepository.findByDiscoverySessionId(sessionId);
-                System.out.println("  - Candidates created: " + candidates.size());
-
-                // Update session status
-                DiscoverySession updatedSession = sessionRepository.findById(sessionId).orElseThrow();
-                updatedSession.markCompleted();
-                updatedSession.setCandidatesFound(candidates.size());
-                sessionRepository.save(updatedSession);
-
-                System.out.println("\nSession completed: " + sessionId);
+                System.out.println("\n✅ Crawl completed successfully!");
                 System.out.println("========================================\n");
+
             } else {
-                System.err.println("\nSearch failed:");
-                System.err.println("  - Error: " + result.getCause().getMessage());
+                System.err.println("\n❌ Crawl failed:");
+                System.err.println("Session ID: " + result.sessionId());
+                System.err.println("Error: " + result.errorMessage());
 
-                // Update session as failed
-                DiscoverySession updatedSession = sessionRepository.findById(sessionId).orElseThrow();
-                updatedSession.markFailed();
-                sessionRepository.save(updatedSession);
-
-                System.out.println("\nSession failed: " + sessionId);
                 System.out.println("========================================\n");
+                System.exit(1);
             }
         };
     }
