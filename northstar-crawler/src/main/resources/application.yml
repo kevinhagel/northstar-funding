@@ -12,6 +12,16 @@ spring:
     template:
       query-timeout: 30
 
+# Search Provider Configuration
+search:
+  providers:
+    brave-search:
+      api-key: ${BRAVE_API_KEY:}
+    serper:
+      api-key: ${SERPER_API_KEY:}
+    tavily:
+      api-key: ${TAVILY_API_KEY:}
+
 logging:
   level:
     com.northstar.funding: INFO
