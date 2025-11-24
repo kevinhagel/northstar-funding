@@ -20,6 +20,7 @@ public class SearchProviderConfig {
     private SerperConfig serper = new SerperConfig();
     private TavilyConfig tavily = new TavilyConfig();
     private SearxngConfig searxng = new SearxngConfig();
+    private PerplexicaConfig perplexica = new PerplexicaConfig();
 
     /**
      * BraveSearch configuration (keyword queries).
@@ -67,6 +68,19 @@ public class SearchProviderConfig {
         private int timeout = 7000;  // 7 seconds (aggregates multiple engines)
         private int maxResults = 20;
         private String format = "json";
+        private RateLimit rateLimit = new RateLimit(Integer.MAX_VALUE);  // Unlimited (self-hosted)
+    }
+
+    /**
+     * Perplexica configuration (self-hosted AI search with LM Studio).
+     */
+    @Data
+    public static class PerplexicaConfig {
+        private String baseUrl = "http://192.168.1.10:3001/api/search";
+        private int timeout = 15000;  // 15 seconds (LM Studio + SearXNG processing)
+        private int maxResults = 20;
+        private String focusMode = "webSearch";  // Perplexica focus mode
+        private String optimizationMode = "balanced";  // Perplexica optimization mode
         private RateLimit rateLimit = new RateLimit(Integer.MAX_VALUE);  // Unlimited (self-hosted)
     }
 

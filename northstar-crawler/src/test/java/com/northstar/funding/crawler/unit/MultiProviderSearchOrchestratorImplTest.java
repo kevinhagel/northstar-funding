@@ -1,6 +1,7 @@
 package com.northstar.funding.crawler.unit;
 
 import com.northstar.funding.crawler.adapter.BraveSearchAdapter;
+import com.northstar.funding.crawler.adapter.PerplexicaAdapter;
 import com.northstar.funding.crawler.adapter.SearxngAdapter;
 import com.northstar.funding.crawler.adapter.SerperAdapter;
 import com.northstar.funding.crawler.adapter.TavilyAdapter;
@@ -64,6 +65,9 @@ class MultiProviderSearchOrchestratorImplTest {
     private TavilyAdapter tavilyAdapter;
 
     @Mock
+    private PerplexicaAdapter perplexicaAdapter;
+
+    @Mock
     private AntiSpamFilter antiSpamFilter;
 
     @Mock
@@ -93,12 +97,14 @@ class MultiProviderSearchOrchestratorImplTest {
         when(searxngAdapter.getProviderType()).thenReturn(SearchEngineType.SEARXNG);
         when(serperAdapter.getProviderType()).thenReturn(SearchEngineType.SERPER);
         when(tavilyAdapter.getProviderType()).thenReturn(SearchEngineType.TAVILY);
+        when(perplexicaAdapter.getProviderType()).thenReturn(SearchEngineType.PERPLEXICA);
 
         orchestrator = new MultiProviderSearchOrchestratorImpl(
                 braveSearchAdapter,
                 searxngAdapter,
                 serperAdapter,
                 tavilyAdapter,
+                perplexicaAdapter,
                 antiSpamFilter,
                 domainService,
                 searchResultService,
