@@ -1,0 +1,18 @@
+spring:
+  application:
+    name: northstar-crawler
+
+  datasource:
+    url: jdbc:postgresql://192.168.1.10:5432/northstar_funding
+    username: northstar_user
+    password: northstar_password
+    driver-class-name: org.postgresql.Driver
+
+  jdbc:
+    template:
+      query-timeout: 30
+
+logging:
+  level:
+    com.northstar.funding: INFO
+    org.springframework: WARN
