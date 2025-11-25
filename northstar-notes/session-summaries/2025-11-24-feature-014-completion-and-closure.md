@@ -190,5 +190,36 @@ The search adapter infrastructure is fully functional with:
 
 ---
 
+## Feature 015 Handoff Context (Session Restart)
+
+### Feature 014 Final Status
+- **4 Search Adapters**: Brave, SearXNG, Serper (mocked), Perplexica
+- **Complete Pipeline**: Query → Search → Process → Candidates
+- **Tests**: 28/29 passing (96.5%)
+- **Manual Execution**: ✅ Working via `SearchWorkflowService.executeManualSearch()`
+- **Scheduling**: ⏳ Deferred to Feature 016
+
+### Key Architecture Decisions Documented
+- **LM Studio**: Now the standard for Perplexica integration
+- **Ollama**: Deprecated for search workflows (parallelism failures)
+- **Tavily**: Removed from adapters (2025-11-23)
+
+### 🎯 Next: Feature 015 - Perplexica + LM Studio Integration
+
+**Scope for Feature 015**:
+1. **Limited scope**: Focus specifically on converting Perplexica to LM Studio only
+2. **Keep Ollama installed**: Available for future use via Spring AI or LangChain4j for direct LLM communication
+3. **Two-stage LLM architecture**: To be brainstormed and designed
+4. **Future consideration**: Perplexica-based assistant in admin dashboard for Kevin/Huw when reviewing funding candidates
+
+**Next Actions**:
+1. Brainstorm the two-stage LLM architecture design
+2. Create Feature 015 spec using `/specify` command
+3. Focus on Perplexica ↔ LM Studio integration reliability
+
+**Context Note**: Session restart required for Claude Opus 4.5 upgrade (`brew upgrade claude-code`)
+
+---
+
 **Previous Session**: [2025-11-23 Feature 014 Complete](./2025-11-23-feature-014-search-adapters-complete.md)
-**Next Session**: Feature 015 - Perplexica + LM Studio Integration
+**Next Session**: Feature 015 - Perplexica + LM Studio Integration (two-stage LLM architecture)
