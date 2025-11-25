@@ -110,6 +110,13 @@
             <version>3.9.2</version>
             <scope>test</scope>
         </dependency>
+
+        <!-- PostgreSQL Driver (for production database) -->
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <scope>runtime</scope>
+        </dependency>
     </dependencies>
 
     <build>
@@ -136,6 +143,14 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
+            </plugin>
+
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <configuration>
+                    <mainClass>com.northstar.funding.crawler.SimpleCrawlRunner</mainClass>
+                </configuration>
             </plugin>
         </plugins>
     </build>

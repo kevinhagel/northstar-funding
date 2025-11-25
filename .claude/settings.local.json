@@ -69,7 +69,8 @@
       "Bash(npm install)",
       "Bash(npm install:*)",
       "Bash(npm run build:*)",
-      "Bash(PGPASSWORD=northstar_password psql:*)"
+      "Bash(PGPASSWORD=northstar_password psql:*)",
+      "Bash(BRAVE_API_KEY=BSAhFjAuLgU0huUZcgyHRRdto5zG6zf SERPER_API_KEY=34929aea6ad9e481c4cf546e93f088ceadce98a4 mvn spring-boot:run:*)"
     ],
     "deny": [],
     "ask": []

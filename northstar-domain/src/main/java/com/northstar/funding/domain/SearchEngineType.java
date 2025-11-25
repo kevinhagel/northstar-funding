@@ -38,5 +38,13 @@ public enum SearchEngineType {
      * AI-optimized search for LLM applications
      * Best paired with AI-generated prompts (not keywords)
      */
-    TAVILY
+    TAVILY,
+
+    /**
+     * Perplexica AI Search
+     * Self-hosted AI search with LM Studio integration
+     * No API costs, uses local LLM for query understanding
+     * Backend powered by SearXNG
+     */
+    PERPLEXICA
 }

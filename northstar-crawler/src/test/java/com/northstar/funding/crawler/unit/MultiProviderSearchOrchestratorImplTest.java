@@ -1,9 +1,9 @@
 package com.northstar.funding.crawler.unit;
 
 import com.northstar.funding.crawler.adapter.BraveSearchAdapter;
+import com.northstar.funding.crawler.adapter.PerplexicaAdapter;
 import com.northstar.funding.crawler.adapter.SearxngAdapter;
 import com.northstar.funding.crawler.adapter.SerperAdapter;
-import com.northstar.funding.crawler.adapter.TavilyAdapter;
 import com.northstar.funding.crawler.antispam.AntiSpamFilter;
 import com.northstar.funding.crawler.antispam.SpamAnalysisResult;
 import com.northstar.funding.crawler.antispam.SpamIndicator;
@@ -61,7 +61,7 @@ class MultiProviderSearchOrchestratorImplTest {
     private SerperAdapter serperAdapter;
 
     @Mock
-    private TavilyAdapter tavilyAdapter;
+    private PerplexicaAdapter perplexicaAdapter;
 
     @Mock
     private AntiSpamFilter antiSpamFilter;
@@ -92,13 +92,13 @@ class MultiProviderSearchOrchestratorImplTest {
         when(braveSearchAdapter.getProviderType()).thenReturn(SearchEngineType.BRAVE);
         when(searxngAdapter.getProviderType()).thenReturn(SearchEngineType.SEARXNG);
         when(serperAdapter.getProviderType()).thenReturn(SearchEngineType.SERPER);
-        when(tavilyAdapter.getProviderType()).thenReturn(SearchEngineType.TAVILY);
+        when(perplexicaAdapter.getProviderType()).thenReturn(SearchEngineType.PERPLEXICA);
 
         orchestrator = new MultiProviderSearchOrchestratorImpl(
                 braveSearchAdapter,
                 searxngAdapter,
                 serperAdapter,
-                tavilyAdapter,
+                perplexicaAdapter,
                 antiSpamFilter,
                 domainService,
                 searchResultService,
@@ -114,7 +114,7 @@ class MultiProviderSearchOrchestratorImplTest {
         List<SearchResult> braveResults = List.of(createSearchResult("brave.com", 1, SearchEngineType.BRAVE));
         List<SearchResult> searxngResults = List.of(createSearchResult("searxng.org", 2, SearchEngineType.SEARXNG));
         List<SearchResult> serperResults = List.of(createSearchResult("serper.dev", 3, SearchEngineType.SERPER));
-        List<SearchResult> tavilyResults = List.of(createSearchResult("tavily.com", 4, SearchEngineType.TAVILY));
+        List<SearchResult> perplexicaResults = List.of(createSearchResult("perplexica.ai", 4, SearchEngineType.PERPLEXICA));
 
         when(braveSearchAdapter.executeSearch(eq("keyword query"), eq(20), any()))
                 .thenReturn(Try.success(braveResults));
@@ -122,8 +122,8 @@ class MultiProviderSearchOrchestratorImplTest {
                 .thenReturn(Try.success(searxngResults));
         when(serperAdapter.executeSearch(eq("keyword query"), eq(20), any()))
                 .thenReturn(Try.success(serperResults));
-        when(tavilyAdapter.executeSearch(eq("ai optimized query"), eq(20), any()))
-                .thenReturn(Try.success(tavilyResults));
+        when(perplexicaAdapter.executeSearch(eq("ai optimized query"), eq(20), any()))
+                .thenReturn(Try.success(perplexicaResults));
 
         // Anti-spam filter passes all results
         when(antiSpamFilter.analyzeForSpam(any())).thenReturn(SpamAnalysisResult.notSpam());
@@ -153,7 +153,7 @@ class MultiProviderSearchOrchestratorImplTest {
         verify(braveSearchAdapter).executeSearch(eq("keyword query"), eq(20), any());
         verify(searxngAdapter).executeSearch(eq("keyword query"), eq(20), any());
         verify(serperAdapter).executeSearch(eq("keyword query"), eq(20), any());
-        verify(tavilyAdapter).executeSearch(eq("ai optimized query"), eq(20), any());
+        verify(perplexicaAdapter).executeSearch(eq("ai optimized query"), eq(20), any());
     }
 
     @Test
@@ -165,14 +165,14 @@ class MultiProviderSearchOrchestratorImplTest {
 
         List<SearchResult> searxngResults = List.of(createSearchResult("searxng.org", 1, SearchEngineType.SEARXNG));
         List<SearchResult> serperResults = List.of(createSearchResult("serper.dev", 2, SearchEngineType.SERPER));
-        List<SearchResult> tavilyResults = List.of(createSearchResult("tavily.com", 3, SearchEngineType.TAVILY));
+        List<SearchResult> perplexicaResults = List.of(createSearchResult("perplexica.ai", 3, SearchEngineType.PERPLEXICA));
 
         when(searxngAdapter.executeSearch(anyString(), anyInt(), any()))
                 .thenReturn(Try.success(searxngResults));
         when(serperAdapter.executeSearch(anyString(), anyInt(), any()))
                 .thenReturn(Try.success(serperResults));
-        when(tavilyAdapter.executeSearch(anyString(), anyInt(), any()))
-                .thenReturn(Try.success(tavilyResults));
+        when(perplexicaAdapter.executeSearch(anyString(), anyInt(), any()))
+                .thenReturn(Try.success(perplexicaResults));
 
         when(antiSpamFilter.analyzeForSpam(any())).thenReturn(SpamAnalysisResult.notSpam());
         when(domainService.findByDomainName(anyString())).thenReturn(Optional.empty());
@@ -207,7 +207,7 @@ class MultiProviderSearchOrchestratorImplTest {
         RuntimeException braveError = new RuntimeException("Authentication failed");
         RuntimeException searxngError = new RuntimeException("Timeout");
         RuntimeException serperError = new RuntimeException("Network error");
-        RuntimeException tavilyError = new RuntimeException("Invalid API key");
+        RuntimeException perplexicaError = new RuntimeException("Connection refused");
 
         when(braveSearchAdapter.executeSearch(anyString(), anyInt(), any()))
                 .thenReturn(Try.failure(braveError));
@@ -215,8 +215,8 @@ class MultiProviderSearchOrchestratorImplTest {
                 .thenReturn(Try.failure(searxngError));
         when(serperAdapter.executeSearch(anyString(), anyInt(), any()))
                 .thenReturn(Try.failure(serperError));
-        when(tavilyAdapter.executeSearch(anyString(), anyInt(), any()))
-                .thenReturn(Try.failure(tavilyError));
+        when(perplexicaAdapter.executeSearch(anyString(), anyInt(), any()))
+                .thenReturn(Try.failure(perplexicaError));
 
         // When
         Try<SearchExecutionResult> result = orchestrator.executeMultiProviderSearch(
@@ -363,7 +363,7 @@ class MultiProviderSearchOrchestratorImplTest {
                 .thenReturn(Try.success(List.of()));
         when(serperAdapter.executeSearch(anyString(), anyInt(), any()))
                 .thenReturn(Try.success(serperResults));
-        when(tavilyAdapter.executeSearch(anyString(), anyInt(), any()))
+        when(perplexicaAdapter.executeSearch(anyString(), anyInt(), any()))
                 .thenReturn(Try.success(List.of()));
 
         // Spam filter rejects spam.com
@@ -398,7 +398,6 @@ class MultiProviderSearchOrchestratorImplTest {
         assertThat(stats.braveSearchResults()).isEqualTo(2);
         assertThat(stats.searxngResults()).isEqualTo(0);
         assertThat(stats.serperResults()).isEqualTo(1);
-        assertThat(stats.tavilyResults()).isEqualTo(0);
     }
 
     @Test
@@ -412,7 +411,7 @@ class MultiProviderSearchOrchestratorImplTest {
                 .thenReturn(Try.success(List.of(createSearchResult("example.org", 1, SearchEngineType.SEARXNG))));
         when(serperAdapter.executeSearch(anyString(), anyInt(), any()))
                 .thenReturn(Try.success(List.of()));
-        when(tavilyAdapter.executeSearch(anyString(), anyInt(), any()))
+        when(perplexicaAdapter.executeSearch(anyString(), anyInt(), any()))
                 .thenReturn(Try.success(List.of()));
 
         when(antiSpamFilter.analyzeForSpam(any())).thenReturn(SpamAnalysisResult.notSpam());
@@ -444,7 +443,7 @@ class MultiProviderSearchOrchestratorImplTest {
                 .thenReturn(Try.success(List.of(createSearchResult("example.org", 1, SearchEngineType.SEARXNG))));
         when(serperAdapter.executeSearch(anyString(), anyInt(), any()))
                 .thenReturn(Try.success(List.of()));
-        when(tavilyAdapter.executeSearch(anyString(), anyInt(), any()))
+        when(perplexicaAdapter.executeSearch(anyString(), anyInt(), any()))
                 .thenReturn(Try.success(List.of()));
 
         when(antiSpamFilter.analyzeForSpam(any())).thenReturn(SpamAnalysisResult.notSpam());
@@ -475,7 +474,7 @@ class MultiProviderSearchOrchestratorImplTest {
                 .thenReturn(Try.success(List.of(createSearchResult("example.org", 1, SearchEngineType.SEARXNG))));
         when(serperAdapter.executeSearch(anyString(), anyInt(), any()))
                 .thenReturn(Try.success(List.of()));
-        when(tavilyAdapter.executeSearch(anyString(), anyInt(), any()))
+        when(perplexicaAdapter.executeSearch(anyString(), anyInt(), any()))
                 .thenReturn(Try.success(List.of()));
 
         when(antiSpamFilter.analyzeForSpam(any())).thenReturn(SpamAnalysisResult.notSpam());
@@ -563,7 +562,7 @@ class MultiProviderSearchOrchestratorImplTest {
                 new ProviderError(SearchEngineType.BRAVE, "Error 1", ProviderError.ErrorType.TIMEOUT, LocalDateTime.now(), "query"),
                 new ProviderError(SearchEngineType.SEARXNG, "Error 2", ProviderError.ErrorType.TIMEOUT, LocalDateTime.now(), "query"),
                 new ProviderError(SearchEngineType.SERPER, "Error 3", ProviderError.ErrorType.TIMEOUT, LocalDateTime.now(), "query"),
-                new ProviderError(SearchEngineType.TAVILY, "Error 4", ProviderError.ErrorType.TIMEOUT, LocalDateTime.now(), "query")
+                new ProviderError(SearchEngineType.PERPLEXICA, "Error 4", ProviderError.ErrorType.TIMEOUT, LocalDateTime.now(), "query")
         );
         SessionStatistics stats = new SessionStatistics(0, 0, 0, 0, 0, 0, 0, 0);
         SearchExecutionResult executionResult = new SearchExecutionResult(List.of(), errors, stats);

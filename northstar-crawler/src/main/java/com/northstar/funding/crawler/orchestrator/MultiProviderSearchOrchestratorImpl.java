@@ -1,10 +1,10 @@
 package com.northstar.funding.crawler.orchestrator;
 
 import com.northstar.funding.crawler.adapter.BraveSearchAdapter;
+import com.northstar.funding.crawler.adapter.PerplexicaAdapter;
 import com.northstar.funding.crawler.adapter.SearchProviderAdapter;
 import com.northstar.funding.crawler.adapter.SearxngAdapter;
 import com.northstar.funding.crawler.adapter.SerperAdapter;
-import com.northstar.funding.crawler.adapter.TavilyAdapter;
 import com.northstar.funding.crawler.antispam.AntiSpamFilter;
 import com.northstar.funding.crawler.antispam.SpamAnalysisResult;
 import com.northstar.funding.domain.DiscoverySession;
@@ -47,7 +47,7 @@ public class MultiProviderSearchOrchestratorImpl implements MultiProviderSearchO
     private final BraveSearchAdapter braveSearchAdapter;
     private final SearxngAdapter searxngAdapter;
     private final SerperAdapter serperAdapter;
-    private final TavilyAdapter tavilyAdapter;
+    private final PerplexicaAdapter perplexicaAdapter;
     private final AntiSpamFilter antiSpamFilter;
     private final DomainService domainService;
     private final SearchResultService searchResultService;
@@ -58,7 +58,7 @@ public class MultiProviderSearchOrchestratorImpl implements MultiProviderSearchO
             BraveSearchAdapter braveSearchAdapter,
             SearxngAdapter searxngAdapter,
             SerperAdapter serperAdapter,
-            TavilyAdapter tavilyAdapter,
+            PerplexicaAdapter perplexicaAdapter,
             AntiSpamFilter antiSpamFilter,
             DomainService domainService,
             SearchResultService searchResultService,
@@ -68,14 +68,14 @@ public class MultiProviderSearchOrchestratorImpl implements MultiProviderSearchO
         this.braveSearchAdapter = braveSearchAdapter;
         this.searxngAdapter = searxngAdapter;
         this.serperAdapter = serperAdapter;
-        this.tavilyAdapter = tavilyAdapter;
+        this.perplexicaAdapter = perplexicaAdapter;
         this.antiSpamFilter = antiSpamFilter;
         this.domainService = domainService;
         this.searchResultService = searchResultService;
         this.discoverySessionService = discoverySessionService;
         this.virtualThreadExecutor = virtualThreadExecutor;
 
-        log.info("MultiProviderSearchOrchestratorImpl initialized with 4 providers and Virtual Thread executor");
+        log.info("MultiProviderSearchOrchestratorImpl initialized with 4 providers (Brave, SearXNG, Serper, Perplexica) and Virtual Thread executor");
     }
 
     @Override
@@ -100,13 +100,13 @@ public class MultiProviderSearchOrchestratorImpl implements MultiProviderSearchO
         CompletableFuture<ProviderSearchResult> serperFuture = executeProviderAsync(
                 serperAdapter, keywordQuery, maxResultsPerProvider, discoverySessionId);
 
-        CompletableFuture<ProviderSearchResult> tavilyFuture = executeProviderAsync(
-                tavilyAdapter, aiOptimizedQuery, maxResultsPerProvider, discoverySessionId);
+        CompletableFuture<ProviderSearchResult> perplexicaFuture = executeProviderAsync(
+                perplexicaAdapter, aiOptimizedQuery, maxResultsPerProvider, discoverySessionId);
 
-        // Wait for all providers to complete (or timeout after 10 seconds)
+        // Wait for all providers to complete (or timeout after 15 seconds - increased for Perplexica)
         try {
-            CompletableFuture.allOf(braveFuture, searxngFuture, serperFuture, tavilyFuture)
-                    .orTimeout(10, TimeUnit.SECONDS)
+            CompletableFuture.allOf(braveFuture, searxngFuture, serperFuture, perplexicaFuture)
+                    .orTimeout(15, TimeUnit.SECONDS)
                     .join();
 
             // Collect results from all providers
@@ -114,7 +114,7 @@ public class MultiProviderSearchOrchestratorImpl implements MultiProviderSearchO
                     braveFuture.join(),
                     searxngFuture.join(),
                     serperFuture.join(),
-                    tavilyFuture.join()
+                    perplexicaFuture.join()
             );
 
             // Aggregate results and collect errors
