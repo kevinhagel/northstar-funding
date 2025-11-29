@@ -220,7 +220,7 @@ services:
   # AI SEARCH (PERPLEXICA)
   # =========================================
   # Version: v1.11.2 (latest as of 2025-11-07)
-  # Ollama integration (replaces LM Studio)
+  # LM Studio integration (proven reliable, Ollama had parallelism issues)
   perplexica:
     image: itzcrazykns1337/perplexica:latest
     container_name: northstar-perplexica
@@ -233,18 +233,11 @@ services:
       - ./perplexica/config.toml:/home/perplexica/config.toml:ro
     environment:
       - SEARXNG_API_URL=http://searxng:8080
-      - OLLAMA_BASE_URL=http://192.168.1.10:11434
-      - OLLAMA_API_URL=http://192.168.1.10:11434
+      # LM Studio (OpenAI-compatible API on port 1234)
+      - LM_STUDIO_BASE_URL=http://192.168.1.10:1234
       # Network exposure for MacBook M2 access
       - NEXT_PUBLIC_API_URL=http://192.168.1.10:3001/api
       - NEXT_PUBLIC_WS_URL=ws://192.168.1.10:3001
-      # Ollama models - using llama3.1:8b for all roles
-      - MODEL=llama3.1:8b
-      - CHAT_MODEL=llama3.1:8b
-      - ACTION_MODEL=llama3.1:8b
-      - WRITER_MODEL=llama3.1:8b
-      - CODER_MODEL=llama3.1:8b
-      - EMBEDDING_MODEL=nomic-embed-text
     networks:
       - northstar-network
     restart: unless-stopped
