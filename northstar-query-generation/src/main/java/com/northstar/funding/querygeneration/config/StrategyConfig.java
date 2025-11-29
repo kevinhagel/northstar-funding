@@ -1,8 +1,9 @@
 package com.northstar.funding.querygeneration.config;
 
 import com.northstar.funding.domain.SearchEngineType;
-import com.northstar.funding.querygeneration.strategy.KeywordQueryStrategy;
-import com.northstar.funding.querygeneration.strategy.QueryGenerationStrategy;
+import com.northstar.funding.querygeneration.strategy.KeywordSearchStrategy;
+import com.northstar.funding.querygeneration.strategy.PromptSearchStrategy;
+import com.northstar.funding.querygeneration.strategy.SearchStrategy;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -10,34 +11,44 @@ import java.util.EnumMap;
 import java.util.Map;
 
 /**
- * Configuration for query generation strategies.
+ * Configuration for search strategies.
+ *
+ * <p>Part of NorthStar Ubiquitous Language:
+ * <ul>
+ *   <li><b>Keyword Search</b> - Short keyword-based queries for traditional search engines</li>
+ *   <li><b>Prompt Search</b> - Engineered prompts for AI-powered search engines</li>
+ * </ul>
  *
  * <p>Maps search engines to their appropriate strategies:
  * <ul>
- *   <li>Brave, Serper, SearXNG → KeywordQueryStrategy (short, keyword-focused)</li>
- *   <li>Perplexica → KeywordQueryStrategy (AI-optimized via LM Studio)</li>
+ *   <li>Brave, Serper, SearXNG → KeywordSearchStrategy</li>
+ *   <li>Perplexica → PromptSearchStrategy</li>
  * </ul>
  */
 @Configuration
 public class StrategyConfig {
 
     /**
-     * Provides a map of search engines to their query generation strategies.
+     * Provides a map of search engines to their search strategies.
      *
-     * @param keywordStrategy Keyword-based strategy for all search engines
-     * @return EnumMap of SearchEngineType to QueryGenerationStrategy
+     * @param keywordStrategy Keyword Search strategy for traditional search engines
+     * @param promptStrategy Prompt Search strategy for AI-powered search engines
+     * @return EnumMap of SearchEngineType to SearchStrategy
      */
     @Bean
-    public Map<SearchEngineType, QueryGenerationStrategy> queryStrategies(
-            KeywordQueryStrategy keywordStrategy) {
+    public Map<SearchEngineType, SearchStrategy> searchStrategies(
+            KeywordSearchStrategy keywordStrategy,
+            PromptSearchStrategy promptStrategy) {
 
-        Map<SearchEngineType, QueryGenerationStrategy> strategies = new EnumMap<>(SearchEngineType.class);
+        Map<SearchEngineType, SearchStrategy> strategies = new EnumMap<>(SearchEngineType.class);
 
-        // Keyword strategy for all search engines
+        // Keyword Search for traditional search engines
         strategies.put(SearchEngineType.BRAVE, keywordStrategy);
         strategies.put(SearchEngineType.SERPER, keywordStrategy);
         strategies.put(SearchEngineType.SEARXNG, keywordStrategy);
-        strategies.put(SearchEngineType.PERPLEXICA, keywordStrategy);
+
+        // Prompt Search for AI-powered search engines
+        strategies.put(SearchEngineType.PERPLEXICA, promptStrategy);
 
         return strategies;
     }

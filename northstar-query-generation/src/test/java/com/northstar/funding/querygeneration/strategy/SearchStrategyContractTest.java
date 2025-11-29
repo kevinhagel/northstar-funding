@@ -22,14 +22,17 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
 /**
- * Contract test for QueryGenerationStrategy interface.
+ * Contract test for SearchStrategy interface.
+ *
+ * <p>Part of NorthStar Ubiquitous Language:
+ * <ul>
+ *   <li><b>Keyword Search</b> - Short keyword-based queries for traditional search engines</li>
+ *   <li><b>Prompt Search</b> - Engineered prompts for AI-powered search engines</li>
+ * </ul>
  *
  * <p>Unit tests for strategy implementations with mocked dependencies.
- *
- * <p>Note: As of 2025-11-29, all search engines use KeywordQueryStrategy.
- * Perplexica handles AI optimization internally via LM Studio.
  */
-class QueryGenerationStrategyContractTest {
+class SearchStrategyContractTest {
 
     @Mock
     private ChatModel chatModel;
@@ -70,9 +73,9 @@ class QueryGenerationStrategyContractTest {
     }
 
     @Test
-    void keywordStrategy_shouldReturnCompletableFuture() throws Exception {
+    void keywordSearchStrategy_shouldReturnCompletableFuture() throws Exception {
         // Arrange
-        QueryGenerationStrategy strategy = new KeywordQueryStrategy(
+        SearchStrategy strategy = new KeywordSearchStrategy(
                 chatModel,
                 categoryMapper,
                 geographicMapper
@@ -94,9 +97,9 @@ class QueryGenerationStrategyContractTest {
     }
 
     @Test
-    void keywordStrategy_shouldReturnCorrectSearchEngine() {
+    void keywordSearchStrategy_shouldReturnCorrectSearchEngine() {
         // Arrange
-        QueryGenerationStrategy strategy = new KeywordQueryStrategy(
+        SearchStrategy strategy = new KeywordSearchStrategy(
                 chatModel,
                 categoryMapper,
                 geographicMapper
@@ -105,7 +108,7 @@ class QueryGenerationStrategyContractTest {
         // Act
         SearchEngineType engine = strategy.getSearchEngine();
 
-        // Assert - KeywordQueryStrategy is used for keyword-based engines
+        // Assert - KeywordSearchStrategy is used for traditional search engines
         assertThat(engine).isIn(
                 SearchEngineType.BRAVE,
                 SearchEngineType.SERPER,
@@ -114,25 +117,57 @@ class QueryGenerationStrategyContractTest {
     }
 
     @Test
-    void keywordStrategy_shouldReturnKeywordQueryType() {
+    void keywordSearchStrategy_shouldReturnKeywordSearchType() {
         // Arrange
-        QueryGenerationStrategy strategy = new KeywordQueryStrategy(
+        SearchStrategy strategy = new KeywordSearchStrategy(
                 chatModel,
                 categoryMapper,
                 geographicMapper
         );
 
         // Act
-        String queryType = strategy.getQueryType();
+        String searchType = strategy.getSearchType();
 
         // Assert
-        assertThat(queryType).isEqualTo("keyword");
+        assertThat(searchType).isEqualTo("keyword");
+    }
+
+    @Test
+    void promptSearchStrategy_shouldReturnPromptSearchType() {
+        // Arrange
+        SearchStrategy strategy = new PromptSearchStrategy(
+                chatModel,
+                categoryMapper,
+                geographicMapper
+        );
+
+        // Act
+        String searchType = strategy.getSearchType();
+
+        // Assert
+        assertThat(searchType).isEqualTo("prompt");
+    }
+
+    @Test
+    void promptSearchStrategy_shouldReturnPerplexicaSearchEngine() {
+        // Arrange
+        SearchStrategy strategy = new PromptSearchStrategy(
+                chatModel,
+                categoryMapper,
+                geographicMapper
+        );
+
+        // Act
+        SearchEngineType engine = strategy.getSearchEngine();
+
+        // Assert
+        assertThat(engine).isEqualTo(SearchEngineType.PERPLEXICA);
     }
 
     @Test
     void strategy_shouldBeThreadSafe() throws Exception {
         // Arrange
-        QueryGenerationStrategy strategy = new KeywordQueryStrategy(
+        SearchStrategy strategy = new KeywordSearchStrategy(
                 chatModel,
                 categoryMapper,
                 geographicMapper

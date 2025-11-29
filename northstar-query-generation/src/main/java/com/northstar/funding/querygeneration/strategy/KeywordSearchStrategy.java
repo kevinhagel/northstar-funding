@@ -20,22 +20,29 @@ import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 /**
- * Strategy for generating keyword-based queries for traditional search engines.
+ * Keyword Search Strategy - generates short, keyword-based queries for traditional search engines.
+ *
+ * <p>Part of NorthStar Ubiquitous Language:
+ * <ul>
+ *   <li><b>Keyword Search</b> - Short keyword-based queries for traditional search engines</li>
+ *   <li><b>Prompt Search</b> - Engineered prompts for AI-powered search engines</li>
+ * </ul>
  *
  * <p>Used for: Brave Search, Serper, SearXNG
  * <p>Query style: Short, keyword-focused (3-8 words)
+ * <p>Example: "Bulgaria education grants funding scholarships"
  */
 @Component
-public class KeywordQueryStrategy implements QueryGenerationStrategy {
+public class KeywordSearchStrategy implements SearchStrategy {
 
-    private static final Logger log = LoggerFactory.getLogger(KeywordQueryStrategy.class);
+    private static final Logger log = LoggerFactory.getLogger(KeywordSearchStrategy.class);
 
     private final ChatModel chatModel;
     private final CategoryMapper categoryMapper;
     private final GeographicMapper geographicMapper;
     private final SearchEngineType searchEngine;
 
-    public KeywordQueryStrategy(
+    public KeywordSearchStrategy(
             ChatModel chatModel,
             CategoryMapper categoryMapper,
             GeographicMapper geographicMapper) {
@@ -94,7 +101,7 @@ public class KeywordQueryStrategy implements QueryGenerationStrategy {
     }
 
     @Override
-    public String getQueryType() {
+    public String getSearchType() {
         return "keyword";
     }
 

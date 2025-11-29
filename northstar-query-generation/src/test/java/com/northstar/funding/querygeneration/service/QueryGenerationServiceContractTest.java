@@ -7,7 +7,7 @@ import com.northstar.funding.querygeneration.exception.QueryGenerationException;
 import com.northstar.funding.querygeneration.model.QueryCacheKey;
 import com.northstar.funding.querygeneration.model.QueryGenerationRequest;
 import com.northstar.funding.querygeneration.model.QueryGenerationResponse;
-import com.northstar.funding.querygeneration.strategy.QueryGenerationStrategy;
+import com.northstar.funding.querygeneration.strategy.SearchStrategy;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
@@ -41,7 +41,7 @@ class QueryGenerationServiceContractTest {
     private QueryCacheService cacheService;
 
     @Mock
-    private QueryGenerationStrategy mockStrategy;
+    private SearchStrategy mockStrategy;
 
     @BeforeEach
     void setUp() throws Exception {
@@ -54,7 +54,7 @@ class QueryGenerationServiceContractTest {
                         List.of("query1", "query2", "query3", "query4", "query5")
                 ));
 
-        Map<SearchEngineType, QueryGenerationStrategy> strategies = Map.of(
+        Map<SearchEngineType, SearchStrategy> strategies = Map.of(
                 SearchEngineType.BRAVE, mockStrategy
         );
 
@@ -153,22 +153,22 @@ class QueryGenerationServiceContractTest {
                 .thenReturn(Optional.empty());
 
         // Mock strategies for all engines
-        QueryGenerationStrategy serperStrategy = org.mockito.Mockito.mock(QueryGenerationStrategy.class);
+        SearchStrategy serperStrategy = org.mockito.Mockito.mock(SearchStrategy.class);
         when(serperStrategy.getSearchEngine()).thenReturn(SearchEngineType.SERPER);
         when(serperStrategy.generateQueries(any(), any(), anyInt()))
                 .thenReturn(CompletableFuture.completedFuture(List.of("serper1", "serper2")));
 
-        QueryGenerationStrategy searxngStrategy = org.mockito.Mockito.mock(QueryGenerationStrategy.class);
+        SearchStrategy searxngStrategy = org.mockito.Mockito.mock(SearchStrategy.class);
         when(searxngStrategy.getSearchEngine()).thenReturn(SearchEngineType.SEARXNG);
         when(searxngStrategy.generateQueries(any(), any(), anyInt()))
                 .thenReturn(CompletableFuture.completedFuture(List.of("searxng1", "searxng2")));
 
-        QueryGenerationStrategy perplexicaStrategy = org.mockito.Mockito.mock(QueryGenerationStrategy.class);
+        SearchStrategy perplexicaStrategy = org.mockito.Mockito.mock(SearchStrategy.class);
         when(perplexicaStrategy.getSearchEngine()).thenReturn(SearchEngineType.PERPLEXICA);
         when(perplexicaStrategy.generateQueries(any(), any(), anyInt()))
                 .thenReturn(CompletableFuture.completedFuture(List.of("perplexica1", "perplexica2")));
 
-        Map<SearchEngineType, QueryGenerationStrategy> allStrategies = Map.of(
+        Map<SearchEngineType, SearchStrategy> allStrategies = Map.of(
                 SearchEngineType.BRAVE, mockStrategy,
                 SearchEngineType.SERPER, serperStrategy,
                 SearchEngineType.SEARXNG, searxngStrategy,

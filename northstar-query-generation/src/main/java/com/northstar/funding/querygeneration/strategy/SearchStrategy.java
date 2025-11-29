@@ -9,12 +9,23 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * Strategy interface for provider-specific query generation.
+ * Search Strategy interface for provider-specific query generation.
+ *
+ * <p>Part of NorthStar Ubiquitous Language:
+ * <ul>
+ *   <li><b>Keyword Search</b> - Short keyword-based queries for traditional search engines</li>
+ *   <li><b>Prompt Search</b> - Engineered prompts for AI-powered search engines</li>
+ * </ul>
+ *
+ * <p>Implementations:
+ * <ul>
+ *   <li>{@link KeywordSearchStrategy} - For Brave, Serper, SearXNG</li>
+ *   <li>{@link PromptSearchStrategy} - For Perplexica and future AI search engines</li>
+ * </ul>
  *
  * <p>Implementations must be stateless and thread-safe.
- * Each strategy generates queries optimized for a specific search engine type.
  */
-public interface QueryGenerationStrategy {
+public interface SearchStrategy {
 
     /**
      * Generate search queries for this strategy's search engine.
@@ -57,15 +68,15 @@ public interface QueryGenerationStrategy {
     SearchEngineType getSearchEngine();
 
     /**
-     * Get the query type for logging/metrics.
+     * Get the search type for logging/metrics.
      *
      * <p>Contract:
      * <ul>
-     *   <li>MUST return either "keyword" or "ai-optimized"</li>
+     *   <li>MUST return either "keyword" or "prompt"</li>
      *   <li>MUST be consistent with search engine type</li>
      * </ul>
      *
-     * @return Query type string
+     * @return Search type string ("keyword" or "prompt")
      */
-    String getQueryType();
+    String getSearchType();
 }

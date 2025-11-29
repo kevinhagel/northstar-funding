@@ -7,7 +7,7 @@ import com.northstar.funding.querygeneration.exception.QueryGenerationException;
 import com.northstar.funding.querygeneration.model.QueryCacheKey;
 import com.northstar.funding.querygeneration.model.QueryGenerationRequest;
 import com.northstar.funding.querygeneration.model.QueryGenerationResponse;
-import com.northstar.funding.querygeneration.strategy.QueryGenerationStrategy;
+import com.northstar.funding.querygeneration.strategy.SearchStrategy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -38,7 +38,7 @@ public class QueryGenerationServiceImpl implements QueryGenerationService {
     private static final Logger log = LoggerFactory.getLogger(QueryGenerationServiceImpl.class);
 
     private final QueryCacheService cacheService;
-    private final Map<SearchEngineType, QueryGenerationStrategy> strategies;
+    private final Map<SearchEngineType, SearchStrategy> strategies;
 
     @Value("${query-generation.max-queries-limit:50}")
     private int maxQueriesLimit;
@@ -51,7 +51,7 @@ public class QueryGenerationServiceImpl implements QueryGenerationService {
 
     public QueryGenerationServiceImpl(
             QueryCacheService cacheService,
-            Map<SearchEngineType, QueryGenerationStrategy> strategies) {
+            Map<SearchEngineType, SearchStrategy> strategies) {
         this.cacheService = cacheService;
         this.strategies = strategies;
     }
@@ -77,7 +77,7 @@ public class QueryGenerationServiceImpl implements QueryGenerationService {
                 }
 
                 // Get strategy for search engine
-                QueryGenerationStrategy strategy = getStrategy(request.getSearchEngine());
+                SearchStrategy strategy = getStrategy(request.getSearchEngine());
 
                 // Generate queries asynchronously
                 List<String> queries = strategy.generateQueries(
@@ -170,11 +170,11 @@ public class QueryGenerationServiceImpl implements QueryGenerationService {
      * Gets the appropriate strategy for the given search engine.
      *
      * @param searchEngine Search engine type
-     * @return Query generation strategy
+     * @return Search strategy
      * @throws QueryGenerationException if no strategy found
      */
-    private QueryGenerationStrategy getStrategy(SearchEngineType searchEngine) {
-        QueryGenerationStrategy strategy = strategies.get(searchEngine);
+    private SearchStrategy getStrategy(SearchEngineType searchEngine) {
+        SearchStrategy strategy = strategies.get(searchEngine);
         if (strategy == null) {
             throw new QueryGenerationException(
                     "No strategy configured for search engine: " + searchEngine);

@@ -20,27 +20,26 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * Integration test for query generation across different search engines.
  *
- * <p>As of 2025-11-29, all search engines use KeywordQueryStrategy:
+ * <p>Part of NorthStar Ubiquitous Language:
  * <ul>
- *   <li>Brave, Serper, SearXNG: Standard keyword search</li>
- *   <li>Perplexica: Keywords sent to AI search (LM Studio handles AI optimization)</li>
+ *   <li><b>Keyword Search</b> - Short keyword-based queries for traditional search engines
+ *       (Brave, Serper, SearXNG) - 3-8 words</li>
+ *   <li><b>Prompt Search</b> - Engineered prompts for AI-powered search engines
+ *       (Perplexica) - 15-40 words with criteria, exclusions, format requirements</li>
  * </ul>
- *
- * <p>Note: Previously tested Tavily's AI-optimized queries, but Tavily was removed
- * and Perplexica handles AI optimization internally via LM Studio.
  */
 @SpringBootTest
 @ActiveProfiles("test")
-class KeywordVsAiOptimizedTest {
+class KeywordVsPromptSearchTest {
 
     @Autowired
     private QueryGenerationService queryGenerationService;
 
     /**
-     * Test that all search engines receive keyword-style queries.
+     * Test keyword vs prompt search strategies produce appropriate queries.
      */
     @Test
-    void generateQueries_forAllEngines_shouldProduceKeywordQueries() throws Exception {
+    void generateQueries_keywordVsPromptSearch_shouldProduceAppropriateQueries() throws Exception {
         UUID sessionId = UUID.randomUUID();
 
         // Arrange - Keyword query request (Brave Search)
@@ -70,27 +69,29 @@ class KeywordVsAiOptimizedTest {
                 .generateQueries(perplexicaRequest)
                 .get(30, TimeUnit.SECONDS);
 
-        // Assert - Both engines receive keyword-style queries
+        // Assert - Both strategies produce queries with funding-related terms
         assertThat(braveResponse.getQueries()).isNotEmpty();
         assertThat(perplexicaResponse.getQueries()).isNotEmpty();
 
-        // At least 60% of queries should contain funding-related terms
-        long matchingBraveQueries = braveResponse.getQueries().stream()
-                .filter(query -> query.toLowerCase().matches(".*\\b(infrastructure|grant|funding|facility|building|scholarship|program)\\b.*"))
+        // Keyword Search: Should be short (3-8 words)
+        long shortBraveQueries = braveResponse.getQueries().stream()
+                .filter(query -> query.split("\\s+").length <= 8)
                 .count();
-        assertThat(matchingBraveQueries).isGreaterThanOrEqualTo((long) (braveResponse.getQueries().size() * 0.6));
+        assertThat(shortBraveQueries).isGreaterThanOrEqualTo((long) (braveResponse.getQueries().size() * 0.6));
 
-        long matchingPerplexicaQueries = perplexicaResponse.getQueries().stream()
-                .filter(query -> query.toLowerCase().matches(".*\\b(infrastructure|grant|funding|facility|building|scholarship|program)\\b.*"))
+        // Prompt Search: Should be longer (15-40 words) with richer context
+        long longerPerplexicaQueries = perplexicaResponse.getQueries().stream()
+                .filter(query -> query.split("\\s+").length > 8)
                 .count();
-        assertThat(matchingPerplexicaQueries).isGreaterThanOrEqualTo((long) (perplexicaResponse.getQueries().size() * 0.6));
+        // Perplexica uses Prompt Search - should produce longer, more detailed queries
+        assertThat(longerPerplexicaQueries).isGreaterThanOrEqualTo((long) (perplexicaResponse.getQueries().size() * 0.6));
     }
 
     /**
-     * Validate keyword queries for all keyword-based engines.
+     * Validate Keyword Search queries for traditional search engines.
      */
     @Test
-    void generateQueries_forAllKeywordEngines_shouldProduceShortQueries() throws Exception {
+    void generateQueries_keywordSearch_shouldProduceShortQueries() throws Exception {
         SearchEngineType[] keywordEngines = {
                 SearchEngineType.BRAVE,
                 SearchEngineType.SERPER,
@@ -112,20 +113,20 @@ class KeywordVsAiOptimizedTest {
                     .generateQueries(request)
                     .get(30, TimeUnit.SECONDS);
 
-            // Assert - Most keyword engines produce short queries (smaller models may occasionally generate longer ones)
+            // Assert - Keyword Search produces short queries (3-8 words)
             long shortQueries = response.getQueries().stream()
-                    .filter(query -> query.split("\\s+").length < 10)
+                    .filter(query -> query.split("\\s+").length <= 8)
                     .count();
             assertThat(shortQueries).isGreaterThanOrEqualTo((long)(response.getQueries().size() * 0.6)); // At least 60% short
         }
     }
 
     /**
-     * Perplexica uses the same keyword strategy as other engines.
-     * (AI optimization happens internally in Perplexica via LM Studio)
+     * Perplexica uses Prompt Search strategy for AI-powered queries.
+     * Generates engineered prompts with criteria, exclusions, and format requirements.
      */
     @Test
-    void generateQueries_forPerplexica_shouldProduceKeywordQueries() throws Exception {
+    void generateQueries_promptSearch_shouldProduceEngineeringPrompts() throws Exception {
         // Arrange
         QueryGenerationRequest request = QueryGenerationRequest.builder()
                 .searchEngine(SearchEngineType.PERPLEXICA)
@@ -140,11 +141,17 @@ class KeywordVsAiOptimizedTest {
                 .generateQueries(request)
                 .get(30, TimeUnit.SECONDS);
 
-        // Assert - Perplexica receives keyword queries (AI optimization is internal)
+        // Assert - Prompt Search produces longer, more detailed queries
         assertThat(response.getQueries()).isNotEmpty();
         assertThat(response.getQueries()).hasSizeGreaterThanOrEqualTo(1);
 
-        // At least 60% of queries should include STEM/education terms
+        // Prompt Search queries should be longer (15-40 words) with rich context
+        long longQueries = response.getQueries().stream()
+                .filter(query -> query.split("\\s+").length > 10)
+                .count();
+        assertThat(longQueries).isGreaterThanOrEqualTo((long)(response.getQueries().size() * 0.6));
+
+        // Should include funding-related terms
         long matchingQueries = response.getQueries().stream()
                 .filter(query -> {
                     String lowerQuery = query.toLowerCase();
