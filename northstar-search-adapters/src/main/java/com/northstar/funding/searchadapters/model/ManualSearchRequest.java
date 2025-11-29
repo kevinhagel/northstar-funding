@@ -20,7 +20,7 @@ import java.util.List;
  *         FundingSearchCategory.INDIVIDUAL_SCHOLARSHIPS,
  *         FundingSearchCategory.STEM_EDUCATION))
  *     .engines(List.of(
- *         SearchEngineType.TAVILY,
+ *         SearchEngineType.PERPLEXICA,
  *         SearchEngineType.SEARXNG))
  *     .maxResultsPerQuery(10)
  *     .geographicScope("Bulgaria, Eastern Europe, EU")

@@ -25,6 +25,9 @@ import static org.mockito.Mockito.when;
  * Contract test for QueryGenerationStrategy interface.
  *
  * <p>Unit tests for strategy implementations with mocked dependencies.
+ *
+ * <p>Note: As of 2025-11-29, all search engines use KeywordQueryStrategy.
+ * Perplexica handles AI optimization internally via LM Studio.
  */
 class QueryGenerationStrategyContractTest {
 
@@ -102,7 +105,7 @@ class QueryGenerationStrategyContractTest {
         // Act
         SearchEngineType engine = strategy.getSearchEngine();
 
-        // Assert
+        // Assert - KeywordQueryStrategy is used for keyword-based engines
         assertThat(engine).isIn(
                 SearchEngineType.BRAVE,
                 SearchEngineType.SERPER,
@@ -124,62 +127,6 @@ class QueryGenerationStrategyContractTest {
 
         // Assert
         assertThat(queryType).isEqualTo("keyword");
-    }
-
-    @Test
-    void tavilyStrategy_shouldReturnCompletableFuture() throws Exception {
-        // Arrange
-        QueryGenerationStrategy strategy = new TavilyQueryStrategy(
-                chatModel,
-                categoryMapper,
-                geographicMapper
-        );
-
-        // Act
-        CompletableFuture<List<String>> future = strategy.generateQueries(
-                Set.of(FundingSearchCategory.STEM_EDUCATION),
-                GeographicScope.EASTERN_EUROPE,
-                3
-        );
-
-        // Assert
-        assertThat(future).isNotNull();
-        assertThat(future).isInstanceOf(CompletableFuture.class);
-
-        List<String> queries = future.get(5, TimeUnit.SECONDS);
-        assertThat(queries).isNotEmpty();
-    }
-
-    @Test
-    void tavilyStrategy_shouldReturnTavilySearchEngine() {
-        // Arrange
-        QueryGenerationStrategy strategy = new TavilyQueryStrategy(
-                chatModel,
-                categoryMapper,
-                geographicMapper
-        );
-
-        // Act
-        SearchEngineType engine = strategy.getSearchEngine();
-
-        // Assert
-        assertThat(engine).isEqualTo(SearchEngineType.TAVILY);
-    }
-
-    @Test
-    void tavilyStrategy_shouldReturnAiOptimizedQueryType() {
-        // Arrange
-        QueryGenerationStrategy strategy = new TavilyQueryStrategy(
-                chatModel,
-                categoryMapper,
-                geographicMapper
-        );
-
-        // Act
-        String queryType = strategy.getQueryType();
-
-        // Assert
-        assertThat(queryType).isEqualTo("ai-optimized");
     }
 
     @Test

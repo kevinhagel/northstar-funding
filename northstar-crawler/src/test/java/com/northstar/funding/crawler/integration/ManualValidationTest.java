@@ -3,7 +3,6 @@ package com.northstar.funding.crawler.integration;
 import com.northstar.funding.crawler.adapter.BraveSearchAdapter;
 import com.northstar.funding.crawler.adapter.SearxngAdapter;
 import com.northstar.funding.crawler.adapter.SerperAdapter;
-import com.northstar.funding.crawler.adapter.TavilyAdapter;
 import com.northstar.funding.crawler.antispam.AntiSpamFilter;
 import com.northstar.funding.crawler.config.SearchProviderConfig;
 import com.northstar.funding.crawler.orchestrator.MultiProviderSearchOrchestrator;
@@ -30,7 +29,7 @@ import static org.assertj.core.api.Assertions.*;
  *
  * Manual validation checklist (to be performed by developer):
  * 1. Start SearXNG at 192.168.1.10:8080
- * 2. Configure API keys for Brave, Serper, Tavily
+ * 2. Configure API keys for Brave, Serper
  * 3. Run single query through each adapter
  * 4. Run multi-provider query through orchestrator
  * 5. Verify anti-spam filtering works
@@ -67,10 +66,6 @@ class ManualValidationTest {
         registry.add("search.providers.serper.api-key", () -> "test-key");
         registry.add("search.providers.serper.timeout", () -> "5000");
         registry.add("search.providers.serper.max-results", () -> "20");
-
-        registry.add("search.providers.tavily.api-key", () -> "test-key");
-        registry.add("search.providers.tavily.timeout", () -> "6000");
-        registry.add("search.providers.tavily.max-results", () -> "20");
     }
 
     // Search Provider Adapters
@@ -82,9 +77,6 @@ class ManualValidationTest {
 
     @Autowired
     private SerperAdapter serperAdapter;
-
-    @Autowired
-    private TavilyAdapter tavilyAdapter;
 
     // Orchestration
     @Autowired
@@ -114,7 +106,6 @@ class ManualValidationTest {
         assertThat(braveAdapter).as("BraveSearchAdapter").isNotNull();
         assertThat(searxngAdapter).as("SearxngAdapter").isNotNull();
         assertThat(serperAdapter).as("SerperAdapter").isNotNull();
-        assertThat(tavilyAdapter).as("TavilyAdapter").isNotNull();
     }
 
     @Test
@@ -144,7 +135,6 @@ class ManualValidationTest {
         assertThat(config.getBraveSearch()).as("BraveSearchConfig").isNotNull();
         assertThat(config.getSearxng()).as("SearxngConfig").isNotNull();
         assertThat(config.getSerper()).as("SerperConfig").isNotNull();
-        assertThat(config.getTavily()).as("TavilyConfig").isNotNull();
     }
 
     @Test
@@ -153,7 +143,6 @@ class ManualValidationTest {
         assertThat(braveAdapter.getProviderType().name()).isEqualTo("BRAVE");
         assertThat(searxngAdapter.getProviderType().name()).isEqualTo("SEARXNG");
         assertThat(serperAdapter.getProviderType().name()).isEqualTo("SERPER");
-        assertThat(tavilyAdapter.getProviderType().name()).isEqualTo("TAVILY");
     }
 
     @Test
@@ -163,13 +152,11 @@ class ManualValidationTest {
         assertThat(braveAdapter.supportsKeywordQueries()).isTrue();
         assertThat(searxngAdapter.supportsKeywordQueries()).isTrue();
         assertThat(serperAdapter.supportsKeywordQueries()).isTrue();
-        assertThat(tavilyAdapter.supportsKeywordQueries()).isTrue();
 
-        // Only Tavily supports AI-optimized queries
+        // Standard adapters don't support AI-optimized queries (Perplexica does)
         assertThat(braveAdapter.supportsAIOptimizedQueries()).isFalse();
         assertThat(searxngAdapter.supportsAIOptimizedQueries()).isFalse();
         assertThat(serperAdapter.supportsAIOptimizedQueries()).isFalse();
-        assertThat(tavilyAdapter.supportsAIOptimizedQueries()).isTrue();
     }
 
     @Test
@@ -178,7 +165,6 @@ class ManualValidationTest {
         assertThat(braveAdapter.getRateLimit()).isEqualTo(50); // 50/day conservative limit
         assertThat(searxngAdapter.getRateLimit()).isEqualTo(Integer.MAX_VALUE); // Unlimited
         assertThat(serperAdapter.getRateLimit()).isEqualTo(60); // 60/day conservative limit
-        assertThat(tavilyAdapter.getRateLimit()).isEqualTo(25); // 25/day conservative limit
     }
 
     @Test
@@ -187,7 +173,6 @@ class ManualValidationTest {
         assertThat(config.getBraveSearch().getTimeout()).isEqualTo(5000); // 5 seconds
         assertThat(config.getSearxng().getTimeout()).isEqualTo(7000); // 7 seconds
         assertThat(config.getSerper().getTimeout()).isEqualTo(5000); // 5 seconds
-        assertThat(config.getTavily().getTimeout()).isEqualTo(6000); // 6 seconds
     }
 
     @Test
@@ -196,7 +181,6 @@ class ManualValidationTest {
         assertThat(config.getBraveSearch().getMaxResults()).isEqualTo(20);
         assertThat(config.getSearxng().getMaxResults()).isEqualTo(20);
         assertThat(config.getSerper().getMaxResults()).isEqualTo(20);
-        assertThat(config.getTavily().getMaxResults()).isEqualTo(20);
     }
 
     @Test
@@ -209,7 +193,6 @@ class ManualValidationTest {
         assertThat(braveAdapter).isNotNull();
         assertThat(searxngAdapter).isNotNull();
         assertThat(serperAdapter).isNotNull();
-        assertThat(tavilyAdapter).isNotNull();
 
         // Phase 3.5: Anti-Spam Detection ✓
         assertThat(antiSpamFilter).isNotNull();

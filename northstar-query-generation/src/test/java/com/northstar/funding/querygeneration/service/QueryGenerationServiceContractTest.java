@@ -163,16 +163,16 @@ class QueryGenerationServiceContractTest {
         when(searxngStrategy.generateQueries(any(), any(), anyInt()))
                 .thenReturn(CompletableFuture.completedFuture(List.of("searxng1", "searxng2")));
 
-        QueryGenerationStrategy tavilyStrategy = org.mockito.Mockito.mock(QueryGenerationStrategy.class);
-        when(tavilyStrategy.getSearchEngine()).thenReturn(SearchEngineType.TAVILY);
-        when(tavilyStrategy.generateQueries(any(), any(), anyInt()))
-                .thenReturn(CompletableFuture.completedFuture(List.of("tavily1", "tavily2")));
+        QueryGenerationStrategy perplexicaStrategy = org.mockito.Mockito.mock(QueryGenerationStrategy.class);
+        when(perplexicaStrategy.getSearchEngine()).thenReturn(SearchEngineType.PERPLEXICA);
+        when(perplexicaStrategy.generateQueries(any(), any(), anyInt()))
+                .thenReturn(CompletableFuture.completedFuture(List.of("perplexica1", "perplexica2")));
 
         Map<SearchEngineType, QueryGenerationStrategy> allStrategies = Map.of(
                 SearchEngineType.BRAVE, mockStrategy,
                 SearchEngineType.SERPER, serperStrategy,
                 SearchEngineType.SEARXNG, searxngStrategy,
-                SearchEngineType.TAVILY, tavilyStrategy
+                SearchEngineType.PERPLEXICA, perplexicaStrategy
         );
 
         QueryGenerationService multiProviderService = new QueryGenerationServiceImpl(cacheService, allStrategies);
@@ -191,7 +191,7 @@ class QueryGenerationServiceContractTest {
                                 SearchEngineType.BRAVE,
                                 SearchEngineType.SERPER,
                                 SearchEngineType.SEARXNG,
-                                SearchEngineType.TAVILY
+                                SearchEngineType.PERPLEXICA
                         ),
                         Set.of(FundingSearchCategory.STEM_EDUCATION),
                         GeographicScope.BULGARIA,
@@ -208,7 +208,7 @@ class QueryGenerationServiceContractTest {
                 SearchEngineType.BRAVE,
                 SearchEngineType.SERPER,
                 SearchEngineType.SEARXNG,
-                SearchEngineType.TAVILY
+                SearchEngineType.PERPLEXICA
         );
 
         // Parallel execution should complete quickly (< 10 seconds)

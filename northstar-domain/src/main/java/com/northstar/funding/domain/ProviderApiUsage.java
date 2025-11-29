@@ -35,7 +35,7 @@ public class ProviderApiUsage {
     private Long id;
 
     /**
-     * Search engine type (BRAVE_SEARCH, SERPER, TAVILY, SEARXNG)
+     * Search engine type (BRAVE_SEARCH, SERPER, PERPLEXICA, SEARXNG)
      * Stored as enum name string
      */
     private String provider;

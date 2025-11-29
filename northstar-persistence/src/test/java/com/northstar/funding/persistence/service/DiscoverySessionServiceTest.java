@@ -48,7 +48,7 @@ class DiscoverySessionServiceTest {
             .status(SessionStatus.RUNNING)
             .executedBy("SYSTEM")
             .startedAt(LocalDateTime.now())
-            .searchEnginesUsed(Set.of("SEARXNG", "TAVILY"))
+            .searchEnginesUsed(Set.of("SEARXNG", "PERPLEXICA"))
             .searchQueries(List.of("funding opportunities"))
             .candidatesFound(0)
             .duplicatesDetected(0)
@@ -455,7 +455,7 @@ class DiscoverySessionServiceTest {
         // Given
         int daysBack = 30;
         List<DiscoverySessionRepository.SearchEngineStats> stats = List.of(
-            new DiscoverySessionRepository.SearchEngineStats("SEARXNG,TAVILY", 10L, 25.5, 1L)
+            new DiscoverySessionRepository.SearchEngineStats("SEARXNG,PERPLEXICA", 10L, 25.5, 1L)
         );
         when(discoverySessionRepository.getSearchEngineStats(any(LocalDateTime.class)))
             .thenReturn(stats);

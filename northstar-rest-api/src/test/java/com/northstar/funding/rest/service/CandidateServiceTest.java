@@ -55,7 +55,7 @@ class CandidateServiceTest {
             .metadataTitle("Test Funding Program")
             .confidenceScore(new BigDecimal("0.85"))
             .status(CandidateStatus.PENDING_CRAWL)
-            .searchEngineSource(SearchEngineType.TAVILY)
+            .searchEngineSource(SearchEngineType.PERPLEXICA)
             .discoveredAt(LocalDateTime.now())
             .build();
 
@@ -65,7 +65,7 @@ class CandidateServiceTest {
             "Test Funding Program",
             "0.85",
             "PENDING_CRAWL",
-            "TAVILY",
+            "PERPLEXICA",
             "2025-11-16T10:30:00"
         );
     }

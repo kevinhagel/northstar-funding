@@ -28,7 +28,7 @@ import lombok.NoArgsConstructor;
  * - BraveSearch
  * - SearXNG
  * - Serper (Google Search API)
- * - Tavily
+ * - Perplexica
  *
  * This entity is the first point of contact with external data.
  * It feeds into the judgment pipeline for creating Organizations,

@@ -12,7 +12,7 @@ import java.util.List;
  *   <li>SearXNGAdapter - Self-hosted metasearch engine</li>
  *   <li>BraveAdapter - Brave Search API (future)</li>
  *   <li>SerperAdapter - Google via Serper API (future)</li>
- *   <li>TavilyAdapter - AI-powered search API (future)</li>
+ *   <li>PerplexicaAdapter - AI-powered search API (future)</li>
  * </ul>
  */
 public interface SearchAdapter {

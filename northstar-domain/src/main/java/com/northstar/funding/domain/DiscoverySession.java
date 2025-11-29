@@ -23,7 +23,7 @@ import lombok.NoArgsConstructor;
  * Critical for AI process improvement and error analysis.
  * 
  * Key Features:
- * - Search engine integration tracking (Searxng, Tavily, Perplexity)
+ * - Search engine integration tracking (Searxng, Perplexica, Perplexity)
  * - LM Studio integration metadata (model tracking, prompt engineering)
  * - Performance metrics for process optimization
  * - Spring Data JDBC entity (no ORM complexity)

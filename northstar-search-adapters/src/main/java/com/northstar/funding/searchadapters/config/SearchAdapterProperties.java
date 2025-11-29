@@ -17,7 +17,6 @@ public class SearchAdapterProperties {
     private BraveConfig brave = new BraveConfig();
     private SerperConfig serper = new SerperConfig();
     private SearxngConfig searxng = new SearxngConfig();
-    private TavilyConfig tavily = new TavilyConfig();
 
     @Data
     public static class BraveConfig {
@@ -37,12 +36,5 @@ public class SearchAdapterProperties {
     public static class SearxngConfig {
         private String apiUrl = "http://192.168.1.10:8080";
         private int timeoutSeconds = 10;
-    }
-
-    @Data
-    public static class TavilyConfig {
-        private String apiKey;
-        private String apiUrl = "https://api.tavily.com/search";
-        private int timeoutSeconds = 15;  // AI search may be slower
     }
 }

@@ -10,7 +10,7 @@ package com.northstar.funding.domain;
  * - BRAVE: Brave Search API (requires API key)
  * - SEARXNG: Self-hosted @ http://192.168.1.10:8080 (no API key)
  * - SERPER: Serper.dev Google Search API (requires API key)
- * - TAVILY: Tavily API (requires API key, AI-optimized)
+ * - PERPLEXICA: Self-hosted AI search with LM Studio (no API key)
  */
 public enum SearchEngineType {
 
@@ -32,13 +32,6 @@ public enum SearchEngineType {
      * Google search results via API
      */
     SERPER,
-
-    /**
-     * Tavily Search API
-     * AI-optimized search for LLM applications
-     * Best paired with AI-generated prompts (not keywords)
-     */
-    TAVILY,
 
     /**
      * Perplexica AI Search

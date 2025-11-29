@@ -3,7 +3,6 @@ package com.northstar.funding.crawler.integration;
 import com.northstar.funding.crawler.adapter.BraveSearchAdapter;
 import com.northstar.funding.crawler.adapter.SearxngAdapter;
 import com.northstar.funding.crawler.adapter.SerperAdapter;
-import com.northstar.funding.crawler.adapter.TavilyAdapter;
 import com.northstar.funding.crawler.config.SearchProviderConfig;
 import com.northstar.funding.crawler.orchestrator.MultiProviderSearchOrchestrator;
 import com.northstar.funding.domain.SearchEngineType;
@@ -22,7 +21,7 @@ import static org.assertj.core.api.Assertions.*;
 /**
  * Integration test for Scenario 2: Multi-Provider Search.
  *
- * T040: Tests that orchestrator can coordinate multiple providers (Brave, SearXNG, Serper, Tavily).
+ * T040: Tests that orchestrator can coordinate multiple providers (Brave, SearXNG, Serper).
  * Simplified version testing Spring context and bean configuration without external services.
  */
 @SpringBootTest(classes = TestApplication.class)
@@ -55,10 +54,6 @@ class MultiProviderSearchTest {
         registry.add("search.providers.serper.api-key", () -> "test-key");
         registry.add("search.providers.serper.timeout", () -> "5000");
         registry.add("search.providers.serper.max-results", () -> "20");
-
-        registry.add("search.providers.tavily.api-key", () -> "test-key");
-        registry.add("search.providers.tavily.timeout", () -> "5000");
-        registry.add("search.providers.tavily.max-results", () -> "20");
     }
 
     @Autowired
@@ -74,9 +69,6 @@ class MultiProviderSearchTest {
     private SerperAdapter serperAdapter;
 
     @Autowired
-    private TavilyAdapter tavilyAdapter;
-
-    @Autowired
     private SearchProviderConfig config;
 
     @Test
@@ -86,7 +78,6 @@ class MultiProviderSearchTest {
         assertThat(braveAdapter).isNotNull();
         assertThat(searxngAdapter).isNotNull();
         assertThat(serperAdapter).isNotNull();
-        assertThat(tavilyAdapter).isNotNull();
     }
 
     @Test
@@ -95,7 +86,6 @@ class MultiProviderSearchTest {
         assertThat(braveAdapter.getProviderType()).isEqualTo(SearchEngineType.BRAVE);
         assertThat(searxngAdapter.getProviderType()).isEqualTo(SearchEngineType.SEARXNG);
         assertThat(serperAdapter.getProviderType()).isEqualTo(SearchEngineType.SERPER);
-        assertThat(tavilyAdapter.getProviderType()).isEqualTo(SearchEngineType.TAVILY);
     }
 
     @Test
@@ -104,14 +94,12 @@ class MultiProviderSearchTest {
         assertThat(config.getBraveSearch()).isNotNull();
         assertThat(config.getSearxng()).isNotNull();
         assertThat(config.getSerper()).isNotNull();
-        assertThat(config.getTavily()).isNotNull();
 
         // Verify basic configuration values (timeout is in milliseconds in config)
         // Test sets all providers to 5000ms for consistency
         assertThat(config.getBraveSearch().getTimeout()).isEqualTo(5000); // 5 seconds
         assertThat(config.getSearxng().getTimeout()).isEqualTo(5000); // 5 seconds (test override)
         assertThat(config.getSerper().getTimeout()).isEqualTo(5000); // 5 seconds
-        assertThat(config.getTavily().getTimeout()).isEqualTo(5000); // 5 seconds
     }
 
     @Test
@@ -120,16 +108,14 @@ class MultiProviderSearchTest {
         assertThat(braveAdapter.supportsKeywordQueries()).isTrue();
         assertThat(searxngAdapter.supportsKeywordQueries()).isTrue();
         assertThat(serperAdapter.supportsKeywordQueries()).isTrue();
-        assertThat(tavilyAdapter.supportsKeywordQueries()).isTrue();
     }
 
     @Test
-    @DisplayName("Only Tavily supports AI-optimized queries")
-    void onlyTavily_SupportsAIOptimizedQueries() {
+    @DisplayName("Standard adapters don't support AI-optimized queries")
+    void standardAdapters_DontSupportAIOptimizedQueries() {
         assertThat(braveAdapter.supportsAIOptimizedQueries()).isFalse();
         assertThat(searxngAdapter.supportsAIOptimizedQueries()).isFalse();
         assertThat(serperAdapter.supportsAIOptimizedQueries()).isFalse();
-        assertThat(tavilyAdapter.supportsAIOptimizedQueries()).isTrue();
     }
 
     @Test
@@ -138,6 +124,5 @@ class MultiProviderSearchTest {
         assertThat(braveAdapter.getRateLimit()).isEqualTo(50); // 50/day conservative limit
         assertThat(searxngAdapter.getRateLimit()).isEqualTo(Integer.MAX_VALUE); // Unlimited (self-hosted)
         assertThat(serperAdapter.getRateLimit()).isEqualTo(60); // 60/day conservative limit
-        assertThat(tavilyAdapter.getRateLimit()).isEqualTo(25); // 25/day conservative limit
     }
 }

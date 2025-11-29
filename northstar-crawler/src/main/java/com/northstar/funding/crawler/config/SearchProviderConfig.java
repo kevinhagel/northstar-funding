@@ -18,7 +18,6 @@ public class SearchProviderConfig {
 
     private BraveSearchConfig braveSearch = new BraveSearchConfig();
     private SerperConfig serper = new SerperConfig();
-    private TavilyConfig tavily = new TavilyConfig();
     private SearxngConfig searxng = new SearxngConfig();
     private PerplexicaConfig perplexica = new PerplexicaConfig();
 
@@ -44,19 +43,6 @@ public class SearchProviderConfig {
         private int timeout = 5000;  // 5 seconds (milliseconds)
         private int maxResults = 20;
         private RateLimit rateLimit = new RateLimit(60);  // Conservative: 60/day
-    }
-
-    /**
-     * Tavily configuration (AI-optimized queries).
-     */
-    @Data
-    public static class TavilyConfig {
-        private String apiKey;
-        private String baseUrl = "https://api.tavily.com/search";
-        private int timeout = 6000;  // 6 seconds (Tavily AI processing takes longer)
-        private int maxResults = 20;
-        private String searchDepth = "advanced";  // Tavily-specific parameter
-        private RateLimit rateLimit = new RateLimit(25);  // Conservative: 25/day
     }
 
     /**

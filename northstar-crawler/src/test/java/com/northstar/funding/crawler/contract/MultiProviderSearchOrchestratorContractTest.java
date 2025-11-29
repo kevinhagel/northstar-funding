@@ -175,7 +175,7 @@ class MultiProviderSearchOrchestratorContractTest {
                         createProviderError(SearchEngineType.BRAVE),
                         createProviderError(SearchEngineType.SEARXNG),
                         createProviderError(SearchEngineType.SERPER),
-                        createProviderError(SearchEngineType.TAVILY)
+                        createProviderError(SearchEngineType.PERPLEXICA)
                 ),
                 createStatistics(0, 0, 0, 0)
         );
@@ -221,7 +221,7 @@ class MultiProviderSearchOrchestratorContractTest {
                 totalResults / 4, // braveSearchResults
                 totalResults / 4, // searxngResults
                 totalResults / 4, // serperResults
-                totalResults / 4  // tavilyResults
+                totalResults / 4  // perplexicaResults
         );
     }
 

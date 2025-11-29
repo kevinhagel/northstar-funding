@@ -8,6 +8,7 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.Profile;
 
 /**
  * Simple command-line runner for testing scheduled crawl functionality.
@@ -39,6 +40,7 @@ public class SimpleCrawlRunner {
     }
 
     @Bean
+    @Profile("!test")
     public CommandLineRunner executeCrawl(ScheduledCrawlService crawlService) {
         return args -> {
             System.out.println("\n========================================");
@@ -52,7 +54,7 @@ public class SimpleCrawlRunner {
 
             System.out.println("Query: " + query);
             System.out.println("Max results per provider: 20");
-            System.out.println("Providers: BraveSearch, SearXNG, Serper, Tavily, Perplexica");
+            System.out.println("Providers: BraveSearch, SearXNG, Serper, Perplexica, Perplexica");
             System.out.println();
 
             System.out.println("\n--- Executing Scheduled Crawl ---\n");

@@ -13,7 +13,7 @@ public record SessionStatistics(
     int braveSearchResults,
     int searxngResults,
     int serperResults,
-    int tavilyResults
+    int perplexicaResults
 ) {
     /**
      * Calculate total queries executed (1 per provider with results + errors).
@@ -23,7 +23,7 @@ public record SessionStatistics(
         if (braveSearchResults > 0) providersWithResults++;
         if (searxngResults > 0) providersWithResults++;
         if (serperResults > 0) providersWithResults++;
-        if (tavilyResults > 0) providersWithResults++;
+        if (perplexicaResults > 0) providersWithResults++;
         return providersWithResults;
     }
 }

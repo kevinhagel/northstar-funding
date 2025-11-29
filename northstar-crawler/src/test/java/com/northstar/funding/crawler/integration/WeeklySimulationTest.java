@@ -3,7 +3,6 @@ package com.northstar.funding.crawler.integration;
 import com.northstar.funding.crawler.adapter.BraveSearchAdapter;
 import com.northstar.funding.crawler.adapter.SearxngAdapter;
 import com.northstar.funding.crawler.adapter.SerperAdapter;
-import com.northstar.funding.crawler.adapter.TavilyAdapter;
 import com.northstar.funding.crawler.orchestrator.MultiProviderSearchOrchestrator;
 import com.northstar.funding.domain.DiscoverySession;
 import com.northstar.funding.domain.SessionType;
@@ -49,7 +48,6 @@ class WeeklySimulationTest {
         registry.add("search.providers.brave.api-key", () -> "test-key");
         registry.add("search.providers.searxng.base-url", () -> "http://192.168.1.10:8080");
         registry.add("search.providers.serper.api-key", () -> "test-key");
-        registry.add("search.providers.tavily.api-key", () -> "test-key");
     }
 
     @Autowired
@@ -67,9 +65,6 @@ class WeeklySimulationTest {
     @Autowired
     private SerperAdapter serperAdapter;
 
-    @Autowired
-    private TavilyAdapter tavilyAdapter;
-
     @Test
     @DisplayName("Spring context loads with all required components for weekly simulation")
     void contextLoads_AllWeeklySimulationComponents() {
@@ -78,7 +73,6 @@ class WeeklySimulationTest {
         assertThat(braveAdapter).isNotNull();
         assertThat(searxngAdapter).isNotNull();
         assertThat(serperAdapter).isNotNull();
-        assertThat(tavilyAdapter).isNotNull();
     }
 
     @Test
@@ -101,7 +95,7 @@ class WeeklySimulationTest {
     void rateLimits_SupportWeeklySimulation() {
         // Weekly simulation: 4 queries/day × 7 days = 28 queries/week
         // Daily limits are conservative to avoid exhausting free tier quotas
-        // With daily limits: 50, 60, 25 we need to rotate across providers
+        // With daily limits: 50, 60 we need to rotate across providers
 
         // SearXNG: Unlimited (self-hosted) - primary provider
         assertThat(searxngAdapter.getRateLimit()).isEqualTo(Integer.MAX_VALUE);
@@ -111,21 +105,17 @@ class WeeklySimulationTest {
 
         // Serper: 60/day (plenty for backup)
         assertThat(serperAdapter.getRateLimit()).isGreaterThan(4);
-
-        // Tavily: 25/day (plenty for backup)
-        assertThat(tavilyAdapter.getRateLimit()).isGreaterThan(4);
     }
 
     @Test
     @DisplayName("All adapters ready for parallel execution in weekly simulation")
     void allAdapters_ReadyForParallelExecution() {
-        // Weekly simulation uses CompletableFuture to run 4 providers in parallel
+        // Weekly simulation uses CompletableFuture to run providers in parallel
         // Verify all adapters are available
 
         assertThat(braveAdapter).isNotNull();
         assertThat(searxngAdapter).isNotNull();
         assertThat(serperAdapter).isNotNull();
-        assertThat(tavilyAdapter).isNotNull();
     }
 
     @Test

@@ -3,7 +3,6 @@ package com.northstar.funding.crawler.integration;
 import com.northstar.funding.crawler.adapter.BraveSearchAdapter;
 import com.northstar.funding.crawler.adapter.SearxngAdapter;
 import com.northstar.funding.crawler.adapter.SerperAdapter;
-import com.northstar.funding.crawler.adapter.TavilyAdapter;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -44,7 +43,6 @@ class RateLimitingTest {
         registry.add("search.providers.brave.api-key", () -> "test-key");
         registry.add("search.providers.searxng.base-url", () -> "http://192.168.1.10:8080");
         registry.add("search.providers.serper.api-key", () -> "test-key");
-        registry.add("search.providers.tavily.api-key", () -> "test-key");
     }
 
     @Autowired
@@ -56,16 +54,12 @@ class RateLimitingTest {
     @Autowired
     private SerperAdapter serperAdapter;
 
-    @Autowired
-    private TavilyAdapter tavilyAdapter;
-
     @Test
     @DisplayName("Spring context loads with all adapters")
     void contextLoads_AllAdapters() {
         assertThat(braveAdapter).isNotNull();
         assertThat(searxngAdapter).isNotNull();
         assertThat(serperAdapter).isNotNull();
-        assertThat(tavilyAdapter).isNotNull();
     }
 
     @Test
@@ -87,18 +81,11 @@ class RateLimitingTest {
     }
 
     @Test
-    @DisplayName("Tavily adapter has correct daily rate limit (25)")
-    void tavilyAdapter_HasCorrectRateLimit() {
-        assertThat(tavilyAdapter.getRateLimit()).isEqualTo(25); // 25/day conservative limit
-    }
-
-    @Test
-    @DisplayName("Adapters ordered by rate limit: SearXNG > Serper > Brave > Tavily")
+    @DisplayName("Adapters ordered by rate limit: SearXNG > Serper > Brave")
     void adapters_OrderedByRateLimit() {
         // For weekly simulation, we should prioritize unlimited providers
         assertThat(searxngAdapter.getRateLimit()).isGreaterThan(serperAdapter.getRateLimit());
         assertThat(serperAdapter.getRateLimit()).isGreaterThan(braveAdapter.getRateLimit());
-        assertThat(braveAdapter.getRateLimit()).isGreaterThan(tavilyAdapter.getRateLimit());
     }
 
     @Test
@@ -107,8 +94,7 @@ class RateLimitingTest {
         // Important for development and testing - we have at least one unlimited provider
         boolean hasUnlimited = searxngAdapter.getRateLimit() == Integer.MAX_VALUE ||
                                braveAdapter.getRateLimit() == Integer.MAX_VALUE ||
-                               serperAdapter.getRateLimit() == Integer.MAX_VALUE ||
-                               tavilyAdapter.getRateLimit() == Integer.MAX_VALUE;
+                               serperAdapter.getRateLimit() == Integer.MAX_VALUE;
 
         assertThat(hasUnlimited).isTrue();
     }

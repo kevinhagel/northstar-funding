@@ -32,8 +32,6 @@ import java.util.List;
  *       api-key: ${SERPER_API_KEY:}
  *     searxng:
  *       base-url: http://localhost:8080
- *     tavily:
- *       api-key: ${TAVILY_API_KEY:}
  * </pre>
  */
 @Configuration
@@ -52,7 +50,7 @@ public class SearchAdapterConfiguration {
      * - Brave: Requires API key
      * - SearXNG: Requires base URL
      *
-     * <p>Note: Serper and Tavily adapters not yet implemented.
+     * <p>Note: Serper adapter not yet implemented.
      *
      * @return List of enabled adapters
      */

@@ -12,7 +12,7 @@ import java.util.UUID;
 /**
  * Contract for orchestrating parallel search execution across multiple providers.
  *
- * Executes searches across all 4 providers (BraveSearch, SearXNG, Serper, Tavily)
+ * Executes searches across all 4 providers (BraveSearch, SearXNG, Serper, Perplexica)
  * concurrently using Java 25 Virtual Threads, aggregates results, handles partial
  * failures, and updates discovery session statistics.
  */
@@ -22,7 +22,7 @@ public interface MultiProviderSearchOrchestrator {
      * Execute search query across all configured providers in parallel.
      *
      * @param keywordQuery Query for traditional search engines (BraveSearch, SearXNG, Serper)
-     * @param aiOptimizedQuery Query for AI-optimized search (Tavily)
+     * @param aiOptimizedQuery Query for AI-optimized search (Perplexica)
      * @param maxResultsPerProvider Maximum results to request from each provider
      * @param discoverySessionId UUID of discovery session for tracking
      * @return Try containing SearchExecutionResult with aggregated results and errors
@@ -98,7 +98,7 @@ public interface MultiProviderSearchOrchestrator {
      * - MUST update newDomainsDiscovered (count of new Domain entities)
      * - MUST update duplicateDomainsSkipped (count of isDuplicate=true results)
      * - MUST update spamResultsFiltered (count of anti-spam rejections)
-     * - MUST update per-provider result counts (braveSearchResults, tavilyResults, etc.)
+     * - MUST update per-provider result counts (braveSearchResults, perplexicaResults, etc.)
      * - MUST set status to COMPLETED if all providers succeeded
      * - MUST set status to PARTIAL_SUCCESS if 1-3 providers failed
      * - MUST set status to FAILED if all providers failed

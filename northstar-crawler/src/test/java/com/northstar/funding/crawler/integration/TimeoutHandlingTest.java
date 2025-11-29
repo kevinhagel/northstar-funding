@@ -3,7 +3,6 @@ package com.northstar.funding.crawler.integration;
 import com.northstar.funding.crawler.adapter.BraveSearchAdapter;
 import com.northstar.funding.crawler.adapter.SearxngAdapter;
 import com.northstar.funding.crawler.adapter.SerperAdapter;
-import com.northstar.funding.crawler.adapter.TavilyAdapter;
 import com.northstar.funding.crawler.config.SearchProviderConfig;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -50,9 +49,6 @@ class TimeoutHandlingTest {
 
         registry.add("search.providers.serper.api-key", () -> "test-key");
         registry.add("search.providers.serper.timeout", () -> "5000"); // 5 seconds
-
-        registry.add("search.providers.tavily.api-key", () -> "test-key");
-        registry.add("search.providers.tavily.timeout", () -> "6000"); // 6 seconds
     }
 
     @Autowired
@@ -65,9 +61,6 @@ class TimeoutHandlingTest {
     private SerperAdapter serperAdapter;
 
     @Autowired
-    private TavilyAdapter tavilyAdapter;
-
-    @Autowired
     private SearchProviderConfig config;
 
     @Test
@@ -76,7 +69,6 @@ class TimeoutHandlingTest {
         assertThat(braveAdapter).isNotNull();
         assertThat(searxngAdapter).isNotNull();
         assertThat(serperAdapter).isNotNull();
-        assertThat(tavilyAdapter).isNotNull();
         assertThat(config).isNotNull();
     }
 
@@ -100,27 +92,18 @@ class TimeoutHandlingTest {
     }
 
     @Test
-    @DisplayName("Tavily adapter has 6 second timeout (AI processing)")
-    void tavilyAdapter_HasLongerTimeout() {
-        // Tavily needs longer timeout because of AI processing
-        assertThat(config.getTavily().getTimeout()).isEqualTo(6000); // 6 seconds in millis
-    }
-
-    @Test
     @DisplayName("All adapters have timeouts configured (none are unlimited)")
     void allAdapters_HaveFiniteTimeouts() {
         assertThat(config.getBraveSearch().getTimeout()).isLessThan(60000); // Less than 1 minute
         assertThat(config.getSearxng().getTimeout()).isLessThan(60000);
         assertThat(config.getSerper().getTimeout()).isLessThan(60000);
-        assertThat(config.getTavily().getTimeout()).isLessThan(60000);
     }
 
     @Test
-    @DisplayName("Timeouts ordered: SearXNG (7s) > Tavily (6s) > Brave/Serper (5s)")
-    void timeouts_OrderedByComplexity() {
-        // More complex operations have longer timeouts
-        assertThat(config.getSearxng().getTimeout()).isGreaterThan(config.getTavily().getTimeout());
-        assertThat(config.getTavily().getTimeout()).isGreaterThan(config.getBraveSearch().getTimeout());
+    @DisplayName("SearXNG has longest timeout for metasearch aggregation")
+    void searxng_HasLongestTimeout() {
+        // SearXNG aggregates multiple engines so needs more time
+        assertThat(config.getSearxng().getTimeout()).isGreaterThan(config.getBraveSearch().getTimeout());
         assertThat(config.getBraveSearch().getTimeout()).isEqualTo(config.getSerper().getTimeout());
     }
 }

@@ -94,12 +94,12 @@ public class SearXNGAdapterContractTest extends SearchAdapterContractTest {
 
     @Override
     protected void stubAuthenticationFailure() {
-        // SearXNG doesn't require auth, but simulate server error for consistency
+        // SearXNG doesn't require auth, but simulate 401 for consistency with contract test
         wireMockServer.stubFor(get(urlPathEqualTo("/search"))
             .withQueryParam("q", matching(".*"))
             .willReturn(aResponse()
-                .withStatus(500)
+                .withStatus(401)
                 .withHeader("Content-Type", "application/json")
-                .withBody("{\"error\": \"Internal server error\"}")));
+                .withBody("{\"error\": \"Unauthorized\"}")));
     }
 }

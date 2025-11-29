@@ -88,14 +88,14 @@ public class SearchWorkflowResult {
     /**
      * Results count by search engine.
      * Map: SearchEngineType → result count
-     * Example: {TAVILY: 45, SEARXNG: 38, BRAVE: 0, SERPER: 0}
+     * Example: {PERPLEXICA: 45, SEARXNG: 38, BRAVE: 0, SERPER: 0}
      */
     private Map<SearchEngineType, Integer> resultsByEngine;
 
     /**
      * Zero result queries by search engine.
      * Map: SearchEngineType → zero result count
-     * Example: {BRAVE: 12, SERPER: 8, TAVILY: 0, SEARXNG: 2}
+     * Example: {BRAVE: 12, SERPER: 8, PERPLEXICA: 0, SEARXNG: 2}
      */
     private Map<SearchEngineType, Integer> zeroResultsByEngine;
 

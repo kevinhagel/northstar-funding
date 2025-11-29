@@ -8,7 +8,7 @@ import dev.langchain4j.model.input.PromptTemplate;
  * <p>Provides two templates:
  * <ul>
  *   <li>KEYWORD_QUERY_TEMPLATE: For traditional search engines (Brave, Serper, SearXNG)</li>
- *   <li>TAVILY_QUERY_TEMPLATE: For AI-optimized search (Tavily)</li>
+ *   <li>PERPLEXICA_QUERY_TEMPLATE: For AI-optimized search (Perplexica)</li>
  * </ul>
  *
  * <p>Templates use LangChain4j variable substitution with {{variableName}} syntax.
@@ -50,7 +50,7 @@ public class PromptTemplates {
             1.""");
 
     /**
-     * Template for generating AI-optimized queries for Tavily search.
+     * Template for generating AI-optimized queries for Perplexica search.
      *
      * <p>Variables:
      * <ul>
@@ -59,7 +59,7 @@ public class PromptTemplates {
      *   <li>{{maxQueries}}: Number of queries to generate</li>
      * </ul>
      */
-    public static final PromptTemplate TAVILY_QUERY_TEMPLATE = PromptTemplate.from("""
+    public static final PromptTemplate PERPLEXICA_QUERY_TEMPLATE = PromptTemplate.from("""
             You are a search query expert specialized in finding educational funding opportunities.
 
             Generate {{maxQueries}} detailed, AI-optimized search queries for semantic search engines.
@@ -97,7 +97,7 @@ public class PromptTemplates {
     /**
      * Fallback queries for AI-optimized search when LLM is unavailable.
      */
-    public static final String[] TAVILY_FALLBACK_QUERIES = {
+    public static final String[] PERPLEXICA_FALLBACK_QUERIES = {
         "Educational funding opportunities for schools and programs supporting student learning and development",
         "Grant programs for teacher professional development and educational capacity building initiatives",
         "Scholarship and financial aid opportunities for students pursuing educational advancement"

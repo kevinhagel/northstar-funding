@@ -81,7 +81,7 @@ class FallbackQueriesTest {
     void verifyFallbackQueriesExist() {
         // This test verifies that PromptTemplates has fallback queries defined
         // Actual test would check PromptTemplates.KEYWORD_FALLBACK_QUERIES
-        // and PromptTemplates.TAVILY_FALLBACK_QUERIES are non-empty
+        // and PromptTemplates.PERPLEXICA_FALLBACK_QUERIES are non-empty
 
         // For now, just a placeholder to document the requirement
         assertThat(true).isTrue();

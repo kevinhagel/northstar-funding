@@ -60,7 +60,7 @@ class MultiProviderParallelTest {
                                 SearchEngineType.BRAVE,
                                 SearchEngineType.SERPER,
                                 SearchEngineType.SEARXNG,
-                                SearchEngineType.TAVILY
+                                SearchEngineType.PERPLEXICA
                         ),
                         categories,
                         geographic,
@@ -76,8 +76,8 @@ class MultiProviderParallelTest {
         assertThat(results.get(SearchEngineType.BRAVE)).hasSize(5);
         assertThat(results.get(SearchEngineType.SERPER)).hasSize(5);
         assertThat(results.get(SearchEngineType.SEARXNG)).hasSize(5);
-        // Tavily may generate 2-5 queries (AI-optimized, different strategy)
-        assertThat(results.get(SearchEngineType.TAVILY))
+        // Perplexica may generate 2-5 queries (AI-optimized, different strategy)
+        assertThat(results.get(SearchEngineType.PERPLEXICA))
                 .hasSizeGreaterThanOrEqualTo(2)
                 .hasSizeLessThanOrEqualTo(5);
 
@@ -104,7 +104,7 @@ class MultiProviderParallelTest {
         // Act - Only 2 providers
         Map<SearchEngineType, List<String>> results = queryGenerationService
                 .generateForMultipleProviders(
-                        List.of(SearchEngineType.BRAVE, SearchEngineType.TAVILY),
+                        List.of(SearchEngineType.BRAVE, SearchEngineType.PERPLEXICA),
                         Set.of(FundingSearchCategory.INFRASTRUCTURE_FUNDING),
                         GeographicScope.BALKANS,
                         3,
@@ -115,8 +115,8 @@ class MultiProviderParallelTest {
         // Assert - llama3.1:8b should generate exact counts
         assertThat(results).hasSize(2);
         assertThat(results.get(SearchEngineType.BRAVE)).hasSize(3);
-        // Tavily may generate 2-3 queries (AI-optimized)
-        assertThat(results.get(SearchEngineType.TAVILY))
+        // Perplexica may generate 2-3 queries (AI-optimized)
+        assertThat(results.get(SearchEngineType.PERPLEXICA))
                 .hasSizeGreaterThanOrEqualTo(2)
                 .hasSizeLessThanOrEqualTo(3);
     }

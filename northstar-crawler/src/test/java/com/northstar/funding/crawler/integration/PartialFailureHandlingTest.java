@@ -3,7 +3,6 @@ package com.northstar.funding.crawler.integration;
 import com.northstar.funding.crawler.adapter.BraveSearchAdapter;
 import com.northstar.funding.crawler.adapter.SearxngAdapter;
 import com.northstar.funding.crawler.adapter.SerperAdapter;
-import com.northstar.funding.crawler.adapter.TavilyAdapter;
 import com.northstar.funding.crawler.orchestrator.MultiProviderSearchOrchestrator;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -51,9 +50,6 @@ class PartialFailureHandlingTest {
 
         registry.add("search.providers.serper.api-key", () -> "test-key");
         registry.add("search.providers.serper.timeout", () -> "5000");
-
-        registry.add("search.providers.tavily.api-key", () -> "test-key");
-        registry.add("search.providers.tavily.timeout", () -> "6000");
     }
 
     @Autowired
@@ -68,9 +64,6 @@ class PartialFailureHandlingTest {
     @Autowired
     private SerperAdapter serperAdapter;
 
-    @Autowired
-    private TavilyAdapter tavilyAdapter;
-
     @Test
     @DisplayName("Spring context loads with orchestrator and all adapters")
     void contextLoads_OrchestratorAndAdapters() {
@@ -78,7 +71,6 @@ class PartialFailureHandlingTest {
         assertThat(braveAdapter).isNotNull();
         assertThat(searxngAdapter).isNotNull();
         assertThat(serperAdapter).isNotNull();
-        assertThat(tavilyAdapter).isNotNull();
     }
 
     @Test
@@ -108,6 +100,5 @@ class PartialFailureHandlingTest {
         assertThat(braveAdapter).isNotNull();
         assertThat(searxngAdapter).isNotNull();
         assertThat(serperAdapter).isNotNull();
-        assertThat(tavilyAdapter).isNotNull();
     }
 }

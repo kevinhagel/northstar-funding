@@ -189,19 +189,19 @@ class SearchResultRepositoryTest {
         SearchResult searxng = createSearchResult("test.org", "https://test.org/1");
         searxng.setSearchEngine(SearchEngineType.SEARXNG);
 
-        SearchResult tavily = createSearchResult("test.org", "https://test.org/2");
-        tavily.setSearchEngine(SearchEngineType.TAVILY);
+        SearchResult perplexica = createSearchResult("test.org", "https://test.org/2");
+        perplexica.setSearchEngine(SearchEngineType.PERPLEXICA);
 
         repository.save(searxng);
-        repository.save(tavily);
+        repository.save(perplexica);
 
         // When
         var searxngResults = repository.findBySearchEngine(SearchEngineType.SEARXNG);
-        var tavilyResults = repository.findBySearchEngine(SearchEngineType.TAVILY);
+        var perplexicaResults = repository.findBySearchEngine(SearchEngineType.PERPLEXICA);
 
         // Then
         assertThat(searxngResults).hasSize(1);
-        assertThat(tavilyResults).hasSize(1);
+        assertThat(perplexicaResults).hasSize(1);
     }
 
     @Test
@@ -348,20 +348,20 @@ class SearchResultRepositoryTest {
         SearchResult searxng2 = createSearchResult("test.org", "https://test.org/2");
         searxng2.setSearchEngine(SearchEngineType.SEARXNG);
 
-        SearchResult tavily = createSearchResult("test.org", "https://test.org/3");
-        tavily.setSearchEngine(SearchEngineType.TAVILY);
+        SearchResult perplexica = createSearchResult("test.org", "https://test.org/3");
+        perplexica.setSearchEngine(SearchEngineType.PERPLEXICA);
 
         repository.save(searxng1);
         repository.save(searxng2);
-        repository.save(tavily);
+        repository.save(perplexica);
 
         // When
         long searxngCount = repository.countBySearchEngine(SearchEngineType.SEARXNG);
-        long tavilyCount = repository.countBySearchEngine(SearchEngineType.TAVILY);
+        long perplexicaCount = repository.countBySearchEngine(SearchEngineType.PERPLEXICA);
 
         // Then
         assertThat(searxngCount).isEqualTo(2);
-        assertThat(tavilyCount).isEqualTo(1);
+        assertThat(perplexicaCount).isEqualTo(1);
     }
 
     @Test

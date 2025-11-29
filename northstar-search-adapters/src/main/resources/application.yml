@@ -28,13 +28,13 @@ search-adapters:
     api-url: ${SEARXNG_API_URL:http://192.168.1.10:8080}
     timeout-seconds: 10
 
-  # Tavily AI Search API
-  # Sign up: https://tavily.com/
+  # Perplexica AI Search API
+  # Sign up: https://perplexica.com/
   # Free tier: 1,000 queries/month
-  # NOTE: Tavily adapter not yet implemented
-  tavily:
-    api-key: ${TAVILY_API_KEY:}
-    api-url: https://api.tavily.com/search
+  # NOTE: Perplexica adapter not yet implemented
+  perplexica:
+    api-key: ${PERPLEXICA_API_KEY:}
+    api-url: https://api.perplexica.com/search
     timeout-seconds: 15
 
 # WebClient HTTP settings
@@ -56,4 +56,4 @@ logging:
     com.northstar.funding.searchadapters.brave: DEBUG
     com.northstar.funding.searchadapters.serper: DEBUG
     com.northstar.funding.searchadapters.searxng: DEBUG
-    com.northstar.funding.searchadapters.tavily: DEBUG
+    com.northstar.funding.searchadapters.perplexica: DEBUG

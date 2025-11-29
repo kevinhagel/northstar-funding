@@ -324,9 +324,9 @@ public class MultiProviderSearchOrchestratorImpl implements MultiProviderSearchO
         int braveResults = successfulResults.getOrDefault(SearchEngineType.BRAVE, List.of()).size();
         int searxngResults = successfulResults.getOrDefault(SearchEngineType.SEARXNG, List.of()).size();
         int serperResults = successfulResults.getOrDefault(SearchEngineType.SERPER, List.of()).size();
-        int tavilyResults = successfulResults.getOrDefault(SearchEngineType.TAVILY, List.of()).size();
+        int perplexicaResults = successfulResults.getOrDefault(SearchEngineType.PERPLEXICA, List.of()).size();
 
-        int totalRawResults = braveResults + searxngResults + serperResults + tavilyResults;
+        int totalRawResults = braveResults + searxngResults + serperResults + perplexicaResults;
         int spamFiltered = totalRawResults - aggregatedResults.size();
 
         return new SessionStatistics(
@@ -337,7 +337,7 @@ public class MultiProviderSearchOrchestratorImpl implements MultiProviderSearchO
                 braveResults,
                 searxngResults,
                 serperResults,
-                tavilyResults
+                perplexicaResults
         );
     }
 

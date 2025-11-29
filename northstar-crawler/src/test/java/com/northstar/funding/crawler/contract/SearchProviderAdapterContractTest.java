@@ -19,7 +19,7 @@ import static org.assertj.core.api.Assertions.*;
 /**
  * Contract tests for SearchProviderAdapter interface.
  *
- * These tests verify that ALL adapter implementations (BraveSearch, Serper, Tavily, SearXNG)
+ * These tests verify that ALL adapter implementations (BraveSearch, Serper, Perplexica, SearXNG)
  * conform to the SearchProviderAdapter contract.
  *
  * TDD Approach: These tests are written BEFORE the concrete implementations.

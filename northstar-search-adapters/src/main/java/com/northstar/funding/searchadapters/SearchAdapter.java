@@ -9,7 +9,7 @@ import java.util.List;
 /**
  * Common interface for all search engine adapters.
  *
- * Implementations: BraveSearchAdapter, SerperAdapter, SearXNGAdapter, TavilyAdapter
+ * Implementations: BraveSearchAdapter, SerperAdapter, SearXNGAdapter, PerplexicaAdapter
  *
  * Contract:
  * - search() returns empty list for zero results (NOT an exception)
@@ -33,7 +33,7 @@ public interface SearchAdapter {
     /**
      * Get the search engine type this adapter implements.
      *
-     * @return SearchEngineType enum (BRAVE, SERPER, SEARXNG, TAVILY)
+     * @return SearchEngineType enum (BRAVE, SERPER, SEARXNG, PERPLEXICA)
      */
     SearchEngineType getEngineType();
 

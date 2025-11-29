@@ -9,7 +9,7 @@ import java.util.List;
 /**
  * Contract for search provider adapters.
  *
- * Each implementation (BraveSearchAdapter, SearxngAdapter, SerperAdapter, TavilyAdapter)
+ * Each implementation (BraveSearchAdapter, SearxngAdapter, SerperAdapter, PerplexicaAdapter)
  * must implement this interface to provide standardized search capabilities.
  *
  * Thread Safety: Implementations MUST be thread-safe for Virtual Thread execution.
@@ -43,7 +43,7 @@ public interface SearchProviderAdapter {
     /**
      * Get the search engine type for this adapter.
      *
-     * @return SearchEngineType enum value (BRAVE_SEARCH, SEARXNG, SERPER, or TAVILY)
+     * @return SearchEngineType enum value (BRAVE_SEARCH, SEARXNG, SERPER, or PERPLEXICA)
      *
      * Contract:
      * - MUST return non-null SearchEngineType
@@ -63,7 +63,7 @@ public interface SearchProviderAdapter {
      * - BraveSearchAdapter MUST return true
      * - SearxngAdapter MUST return true
      * - SerperAdapter MUST return true
-     * - TavilyAdapter MUST return false (AI-optimized only)
+     * - PerplexicaAdapter MUST return false (AI-optimized only)
      */
     boolean supportsKeywordQueries();
 
@@ -80,7 +80,7 @@ public interface SearchProviderAdapter {
      * - BraveSearchAdapter MUST return false (keyword only)
      * - SearxngAdapter MUST return false (keyword only)
      * - SerperAdapter MUST return false (keyword only)
-     * - TavilyAdapter MUST return true (AI-optimized)
+     * - PerplexicaAdapter MUST return true (AI-optimized)
      */
     boolean supportsAIOptimizedQueries();
 
@@ -106,7 +106,7 @@ public interface SearchProviderAdapter {
      * Contract:
      * - BraveSearchAdapter MUST return 50 (conservative daily limit)
      * - SerperAdapter MUST return 60 (conservative daily limit)
-     * - TavilyAdapter MUST return 25 (conservative daily limit)
+     * - PerplexicaAdapter MUST return 25 (conservative daily limit)
      * - SearxngAdapter MUST return Integer.MAX_VALUE (no limit, self-hosted)
      */
     int getRateLimit();
