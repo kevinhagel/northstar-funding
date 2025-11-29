@@ -18,12 +18,16 @@ spring:
 
 # Query Generation configuration
 query-generation:
-  # Ollama Configuration
-  lm-studio:
-    base-url: http://192.168.1.10:11434/v1
+  # LLM Configuration - uses LM Studio for tests
+  llm:
+    base-url: http://192.168.1.10:1234/v1
     api-key: not-needed
-    timeout-seconds: 60  # Increased for larger model
-    model-name: llama3.1:8b  # 8B model for reliable query generation (better instruction following)
+    timeout-seconds: 60
+    model-name: llama-3.1-8b-instruct  # LM Studio model ID
+    max-tokens: 500
+    temperature: 0.7
+    log-requests: true
+    log-responses: true
 
   # Cache configuration
   cache:
